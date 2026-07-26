@@ -1,5 +1,6 @@
 const path = require('path');
 const express = require('express');
+const { init } = require('./db');
 
 const roomsRouter = require('./routes/rooms');
 const bookingsRouter = require('./routes/bookings');
@@ -17,6 +18,13 @@ app.use('/api/contact', contactRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-app.listen(PORT, () => {
-  console.log(`Horizon Inn server running on port ${PORT}`);
-});
+init()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Horizon Inn server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('Failed to initialize database:', err);
+    process.exit(1);
+  });

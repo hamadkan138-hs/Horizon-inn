@@ -1,92 +1,113 @@
 const path = require('path');
 const fs = require('fs');
-const Database = require('better-sqlite3');
+const { createClient } = require('@libsql/client');
 
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+const DATABASE_URL = process.env.TURSO_DATABASE_URL
+  || `file:${path.join(process.env.DATA_DIR || path.join(__dirname, '..', 'data'), 'horizon.db')}`;
+const AUTH_TOKEN = process.env.TURSO_AUTH_TOKEN;
 
-const db = new Database(path.join(DATA_DIR, 'horizon.db'));
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
-
-db.exec(`
-  CREATE TABLE IF NOT EXISTS rooms (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    slug TEXT UNIQUE NOT NULL,
-    name TEXT NOT NULL,
-    description TEXT NOT NULL,
-    price INTEGER NOT NULL,
-    features TEXT NOT NULL,
-    gradient TEXT NOT NULL,
-    total_units INTEGER NOT NULL DEFAULT 3,
-    featured INTEGER NOT NULL DEFAULT 0
-  );
-
-  CREATE TABLE IF NOT EXISTS bookings (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    room_id INTEGER NOT NULL REFERENCES rooms(id),
-    name TEXT NOT NULL,
-    email TEXT NOT NULL,
-    phone TEXT NOT NULL,
-    checkin TEXT NOT NULL,
-    checkout TEXT NOT NULL,
-    guests INTEGER NOT NULL,
-    special_requests TEXT DEFAULT '',
-    status TEXT NOT NULL DEFAULT 'confirmed',
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    email TEXT NOT NULL,
-    message TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-`);
-
-const roomCount = db.prepare('SELECT COUNT(*) AS n FROM rooms').get().n;
-if (roomCount === 0) {
-  const insertRoom = db.prepare(`
-    INSERT INTO rooms (slug, name, description, price, features, gradient, total_units, featured)
-    VALUES (@slug, @name, @description, @price, @features, @gradient, @total_units, @featured)
-  `);
-  const seedRooms = [
-    {
-      slug: 'deluxe-room',
-      name: 'Deluxe Room',
-      description: 'Spacious room with premium bedding and modern amenities.',
-      price: 199,
-      features: JSON.stringify(['King-size bed', 'Marble bathroom', 'City view balcony', 'Smart TV & streaming']),
-      gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      total_units: 6,
-      featured: 0
-    },
-    {
-      slug: 'luxury-suite',
-      name: 'Luxury Suite',
-      description: 'Ultimate luxury with separate living area and panoramic views.',
-      price: 349,
-      features: JSON.stringify(['Separate living room', 'Jacuzzi bathtub', 'Panoramic view', 'Personal butler service']),
-      gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-      total_units: 4,
-      featured: 1
-    },
-    {
-      slug: 'presidential-suite',
-      name: 'Presidential Suite',
-      description: 'The pinnacle of luxury with exclusive amenities and services.',
-      price: 599,
-      features: JSON.stringify(['Multi-room layout', 'Private sauna', '360° panoramic view', '24/7 concierge service']),
-      gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-      total_units: 2,
-      featured: 0
-    }
-  ];
-  const insertMany = db.transaction((rooms) => {
-    for (const room of rooms) insertRoom.run(room);
-  });
-  insertMany(seedRooms);
+if (DATABASE_URL.startsWith('file:')) {
+  const dir = path.dirname(DATABASE_URL.slice('file:'.length));
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
-module.exports = db;
+const db = createClient(AUTH_TOKEN ? { url: DATABASE_URL, authToken: AUTH_TOKEN } : { url: DATABASE_URL });
+
+const SEED_ROOMS = [
+  {
+    slug: 'deluxe-room',
+    name: 'Deluxe Room',
+    description: 'Spacious room with premium bedding and modern amenities.',
+    price: 199,
+    features: JSON.stringify(['King-size bed', 'Marble bathroom', 'City view balcony', 'Smart TV & streaming']),
+    gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    total_units: 6,
+    featured: 0
+  },
+  {
+    slug: 'luxury-suite',
+    name: 'Luxury Suite',
+    description: 'Ultimate luxury with separate living area and panoramic views.',
+    price: 349,
+    features: JSON.stringify(['Separate living room', 'Jacuzzi bathtub', 'Panoramic view', 'Personal butler service']),
+    gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    total_units: 4,
+    featured: 1
+  },
+  {
+    slug: 'presidential-suite',
+    name: 'Presidential Suite',
+    description: 'The pinnacle of luxury with exclusive amenities and services.',
+    price: 599,
+    features: JSON.stringify(['Multi-room layout', 'Private sauna', '360° panoramic view', '24/7 concierge service']),
+    gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+    total_units: 2,
+    featured: 0
+  }
+];
+
+let initPromise = null;
+
+function init() {
+  if (!initPromise) {
+    initPromise = (async () => {
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS rooms (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          slug TEXT UNIQUE NOT NULL,
+          name TEXT NOT NULL,
+          description TEXT NOT NULL,
+          price INTEGER NOT NULL,
+          features TEXT NOT NULL,
+          gradient TEXT NOT NULL,
+          total_units INTEGER NOT NULL DEFAULT 3,
+          featured INTEGER NOT NULL DEFAULT 0
+        )
+      `);
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS bookings (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          room_id INTEGER NOT NULL REFERENCES rooms(id),
+          name TEXT NOT NULL,
+          email TEXT NOT NULL,
+          phone TEXT NOT NULL,
+          checkin TEXT NOT NULL,
+          checkout TEXT NOT NULL,
+          guests INTEGER NOT NULL,
+          special_requests TEXT DEFAULT '',
+          status TEXT NOT NULL DEFAULT 'confirmed',
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS messages (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          email TEXT NOT NULL,
+          message TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+
+      const countResult = await db.execute('SELECT COUNT(*) AS n FROM rooms');
+      const roomCount = Number(countResult.rows[0].n);
+
+      if (roomCount === 0) {
+        for (const room of SEED_ROOMS) {
+          await db.execute({
+            sql: `
+              INSERT INTO rooms (slug, name, description, price, features, gradient, total_units, featured)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `,
+            args: [room.slug, room.name, room.description, room.price, room.features, room.gradient, room.total_units, room.featured]
+          });
+        }
+      }
+    })();
+  }
+  return initPromise;
+}
+
+module.exports = { db, init };
