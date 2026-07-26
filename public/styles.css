@@ -487,6 +487,58 @@ h2::after {
     color: #a5473c;
 }
 
+/* Gallery */
+.gallery {
+    padding: 100px 0;
+    background: var(--charcoal);
+}
+
+.gallery h2 {
+    color: var(--white);
+}
+
+.gallery-intro {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.65);
+    max-width: 560px;
+    margin: -20px auto 44px;
+    font-size: 0.98rem;
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, 240px);
+    grid-template-areas:
+        "lounge lounge tree meet"
+        "fire   patio  tree meet";
+    gap: 18px;
+}
+
+.gallery-item {
+    overflow: hidden;
+    position: relative;
+}
+
+.gallery-lounge { grid-area: lounge; }
+.gallery-tree { grid-area: tree; }
+.gallery-meet { grid-area: meet; }
+.gallery-fire { grid-area: fire; }
+.gallery-patio { grid-area: patio; }
+
+.gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.8s ease, filter 0.8s ease;
+    filter: saturate(1.05);
+}
+
+.gallery-item:hover img {
+    transform: scale(1.06);
+}
+
 /* Booking & Contact forms */
 .booking,
 .contact {
@@ -852,5 +904,16 @@ table.admin-table th {
     .booking-form-wrapper,
     .contact-form {
         padding: 28px;
+    }
+
+    .gallery-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: none;
+        grid-template-areas: none;
+        grid-auto-rows: 220px;
+    }
+
+    .gallery-lounge, .gallery-tree, .gallery-meet, .gallery-fire, .gallery-patio {
+        grid-area: auto;
     }
 }
