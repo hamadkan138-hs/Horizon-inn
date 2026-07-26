@@ -139,6 +139,12 @@ h2::after {
     color: var(--gold);
 }
 
+.nav-logo {
+    height: 34px;
+    width: auto;
+    display: block;
+}
+
 .nav-menu {
     list-style: none;
     display: flex;
@@ -1256,6 +1262,27 @@ table.admin-table th {
     margin-top: 22px;
     padding-top: 18px;
     border-top: 1px dashed #d8d4c9;
+}
+
+.verify-banner {
+    background: #fdf0e2;
+    border-left: 3px solid #b5701f;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+    color: #6b4a12;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.verify-banner i {
+    color: #b5701f;
+}
+
+.verify-banner .verify-btn {
+    margin-left: auto;
 }
 
 .detail-subsection h4 {

@@ -127,6 +127,12 @@ router.get('/summary', async (req, res) => {
     const pendingResult = await db.execute(`
       SELECT COUNT(*) AS pendingCount FROM bookings WHERE status = 'pending'
     `);
+    const pendingBalanceResult = await db.execute(`
+      SELECT COALESCE(SUM(MAX(b.total_amount - COALESCE(p.paid, 0), 0)), 0) AS pendingBalance
+      FROM bookings b
+      LEFT JOIN (SELECT booking_id, SUM(amount) AS paid FROM payments GROUP BY booking_id) p ON p.booking_id = b.id
+      WHERE b.status != 'cancelled'
+    `);
 
     const totalRevenue = Number(revenueResult.rows[0].totalRevenue);
     const totalExpenses = Number(expensesResult.rows[0].totalExpenses);
@@ -137,11 +143,72 @@ router.get('/summary', async (req, res) => {
       totalCollected: Number(paidResult.rows[0].totalCollected),
       totalExpenses,
       netEarnings: totalRevenue - totalExpenses,
-      pendingCount: Number(pendingResult.rows[0].pendingCount)
+      pendingCount: Number(pendingResult.rows[0].pendingCount),
+      pendingBalance: Number(pendingBalanceResult.rows[0].pendingBalance)
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to load summary report' });
+  }
+});
+
+// Front-desk daily view: who's arriving/leaving today, cash taken today, who still owes money
+router.get('/daily-summary', async (req, res) => {
+  try {
+    const date = req.query.date || new Date().toISOString().slice(0, 10);
+
+    const checkinsResult = await db.execute({
+      sql: `
+        SELECT bookings.*, rooms.name AS room_name
+        FROM bookings JOIN rooms ON rooms.id = bookings.room_id
+        WHERE checkin = ? AND status != 'cancelled'
+        ORDER BY bookings.id
+      `,
+      args: [date]
+    });
+    const checkoutsResult = await db.execute({
+      sql: `
+        SELECT bookings.*, rooms.name AS room_name
+        FROM bookings JOIN rooms ON rooms.id = bookings.room_id
+        WHERE checkout = ? AND status != 'cancelled'
+        ORDER BY bookings.id
+      `,
+      args: [date]
+    });
+    const cashTodayResult = await db.execute({
+      sql: `SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE date(recorded_at) = ?`,
+      args: [date]
+    });
+    const outstandingResult = await db.execute(`
+      SELECT bookings.*, rooms.name AS room_name,
+             bookings.total_amount - COALESCE(p.paid, 0) AS balance
+      FROM bookings
+      JOIN rooms ON rooms.id = bookings.room_id
+      LEFT JOIN (SELECT booking_id, SUM(amount) AS paid FROM payments GROUP BY booking_id) p ON p.booking_id = bookings.id
+      WHERE bookings.status NOT IN ('cancelled', 'checked_out') AND bookings.total_amount - COALESCE(p.paid, 0) > 0.01
+      ORDER BY balance DESC
+    `);
+
+    const paidByBooking = {};
+    for (const row of [...checkinsResult.rows, ...checkoutsResult.rows]) {
+      if (paidByBooking[row.id] !== undefined) continue;
+      const paidResult = await db.execute({ sql: 'SELECT COALESCE(SUM(amount),0) AS paid FROM payments WHERE booking_id = ?', args: [row.id] });
+      paidByBooking[row.id] = Number(paidResult.rows[0].paid);
+    }
+
+    const withBalance = (row) => ({ ...row, balance: Math.max(0, Number(row.total_amount) - (paidByBooking[row.id] || 0)) });
+
+    res.json({
+      date,
+      checkins: checkinsResult.rows.map(withBalance),
+      checkouts: checkoutsResult.rows.map(withBalance),
+      cashReceivedToday: Number(cashTodayResult.rows[0].total),
+      outstandingTotal: outstandingResult.rows.reduce((sum, r) => sum + Number(r.balance), 0),
+      outstandingBookings: outstandingResult.rows
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load daily summary' });
   }
 });
 

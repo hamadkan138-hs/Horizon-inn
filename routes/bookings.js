@@ -4,6 +4,7 @@ const adminAuth = require('../middleware/adminAuth');
 const { requireRole } = adminAuth;
 const { isRoomAvailable } = require('../lib/availability');
 const { computeTotalAmount } = require('../lib/pricing');
+const { recomputeBookingTotal } = require('../lib/billing');
 
 const router = express.Router();
 
@@ -60,21 +61,21 @@ router.post('/', async (req, res) => {
       return res.status(409).json({ error: 'This room type is fully booked for the selected dates' });
     }
 
-    const totalAmount = await computeTotalAmount(room, checkin, checkout);
+    const roomAmount = await computeTotalAmount(room, checkin, checkout);
 
     const insertResult = await db.execute({
       sql: `
         INSERT INTO bookings (
           room_id, name, email, phone, checkin, checkout, guests, special_requests,
           cnic, marital_status, arrival_from, departure_to, arrival_time, purpose_of_stay, vehicle_number,
-          payment_method, transaction_id, terms_accepted, status, payment_status, total_amount
+          payment_method, transaction_id, terms_accepted, status, payment_status, total_amount, room_amount
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?, ?)
       `,
       args: [
         roomId, name, email, phone, checkin, checkout, guests, specialRequests || '',
         cnic, maritalStatus, arrivalFrom, departureTo, arrivalTime || '', purposeOfStay || '', vehicleNumber || '',
-        paymentMethod, transactionId || '', 1, totalAmount
+        paymentMethod, transactionId || '', 1, roomAmount, roomAmount
       ]
     });
 
@@ -105,7 +106,7 @@ router.get('/', adminAuth, async (req, res) => {
   }
 });
 
-// Single booking with room + payment history (admin) — used by invoice view
+// Single booking with room + payment history + extra charges (admin) — used by invoice view
 router.get('/:id', adminAuth, async (req, res) => {
   try {
     const result = await db.execute({
@@ -125,7 +126,11 @@ router.get('/:id', adminAuth, async (req, res) => {
       sql: 'SELECT * FROM payments WHERE booking_id = ? ORDER BY recorded_at ASC',
       args: [req.params.id]
     });
-    res.json({ ...booking, payments: paymentsResult.rows });
+    const chargesResult = await db.execute({
+      sql: 'SELECT * FROM booking_charges WHERE booking_id = ? ORDER BY created_at ASC',
+      args: [req.params.id]
+    });
+    res.json({ ...booking, payments: paymentsResult.rows, charges: chargesResult.rows });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to load booking' });
@@ -170,6 +175,7 @@ router.patch('/:id/details', adminAuth, requireRole('admin', 'staff'), async (re
       return res.status(400).json({ error: 'Invalid check-in/check-out dates' });
     }
 
+    let roomAmountChanged = false;
     if (req.body.checkin || req.body.checkout) {
       const roomResult = await db.execute({ sql: 'SELECT * FROM rooms WHERE id = ?', args: [booking.room_id] });
       const room = roomResult.rows[0];
@@ -177,13 +183,16 @@ router.patch('/:id/details', adminAuth, requireRole('admin', 'staff'), async (re
       if (!available) {
         return res.status(409).json({ error: 'Room is not available for the new dates' });
       }
-      const totalAmount = await computeTotalAmount(room, nextCheckin, nextCheckout);
-      updates.push('total_amount = ?');
-      args.push(totalAmount);
+      const roomAmount = await computeTotalAmount(room, nextCheckin, nextCheckout);
+      updates.push('room_amount = ?');
+      args.push(roomAmount);
+      roomAmountChanged = true;
     }
 
     args.push(req.params.id);
     await db.execute({ sql: `UPDATE bookings SET ${updates.join(', ')} WHERE id = ?`, args });
+
+    if (roomAmountChanged) await recomputeBookingTotal(req.params.id);
 
     const updated = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
     res.json(updated.rows[0]);
@@ -228,6 +237,73 @@ router.patch('/:id', adminAuth, async (req, res) => {
   }
 });
 
+// Set a tax rate for the booking (admin) — recomputes total_amount and payment_status
+router.patch('/:id/tax', adminAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const { taxPercent } = req.body;
+    if (taxPercent === undefined || taxPercent < 0 || taxPercent > 100) {
+      return res.status(400).json({ error: 'taxPercent must be between 0 and 100' });
+    }
+    const existing = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
+    if (!existing.rows[0]) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+    await db.execute({ sql: 'UPDATE bookings SET tax_percent = ? WHERE id = ?', args: [taxPercent, req.params.id] });
+    const result = await recomputeBookingTotal(req.params.id);
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update tax rate' });
+  }
+});
+
+// Add an extra service charge to a booking (admin) — e.g. breakfast, laundry, airport pickup
+router.post('/:id/charges', adminAuth, async (req, res) => {
+  try {
+    const { description, amount } = req.body;
+    if (!description || !amount || amount <= 0) {
+      return res.status(400).json({ error: 'Description and a positive amount are required' });
+    }
+    const existing = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
+    if (!existing.rows[0]) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+    await db.execute({
+      sql: 'INSERT INTO booking_charges (booking_id, description, amount) VALUES (?, ?, ?)',
+      args: [req.params.id, description, amount]
+    });
+    const totals = await recomputeBookingTotal(req.params.id);
+    const chargesResult = await db.execute({
+      sql: 'SELECT * FROM booking_charges WHERE booking_id = ? ORDER BY created_at ASC',
+      args: [req.params.id]
+    });
+    res.status(201).json({ charges: chargesResult.rows, ...totals });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to add charge' });
+  }
+});
+
+// Remove an extra service charge (admin)
+router.delete('/:id/charges/:chargeId', adminAuth, async (req, res) => {
+  try {
+    const existing = await db.execute({ sql: 'SELECT * FROM booking_charges WHERE id = ? AND booking_id = ?', args: [req.params.chargeId, req.params.id] });
+    if (!existing.rows[0]) {
+      return res.status(404).json({ error: 'Charge not found' });
+    }
+    await db.execute({ sql: 'DELETE FROM booking_charges WHERE id = ?', args: [req.params.chargeId] });
+    const totals = await recomputeBookingTotal(req.params.id);
+    const chargesResult = await db.execute({
+      sql: 'SELECT * FROM booking_charges WHERE booking_id = ? ORDER BY created_at ASC',
+      args: [req.params.id]
+    });
+    res.json({ charges: chargesResult.rows, ...totals });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to remove charge' });
+  }
+});
+
 // Record a payment against a booking (admin) — builds transaction history and
 // auto-derives payment_status from total paid vs total_amount.
 router.post('/:id/payments', adminAuth, async (req, res) => {
@@ -238,8 +314,7 @@ router.post('/:id/payments', adminAuth, async (req, res) => {
     }
 
     const bookingResult = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
-    const booking = bookingResult.rows[0];
-    if (!booking) {
+    if (!bookingResult.rows[0]) {
       return res.status(404).json({ error: 'Booking not found' });
     }
 
@@ -251,20 +326,13 @@ router.post('/:id/payments', adminAuth, async (req, res) => {
       args: [req.params.id, amount, method, transactionId || '', note || '', req.user.username]
     });
 
-    const paidResult = await db.execute({
-      sql: 'SELECT COALESCE(SUM(amount), 0) AS paid FROM payments WHERE booking_id = ?',
-      args: [req.params.id]
-    });
-    const paidTotal = Number(paidResult.rows[0].paid);
-    const newStatus = paidTotal <= 0 ? 'unpaid' : (paidTotal >= booking.total_amount ? 'paid' : 'partial');
-
-    await db.execute({ sql: 'UPDATE bookings SET payment_status = ? WHERE id = ?', args: [newStatus, req.params.id] });
+    const totals = await recomputeBookingTotal(req.params.id);
 
     const paymentsResult = await db.execute({
       sql: 'SELECT * FROM payments WHERE booking_id = ? ORDER BY recorded_at ASC',
       args: [req.params.id]
     });
-    res.status(201).json({ payments: paymentsResult.rows, paidTotal, paymentStatus: newStatus });
+    res.status(201).json({ payments: paymentsResult.rows, ...totals });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to record payment' });

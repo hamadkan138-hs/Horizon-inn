@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Horizon Inn - Admin</title>
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@
     <nav class="navbar scrolled">
         <div class="nav-container">
             <div class="nav-brand">
-                <i class="fas fa-mountain"></i>
+                <img src="images/logo-mark.png" alt="Horizon Inn" class="nav-logo">
                 <span>Horizon Inn</span>
             </div>
             <ul class="nav-menu active" style="position: static; background: none; padding: 0; flex-direction: row;">
@@ -56,6 +56,7 @@
 
             <div class="admin-tabs" id="adminTabs">
                 <button class="admin-tab active" data-tab="bookings">Bookings</button>
+                <button class="admin-tab" data-tab="daily">Daily Summary</button>
                 <button class="admin-tab" data-tab="availability">Availability</button>
                 <button class="admin-tab" data-tab="guests">Guests</button>
                 <button class="admin-tab" data-tab="rooms">Rooms &amp; Pricing</button>
@@ -77,6 +78,12 @@
                         <option value="checked_out">Checked Out</option>
                         <option value="cancelled">Cancelled</option>
                     </select>
+                    <select id="bookingPaymentFilter">
+                        <option value="">All payment statuses</option>
+                        <option value="unpaid">Unpaid</option>
+                        <option value="partial">Partial</option>
+                        <option value="paid">Paid</option>
+                    </select>
                 </div>
                 <div style="overflow-x: auto;">
                     <table class="admin-table" id="bookingsTable">
@@ -94,6 +101,38 @@
                             </tr>
                         </thead>
                         <tbody id="bookingsBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Daily Summary -->
+            <section class="admin-panel" id="panel-daily" style="display: none;">
+                <div class="panel-toolbar">
+                    <input type="date" id="dailyDate">
+                </div>
+                <div class="summary-cards" id="dailyCards"></div>
+
+                <h2 style="text-align: left; font-size: 1.2rem; margin-top: 30px;">Check-ins</h2>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="dailyCheckinsTable">
+                        <thead><tr><th>Guest</th><th>Room</th><th>Guests</th><th>Status</th><th>Balance Due</th></tr></thead>
+                        <tbody id="dailyCheckinsBody"></tbody>
+                    </table>
+                </div>
+
+                <h2 style="text-align: left; font-size: 1.2rem; margin-top: 30px;">Check-outs</h2>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="dailyCheckoutsTable">
+                        <thead><tr><th>Guest</th><th>Room</th><th>Guests</th><th>Status</th><th>Balance Due</th></tr></thead>
+                        <tbody id="dailyCheckoutsBody"></tbody>
+                    </table>
+                </div>
+
+                <h2 style="text-align: left; font-size: 1.2rem; margin-top: 30px;">Outstanding Balances (all active bookings)</h2>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="outstandingTable">
+                        <thead><tr><th>Guest</th><th>Room</th><th>Status</th><th>Total</th><th>Balance</th></tr></thead>
+                        <tbody id="outstandingBody"></tbody>
                     </table>
                 </div>
             </section>

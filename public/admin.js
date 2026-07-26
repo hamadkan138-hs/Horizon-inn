@@ -79,6 +79,7 @@ document.querySelectorAll('.admin-tab').forEach((btn) => {
         document.querySelectorAll('.admin-panel').forEach((p) => { p.style.display = 'none'; });
         document.getElementById(`panel-${btn.dataset.tab}`).style.display = 'block';
 
+        if (btn.dataset.tab === 'daily') loadDailySummary();
         if (btn.dataset.tab === 'availability') loadAvailability();
         if (btn.dataset.tab === 'guests') loadGuests();
         if (btn.dataset.tab === 'rooms') loadRoomsPanel();
@@ -160,8 +161,23 @@ async function renderBookingDetail(id) {
         const b = await apiGet(`/api/bookings/${id}`);
         const paidTotal = b.payments.reduce((sum, p) => sum + Number(p.amount), 0);
         const balance = Math.max(0, Number(b.total_amount) - paidTotal);
+        const chargesTotal = b.charges.reduce((sum, c) => sum + Number(c.amount), 0);
+
+        const needsVerification = b.payment_method !== 'pay_at_property' && b.transaction_id && b.payment_status === 'unpaid';
+        const verifyBanner = needsVerification ? `
+            <div class="verify-banner">
+                <i class="fas fa-circle-exclamation"></i>
+                Guest submitted a <strong>${PAYMENT_METHOD_LABELS[b.payment_method]}</strong> transaction ID
+                (<strong>${escapeHtml(b.transaction_id)}</strong>) for ${money(b.total_amount)} but no payment has been verified yet.
+                <button type="button" class="action-btn confirm verify-btn" data-id="${id}"
+                    data-amount="${b.total_amount}" data-method="${b.payment_method}" data-txn="${escapeHtml(b.transaction_id)}">
+                    Verify &amp; Record Payment
+                </button>
+            </div>
+        ` : '';
 
         cell.innerHTML = `
+            ${verifyBanner}
             <div class="detail-grid">
                 ${detailField('CNIC / Passport', b.cnic)}
                 ${detailField('Marital Status', b.marital_status)}
@@ -175,6 +191,27 @@ async function renderBookingDetail(id) {
                 ${detailField('Special Requests', b.special_requests)}
                 ${detailField('Terms Accepted', b.terms_accepted ? 'Yes' : 'No')}
                 ${detailField('Booked At', b.created_at)}
+            </div>
+
+            <div class="detail-subsection">
+                <h4>Charges &mdash; Room ${money(b.room_amount)}, Extras ${money(chargesTotal)}, Tax ${b.tax_percent}%</h4>
+                <table class="admin-table mini-table">
+                    <thead><tr><th>Description</th><th>Amount</th><th></th></tr></thead>
+                    <tbody>
+                        <tr><td>${escapeHtml(b.room_name)} (room charge)</td><td>${money(b.room_amount)}</td><td></td></tr>
+                        ${b.charges.map((c) => `<tr><td>${escapeHtml(c.description)}</td><td>${money(c.amount)}</td><td><button class="action-btn cancel remove-charge-btn" data-booking="${id}" data-charge="${c.id}">Remove</button></td></tr>`).join('')}
+                    </tbody>
+                </table>
+                <form class="inline-form charge-form" data-id="${id}">
+                    <input type="text" name="description" placeholder="Extra service (e.g. Breakfast)" required>
+                    <input type="number" name="amount" placeholder="Amount ($)" min="0.01" step="0.01" required>
+                    <button type="submit" class="action-btn confirm">Add Charge</button>
+                </form>
+                <form class="inline-form tax-form" data-id="${id}">
+                    <label style="font-size: 0.85rem; color: var(--text-light);">Tax rate:</label>
+                    <input type="number" name="taxPercent" value="${b.tax_percent}" min="0" max="100" step="0.1" style="max-width: 100px;">
+                    <button type="submit" class="action-btn confirm">Update Tax %</button>
+                </form>
             </div>
 
             <div class="detail-subsection">
@@ -215,7 +252,8 @@ async function renderBookingDetail(id) {
             </div>
         `;
 
-        cell.querySelector('.payment-form').addEventListener('submit', async (e) => {
+        const paymentForm = cell.querySelector('.payment-form');
+        paymentForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = e.target;
             try {
@@ -225,6 +263,55 @@ async function renderBookingDetail(id) {
                     transactionId: form.transactionId.value,
                     note: form.note.value
                 });
+                loadBookings(true, id);
+            } catch (err) {
+                alert(err.message);
+            }
+        });
+
+        const verifyBtn = cell.querySelector('.verify-btn');
+        if (verifyBtn) {
+            verifyBtn.addEventListener('click', () => {
+                paymentForm.amount.value = verifyBtn.dataset.amount;
+                paymentForm.method.value = verifyBtn.dataset.method;
+                paymentForm.transactionId.value = verifyBtn.dataset.txn;
+                paymentForm.note.value = 'Verified guest-submitted transaction ID';
+                paymentForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                paymentForm.amount.focus();
+            });
+        }
+
+        cell.querySelector('.charge-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            try {
+                await apiSend('POST', `/api/bookings/${id}/charges`, {
+                    description: form.description.value,
+                    amount: Number(form.amount.value)
+                });
+                loadBookings(true, id);
+            } catch (err) {
+                alert(err.message);
+            }
+        });
+
+        cell.querySelectorAll('.remove-charge-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('Remove this charge?')) return;
+                try {
+                    await apiSend('DELETE', `/api/bookings/${btn.dataset.booking}/charges/${btn.dataset.charge}`, {});
+                    loadBookings(true, id);
+                } catch (err) {
+                    alert(err.message);
+                }
+            });
+        });
+
+        cell.querySelector('.tax-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            try {
+                await apiSend('PATCH', `/api/bookings/${id}/tax`, { taxPercent: Number(form.taxPercent.value) });
                 loadBookings(true, id);
             } catch (err) {
                 alert(err.message);
@@ -269,10 +356,12 @@ async function loadBookings(keepOpen, reopenId) {
 function applyBookingFilters() {
     const search = document.getElementById('bookingSearch').value.toLowerCase();
     const statusFilter = document.getElementById('bookingStatusFilter').value;
+    const paymentFilter = document.getElementById('bookingPaymentFilter').value;
     const filtered = allBookings.filter((b) => {
         const matchesSearch = !search || [b.name, b.email, b.phone, b.cnic].some((f) => (f || '').toLowerCase().includes(search));
         const matchesStatus = !statusFilter || b.status === statusFilter;
-        return matchesSearch && matchesStatus;
+        const matchesPayment = !paymentFilter || b.payment_status === paymentFilter;
+        return matchesSearch && matchesStatus && matchesPayment;
     });
 
     const body = document.getElementById('bookingsBody');
@@ -299,6 +388,37 @@ function applyBookingFilters() {
 
 document.getElementById('bookingSearch').addEventListener('input', applyBookingFilters);
 document.getElementById('bookingStatusFilter').addEventListener('change', applyBookingFilters);
+document.getElementById('bookingPaymentFilter').addEventListener('change', applyBookingFilters);
+
+/* ---------------- Daily Summary ---------------- */
+function dailyRowHtml(b) {
+    return `<tr><td>${escapeHtml(b.name)}<br><small>${escapeHtml(b.phone)}</small></td><td>${escapeHtml(b.room_name)}</td><td>${b.guests}</td><td><span class="status-pill ${b.status}">${STATUS_LABELS[b.status]}</span></td><td>${money(b.balance)}</td></tr>`;
+}
+
+async function loadDailySummary() {
+    const dateInput = document.getElementById('dailyDate');
+    if (!dateInput.value) dateInput.value = new Date().toISOString().slice(0, 10);
+
+    try {
+        const data = await apiGet(`/api/reports/daily-summary?date=${dateInput.value}`);
+
+        document.getElementById('dailyCards').innerHTML = `
+            <div class="summary-card"><span>Check-ins</span><strong>${data.checkins.length}</strong></div>
+            <div class="summary-card"><span>Check-outs</span><strong>${data.checkouts.length}</strong></div>
+            <div class="summary-card"><span>Cash Received Today</span><strong>${money(data.cashReceivedToday)}</strong></div>
+            <div class="summary-card"><span>Total Outstanding</span><strong>${money(data.outstandingTotal)}</strong></div>
+        `;
+
+        document.getElementById('dailyCheckinsBody').innerHTML = data.checkins.map(dailyRowHtml).join('') || '<tr><td colspan="5">No check-ins scheduled.</td></tr>';
+        document.getElementById('dailyCheckoutsBody').innerHTML = data.checkouts.map(dailyRowHtml).join('') || '<tr><td colspan="5">No check-outs scheduled.</td></tr>';
+
+        document.getElementById('outstandingBody').innerHTML = data.outstandingBookings.map((b) => `
+            <tr><td>${escapeHtml(b.name)}<br><small>${escapeHtml(b.phone)}</small></td><td>${escapeHtml(b.room_name)}</td><td><span class="status-pill ${b.status}">${STATUS_LABELS[b.status]}</span></td><td>${money(b.total_amount)}</td><td>${money(b.balance)}</td></tr>
+        `).join('') || '<tr><td colspan="5">No outstanding balances. 🎉</td></tr>';
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('dailyDate').addEventListener('change', loadDailySummary);
 
 /* ---------------- Availability calendar ---------------- */
 async function loadAvailability() {
@@ -523,9 +643,10 @@ async function loadReports() {
         const summary = await apiGet('/api/reports/summary');
         document.getElementById('summaryCards').innerHTML = `
             <div class="summary-card"><span>Total Revenue</span><strong>${money(summary.totalRevenue)}</strong></div>
-            <div class="summary-card"><span>Collected</span><strong>${money(summary.totalCollected)}</strong></div>
+            <div class="summary-card"><span>Completed Payments</span><strong>${money(summary.totalCollected)}</strong></div>
+            <div class="summary-card"><span>Pending Payments</span><strong>${money(summary.pendingBalance)}</strong></div>
             <div class="summary-card"><span>Expenses</span><strong>${money(summary.totalExpenses)}</strong></div>
-            <div class="summary-card"><span>Net Earnings</span><strong>${money(summary.netEarnings)}</strong></div>
+            <div class="summary-card"><span>Net Profit</span><strong>${money(summary.netEarnings)}</strong></div>
             <div class="summary-card"><span>Total Bookings</span><strong>${summary.totalBookings}</strong></div>
             <div class="summary-card"><span>Pending Review</span><strong>${summary.pendingCount}</strong></div>
         `;

@@ -104,7 +104,9 @@ function init() {
           transaction_id TEXT NOT NULL DEFAULT '',
           payment_status TEXT NOT NULL DEFAULT 'unpaid',
           terms_accepted INTEGER NOT NULL DEFAULT 0,
-          total_amount REAL NOT NULL DEFAULT 0
+          total_amount REAL NOT NULL DEFAULT 0,
+          room_amount REAL NOT NULL DEFAULT 0,
+          tax_percent REAL NOT NULL DEFAULT 0
         )
       `);
 
@@ -123,8 +125,28 @@ function init() {
         "transaction_id TEXT NOT NULL DEFAULT ''",
         "payment_status TEXT NOT NULL DEFAULT 'unpaid'",
         "terms_accepted INTEGER NOT NULL DEFAULT 0",
-        "total_amount REAL NOT NULL DEFAULT 0"
+        "total_amount REAL NOT NULL DEFAULT 0",
+        "room_amount REAL NOT NULL DEFAULT 0",
+        "tax_percent REAL NOT NULL DEFAULT 0"
       ]);
+
+      // One-time backfill: bookings created before room_amount existed still have
+      // it at the column default (0). Their total_amount was the room charge in
+      // full (no charges/tax existed yet), so that's the correct value to copy in.
+      await db.execute(`
+        UPDATE bookings SET room_amount = total_amount
+        WHERE room_amount = 0 AND total_amount > 0
+      `);
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS booking_charges (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          booking_id INTEGER NOT NULL REFERENCES bookings(id),
+          description TEXT NOT NULL,
+          amount REAL NOT NULL,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
 
       await db.execute(`
         CREATE TABLE IF NOT EXISTS payments (

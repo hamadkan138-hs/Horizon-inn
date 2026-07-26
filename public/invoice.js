@@ -32,10 +32,17 @@ async function loadInvoice() {
         document.getElementById('stayGuests').textContent = `${b.guests} guest(s)`;
 
         const n = nights(b.checkin, b.checkout);
-        const rate = b.total_amount / n;
-        document.getElementById('chargeRow').innerHTML = `
-            <tr><td>${b.room_name}</td><td>${n}</td><td>${money(rate)}</td><td>${money(b.total_amount)}</td></tr>
-        `;
+        const rate = b.room_amount / n;
+        const chargesTotal = b.charges.reduce((sum, c) => sum + Number(c.amount), 0);
+        const subtotal = Number(b.room_amount) + chargesTotal;
+        const taxAmount = subtotal * (Number(b.tax_percent) / 100);
+
+        let rows = `<tr><td>${b.room_name}</td><td>${n}</td><td>${money(rate)}</td><td>${money(b.room_amount)}</td></tr>`;
+        rows += b.charges.map((c) => `<tr><td>${c.description}</td><td>&mdash;</td><td>&mdash;</td><td>${money(c.amount)}</td></tr>`).join('');
+        if (b.tax_percent > 0) {
+            rows += `<tr><td>Tax (${b.tax_percent}%)</td><td>&mdash;</td><td>&mdash;</td><td>${money(taxAmount)}</td></tr>`;
+        }
+        document.getElementById('chargeRow').innerHTML = rows;
 
         const paidTotal = b.payments.reduce((sum, p) => sum + Number(p.amount), 0);
         document.getElementById('paymentsBody').innerHTML = b.payments.map((p) => `
