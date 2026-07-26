@@ -1,62 +1,116 @@
 function money(n) {
-    return `$${Number(n || 0).toFixed(2)}`;
+    const num = Number(n || 0);
+    return num < 0 ? `-$${Math.abs(num).toFixed(2)}` : `$${num.toFixed(2)}`;
 }
 
 function nights(checkin, checkout) {
     return Math.max(1, Math.round((new Date(checkout) - new Date(checkin)) / (1000 * 60 * 60 * 24)));
 }
 
+const STATUS_LABELS = {
+    pending: 'Pending', confirmed: 'Confirmed', checked_in: 'Checked In',
+    checked_out: 'Checked Out', cancelled: 'Cancelled'
+};
+
 async function loadInvoice() {
     const status = document.getElementById('status');
-    const id = new URLSearchParams(window.location.search).get('id');
-    const token = sessionStorage.getItem('horizonAdminAuth');
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    const publicToken = params.get('token');
 
     if (!id) { status.textContent = 'No booking specified.'; return; }
-    if (!token) { status.textContent = 'Please log in to the admin dashboard first, then open this invoice link again.'; return; }
+
+    let b;
+    try {
+        if (publicToken) {
+            const res = await fetch(`/api/public-invoice/${id}?token=${encodeURIComponent(publicToken)}`);
+            if (!res.ok) throw new Error('not-found');
+            b = await res.json();
+        } else {
+            const token = sessionStorage.getItem('horizonAdminAuth');
+            if (!token) { status.textContent = 'Please log in to the admin dashboard first, then open this invoice link again.'; return; }
+            const res = await fetch(`/api/bookings/${id}`, { headers: { Authorization: `Basic ${token}` } });
+            if (!res.ok) throw new Error('not-found');
+            b = await res.json();
+        }
+    } catch (err) {
+        status.textContent = 'Failed to load invoice. The link may be invalid or expired.';
+        return;
+    }
 
     try {
-        const res = await fetch(`/api/bookings/${id}`, { headers: { Authorization: `Basic ${token}` } });
-        if (!res.ok) throw new Error('Could not load booking');
-        const b = await res.json();
+        document.getElementById('invNumber').textContent = b.invoice_number;
+        document.getElementById('invBookingId').textContent = b.id;
+        const issued = new Date(b.created_at.replace(' ', 'T'));
+        document.getElementById('invDate').textContent = `Issued ${issued.toLocaleDateString()} ${issued.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
-        document.getElementById('invId').textContent = b.id;
-        document.getElementById('invDate').textContent = `Issued ${new Date().toLocaleDateString()}`;
-        document.getElementById('invStatus').textContent = b.status.replace('_', ' ');
+        const paidTotal = b.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+        const balance = Math.max(0, Number(b.total_amount) - paidTotal);
+        const badge = document.getElementById('invStatusBadge');
+        badge.textContent = b.payment_status;
+        badge.classList.add(b.payment_status);
 
         document.getElementById('guestName').textContent = b.name;
         document.getElementById('guestContact').textContent = `${b.email} · ${b.phone}`;
         document.getElementById('guestCnic').textContent = `CNIC/Passport: ${b.cnic || '—'}`;
+        document.getElementById('guestAddress').textContent = `Address: ${b.address || '—'}`;
 
-        document.getElementById('stayRoom').textContent = b.room_name;
-        document.getElementById('stayDates').textContent = `${b.checkin} to ${b.checkout}`;
-        document.getElementById('stayGuests').textContent = `${b.guests} guest(s)`;
+        document.getElementById('stayRoom').textContent = `${b.room_name}`;
+        document.getElementById('stayRoomNumber').textContent = b.room_number ? `Room Number: ${b.room_number}` : '';
+        document.getElementById('stayDates').textContent = `${b.checkin} to ${b.checkout} (${nights(b.checkin, b.checkout)} night${nights(b.checkin, b.checkout) > 1 ? 's' : ''})`;
+        document.getElementById('stayOccupancy').textContent = `${b.guests} guest(s) · Status: ${STATUS_LABELS[b.status] || b.status}`;
 
         const n = nights(b.checkin, b.checkout);
         const rate = b.room_amount / n;
+        const positiveCharges = b.charges.filter((c) => c.amount > 0);
+        const discountCharges = b.charges.filter((c) => c.amount < 0);
+        const discountTotal = discountCharges.reduce((sum, c) => sum + Number(c.amount), 0);
         const chargesTotal = b.charges.reduce((sum, c) => sum + Number(c.amount), 0);
         const subtotal = Number(b.room_amount) + chargesTotal;
         const taxAmount = subtotal * (Number(b.tax_percent) / 100);
 
-        let rows = `<tr><td>${b.room_name}</td><td>${n}</td><td>${money(rate)}</td><td>${money(b.room_amount)}</td></tr>`;
-        rows += b.charges.map((c) => `<tr><td>${c.description}</td><td>&mdash;</td><td>&mdash;</td><td>${money(c.amount)}</td></tr>`).join('');
-        if (b.tax_percent > 0) {
-            rows += `<tr><td>Tax (${b.tax_percent}%)</td><td>&mdash;</td><td>&mdash;</td><td>${money(taxAmount)}</td></tr>`;
-        }
-        document.getElementById('chargeRow').innerHTML = rows;
+        let rows = `<tr><td>${b.room_name} (room charge)</td><td class="num">${n}</td><td class="num">${money(rate)}</td><td class="num">${money(b.room_amount)}</td></tr>`;
+        rows += positiveCharges.map((c) => `<tr><td>${c.description}</td><td class="num">&mdash;</td><td class="num">&mdash;</td><td class="num">${money(c.amount)}</td></tr>`).join('');
+        rows += discountCharges.map((c) => `<tr class="discount-row"><td>${c.description}</td><td class="num">&mdash;</td><td class="num">&mdash;</td><td class="num">${money(c.amount)}</td></tr>`).join('');
+        document.getElementById('chargeRows').innerHTML = rows;
 
-        const paidTotal = b.payments.reduce((sum, p) => sum + Number(p.amount), 0);
         document.getElementById('paymentsBody').innerHTML = b.payments.map((p) => `
-            <tr><td>${p.recorded_at}</td><td>${p.method}</td><td>${p.transaction_id || '—'}</td><td>${money(p.amount)}</td></tr>
+            <tr><td>${p.recorded_at}</td><td>${p.method}</td><td>${p.transaction_id || '—'}</td><td class="num">${money(p.amount)}</td></tr>
         `).join('') || '<tr><td colspan="4">No payments recorded yet.</td></tr>';
 
+        const roomPlusExtras = Number(b.room_amount) + positiveCharges.reduce((s, c) => s + Number(c.amount), 0);
+        document.getElementById('subtotal').textContent = money(roomPlusExtras);
+        if (discountTotal < 0) {
+            document.getElementById('discountLine').style.display = 'flex';
+            document.getElementById('discountAmount').textContent = money(discountTotal);
+        }
+        if (b.tax_percent > 0) {
+            document.getElementById('taxLine').style.display = 'flex';
+            document.getElementById('taxAmount').textContent = `${money(taxAmount)} (${b.tax_percent}%)`;
+        }
         document.getElementById('totalDue').textContent = money(b.total_amount);
         document.getElementById('totalPaid').textContent = money(paidTotal);
-        document.getElementById('totalBalance').textContent = money(Math.max(0, b.total_amount - paidTotal));
+
+        const balanceEl = document.getElementById('totalBalance');
+        balanceEl.textContent = money(balance);
+        balanceEl.className = balance > 0.01 ? 'balance-due' : 'balance-clear';
+
+        document.getElementById('paymentStatusText').textContent = b.payment_status.toUpperCase();
+
+        if (b.invoice_notes) {
+            document.getElementById('notesWrapper').style.display = 'block';
+            document.getElementById('notesText').textContent = b.invoice_notes;
+        }
+        if (b.special_requests) {
+            const existing = document.getElementById('notesText');
+            document.getElementById('notesWrapper').style.display = 'block';
+            existing.textContent = (existing.textContent ? existing.textContent + '\n\n' : '') + `Special requests: ${b.special_requests}`;
+        }
 
         status.style.display = 'none';
         document.getElementById('invoiceContent').style.display = 'block';
     } catch (err) {
-        status.textContent = 'Failed to load invoice. Make sure you are logged in as admin.';
+        status.textContent = 'Failed to render invoice.';
     }
 }
 

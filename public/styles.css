@@ -1302,6 +1302,18 @@ table.admin-table th {
     color: var(--text-light);
 }
 
+.discount-row td {
+    color: #3d7a4f;
+}
+
+.overdue-row {
+    background: #fdf3f2;
+}
+
+.overdue-row:hover {
+    background: #fbe9e7;
+}
+
 /* Availability calendar */
 .calendar-grid {
     background: var(--white);

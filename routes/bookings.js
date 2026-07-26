@@ -22,7 +22,7 @@ router.post('/', async (req, res) => {
   try {
     const {
       name, email, phone, roomId, checkin, checkout, guests, specialRequests,
-      cnic, maritalStatus, arrivalFrom, departureTo, arrivalTime, purposeOfStay, vehicleNumber,
+      cnic, maritalStatus, arrivalFrom, departureTo, arrivalTime, purposeOfStay, vehicleNumber, address,
       paymentMethod, transactionId, termsAccepted
     } = req.body;
 
@@ -67,19 +67,24 @@ router.post('/', async (req, res) => {
       sql: `
         INSERT INTO bookings (
           room_id, name, email, phone, checkin, checkout, guests, special_requests,
-          cnic, marital_status, arrival_from, departure_to, arrival_time, purpose_of_stay, vehicle_number,
-          payment_method, transaction_id, terms_accepted, status, payment_status, total_amount, room_amount
+          cnic, marital_status, arrival_from, departure_to, arrival_time, purpose_of_stay, vehicle_number, address,
+          payment_method, transaction_id, terms_accepted, status, payment_status, total_amount, room_amount,
+          invoice_token
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?, ?, lower(hex(randomblob(12))))
       `,
       args: [
         roomId, name, email, phone, checkin, checkout, guests, specialRequests || '',
-        cnic, maritalStatus, arrivalFrom, departureTo, arrivalTime || '', purposeOfStay || '', vehicleNumber || '',
+        cnic, maritalStatus, arrivalFrom, departureTo, arrivalTime || '', purposeOfStay || '', vehicleNumber || '', address || '',
         paymentMethod, transactionId || '', 1, roomAmount, roomAmount
       ]
     });
 
     const bookingId = Number(insertResult.lastInsertRowid);
+    const year = new Date(checkin).getFullYear();
+    const invoiceNumber = `INV-${year}-${String(bookingId).padStart(4, '0')}`;
+    await db.execute({ sql: 'UPDATE bookings SET invoice_number = ? WHERE id = ?', args: [invoiceNumber, bookingId] });
+
     const bookingResult = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [bookingId] });
     const booking = bookingResult.rows[0];
 
@@ -90,19 +95,48 @@ router.post('/', async (req, res) => {
   }
 });
 
-// List all bookings (admin)
+// List all bookings (admin) — includes paid_total/balance so the Bookings and
+// Payments tabs can render financial state without an N+1 query per row.
 router.get('/', adminAuth, async (req, res) => {
   try {
     const result = await db.execute(`
-      SELECT bookings.*, rooms.name AS room_name
+      SELECT bookings.*, rooms.name AS room_name,
+             COALESCE(p.paid, 0) AS paid_total,
+             bookings.total_amount - COALESCE(p.paid, 0) AS balance
       FROM bookings
       JOIN rooms ON rooms.id = bookings.room_id
+      LEFT JOIN (SELECT booking_id, SUM(amount) AS paid FROM payments GROUP BY booking_id) p ON p.booking_id = bookings.id
       ORDER BY bookings.created_at DESC
     `);
     res.json(result.rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to load bookings' });
+  }
+});
+
+// Admin-only invoice metadata: room number assignment and printed notes
+router.patch('/:id/invoice-fields', adminAuth, async (req, res) => {
+  try {
+    const { roomNumber, invoiceNotes } = req.body;
+    if (roomNumber === undefined && invoiceNotes === undefined) {
+      return res.status(400).json({ error: 'Provide roomNumber and/or invoiceNotes to update' });
+    }
+    const existing = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
+    if (!existing.rows[0]) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+    const updates = [];
+    const args = [];
+    if (roomNumber !== undefined) { updates.push('room_number = ?'); args.push(roomNumber); }
+    if (invoiceNotes !== undefined) { updates.push('invoice_notes = ?'); args.push(invoiceNotes); }
+    args.push(req.params.id);
+    await db.execute({ sql: `UPDATE bookings SET ${updates.join(', ')} WHERE id = ?`, args });
+    const updated = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
+    res.json(updated.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update invoice fields' });
   }
 });
 
@@ -257,12 +291,13 @@ router.patch('/:id/tax', adminAuth, requireRole('admin'), async (req, res) => {
   }
 });
 
-// Add an extra service charge to a booking (admin) — e.g. breakfast, laundry, airport pickup
+// Add a charge line to a booking (admin) — e.g. breakfast, laundry, airport
+// pickup. A negative amount represents a discount and is subtracted.
 router.post('/:id/charges', adminAuth, async (req, res) => {
   try {
     const { description, amount } = req.body;
-    if (!description || !amount || amount <= 0) {
-      return res.status(400).json({ error: 'Description and a positive amount are required' });
+    if (!description || !amount) {
+      return res.status(400).json({ error: 'Description and a non-zero amount are required (negative = discount)' });
     }
     const existing = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
     if (!existing.rows[0]) {

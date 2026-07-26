@@ -49,7 +49,8 @@ function escapeHtml(str) {
 }
 
 function money(n) {
-    return `$${Number(n || 0).toFixed(2)}`;
+    const num = Number(n || 0);
+    return num < 0 ? `-$${Math.abs(num).toFixed(2)}` : `$${num.toFixed(2)}`;
 }
 
 function showLogin() {
@@ -79,6 +80,7 @@ document.querySelectorAll('.admin-tab').forEach((btn) => {
         document.querySelectorAll('.admin-panel').forEach((p) => { p.style.display = 'none'; });
         document.getElementById(`panel-${btn.dataset.tab}`).style.display = 'block';
 
+        if (btn.dataset.tab === 'payments') loadTransactionsPanel();
         if (btn.dataset.tab === 'daily') loadDailySummary();
         if (btn.dataset.tab === 'availability') loadAvailability();
         if (btn.dataset.tab === 'guests') loadGuests();
@@ -181,6 +183,7 @@ async function renderBookingDetail(id) {
             <div class="detail-grid">
                 ${detailField('CNIC / Passport', b.cnic)}
                 ${detailField('Marital Status', b.marital_status)}
+                ${detailField('Address', b.address)}
                 ${detailField('Arriving From', b.arrival_from)}
                 ${detailField('Departing To', b.departure_to)}
                 ${detailField('Arrival Time', b.arrival_time)}
@@ -194,17 +197,29 @@ async function renderBookingDetail(id) {
             </div>
 
             <div class="detail-subsection">
+                <h4>Invoice &mdash; ${escapeHtml(b.invoice_number)}</h4>
+                <form class="inline-form invoice-fields-form" data-id="${id}">
+                    <input type="text" name="roomNumber" value="${escapeHtml(b.room_number)}" placeholder="Room number (e.g. 12)">
+                    <input type="text" name="invoiceNotes" value="${escapeHtml(b.invoice_notes)}" placeholder="Notes to print on invoice">
+                    <button type="submit" class="action-btn confirm">Save</button>
+                    <a class="action-btn details-toggle" href="invoice.html?id=${id}" target="_blank" rel="noopener">Open Invoice</a>
+                    <button type="button" class="action-btn details-toggle copy-link-btn" data-id="${id}" data-token="${b.invoice_token}">Copy Guest Link</button>
+                </form>
+                <p class="form-message" id="invoiceFieldsMessage-${id}"></p>
+            </div>
+
+            <div class="detail-subsection">
                 <h4>Charges &mdash; Room ${money(b.room_amount)}, Extras ${money(chargesTotal)}, Tax ${b.tax_percent}%</h4>
                 <table class="admin-table mini-table">
                     <thead><tr><th>Description</th><th>Amount</th><th></th></tr></thead>
                     <tbody>
                         <tr><td>${escapeHtml(b.room_name)} (room charge)</td><td>${money(b.room_amount)}</td><td></td></tr>
-                        ${b.charges.map((c) => `<tr><td>${escapeHtml(c.description)}</td><td>${money(c.amount)}</td><td><button class="action-btn cancel remove-charge-btn" data-booking="${id}" data-charge="${c.id}">Remove</button></td></tr>`).join('')}
+                        ${b.charges.map((c) => `<tr ${c.amount < 0 ? 'class="discount-row"' : ''}><td>${escapeHtml(c.description)}</td><td>${money(c.amount)}</td><td><button class="action-btn cancel remove-charge-btn" data-booking="${id}" data-charge="${c.id}">Remove</button></td></tr>`).join('')}
                     </tbody>
                 </table>
                 <form class="inline-form charge-form" data-id="${id}">
-                    <input type="text" name="description" placeholder="Extra service (e.g. Breakfast)" required>
-                    <input type="number" name="amount" placeholder="Amount ($)" min="0.01" step="0.01" required>
+                    <input type="text" name="description" placeholder="Extra service or discount (e.g. Breakfast, Loyalty Discount)" required>
+                    <input type="number" name="amount" placeholder="Amount (negative = discount)" step="0.01" required>
                     <button type="submit" class="action-btn confirm">Add Charge</button>
                 </form>
                 <form class="inline-form tax-form" data-id="${id}">
@@ -318,6 +333,35 @@ async function renderBookingDetail(id) {
             }
         });
 
+        cell.querySelector('.invoice-fields-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const msg = document.getElementById(`invoiceFieldsMessage-${id}`);
+            try {
+                await apiSend('PATCH', `/api/bookings/${id}/invoice-fields`, {
+                    roomNumber: form.roomNumber.value,
+                    invoiceNotes: form.invoiceNotes.value
+                });
+                msg.textContent = 'Saved.';
+                msg.className = 'form-message success';
+            } catch (err) {
+                msg.textContent = err.message;
+                msg.className = 'form-message error';
+            }
+        });
+
+        cell.querySelector('.copy-link-btn').addEventListener('click', async () => {
+            const btn = cell.querySelector('.copy-link-btn');
+            const link = `${window.location.origin}/invoice.html?id=${btn.dataset.id}&token=${btn.dataset.token}`;
+            try {
+                await navigator.clipboard.writeText(link);
+                btn.textContent = 'Link Copied!';
+            } catch (err) {
+                prompt('Copy this link to send to the guest:', link);
+            }
+            setTimeout(() => { btn.textContent = 'Copy Guest Link'; }, 2000);
+        });
+
         cell.querySelector('.edit-booking-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = e.target;
@@ -419,6 +463,98 @@ async function loadDailySummary() {
 }
 
 document.getElementById('dailyDate').addEventListener('change', loadDailySummary);
+
+/* ---------------- Payments / Transactions ---------------- */
+function isOverdue(b) {
+    const today = new Date().toISOString().slice(0, 10);
+    return ['unpaid', 'partial'].includes(b.payment_status) && b.status !== 'cancelled' && b.checkout < today;
+}
+
+async function loadTransactionsPanel() {
+    if (!allRooms.length) allRooms = await apiGet('/api/rooms');
+    const roomFilter = document.getElementById('txnRoomFilter');
+    if (roomFilter.options.length <= 1) {
+        roomFilter.innerHTML = '<option value="">All room types</option>' +
+            allRooms.map((r) => `<option value="${escapeHtml(r.name)}">${escapeHtml(r.name)}</option>`).join('');
+    }
+    applyTransactionFilters();
+}
+
+function applyTransactionFilters() {
+    const status = document.getElementById('txnStatusFilter').value;
+    const method = document.getElementById('txnMethodFilter').value;
+    const room = document.getElementById('txnRoomFilter').value;
+    const from = document.getElementById('txnFrom').value;
+    const to = document.getElementById('txnTo').value;
+    const overdueOnly = document.getElementById('txnOverdueOnly').checked;
+
+    const filtered = allBookings.filter((b) => {
+        if (status && b.payment_status !== status) return false;
+        if (method && b.payment_method !== method) return false;
+        if (room && b.room_name !== room) return false;
+        if (from && b.checkin < from) return false;
+        if (to && b.checkin > to) return false;
+        if (overdueOnly && !isOverdue(b)) return false;
+        return true;
+    });
+
+    document.getElementById('transactionsBody').innerHTML = filtered.map((b) => `
+        <tr class="${isOverdue(b) ? 'overdue-row' : ''}">
+            <td>${escapeHtml(b.invoice_number)}</td>
+            <td>#${b.id}</td>
+            <td>${escapeHtml(b.name)}</td>
+            <td>${escapeHtml(b.room_name)}</td>
+            <td>${PAYMENT_METHOD_LABELS[b.payment_method] || b.payment_method}</td>
+            <td>${money(b.total_amount)}</td>
+            <td>${money(b.paid_total)}</td>
+            <td>${money(b.balance)}</td>
+            <td>
+                <span class="status-pill ${b.payment_status}">${b.payment_status}</span>
+                ${isOverdue(b) ? '<span class="status-pill unpaid" style="margin-left:4px;">Overdue</span>' : ''}
+            </td>
+            <td>${b.checkin}</td>
+            <td>
+                <a class="action-btn details-toggle" href="invoice.html?id=${b.id}" target="_blank" rel="noopener">Invoice</a>
+                <button class="action-btn confirm jump-to-booking-btn" data-id="${b.id}">Manage</button>
+            </td>
+        </tr>
+    `).join('') || '<tr><td colspan="11">No transactions match these filters.</td></tr>';
+
+    document.querySelectorAll('.jump-to-booking-btn').forEach((btn) => {
+        btn.addEventListener('click', () => jumpToBooking(btn.dataset.id));
+    });
+}
+
+['txnStatusFilter', 'txnMethodFilter', 'txnRoomFilter', 'txnFrom', 'txnTo', 'txnOverdueOnly'].forEach((id) => {
+    document.getElementById(id).addEventListener('change', applyTransactionFilters);
+});
+
+function jumpToBooking(id) {
+    document.querySelector('.admin-tab[data-tab="bookings"]').click();
+    setTimeout(() => {
+        const toggleBtn = document.querySelector(`.details-toggle[data-target="details-${id}"]`);
+        if (toggleBtn) {
+            toggleBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (document.getElementById(`details-${id}`).style.display === 'none') toggleBtn.click();
+        }
+    }, 100);
+}
+
+document.getElementById('txnExportBtn').addEventListener('click', () => {
+    const rows = [['Invoice #', 'Booking ID', 'Customer', 'Email', 'Phone', 'Room', 'Method', 'Total', 'Paid', 'Balance', 'Payment Status', 'Booking Status', 'Check-in', 'Check-out']];
+    allBookings.forEach((b) => {
+        rows.push([b.invoice_number, b.id, b.name, b.email, b.phone, b.room_name, PAYMENT_METHOD_LABELS[b.payment_method] || b.payment_method,
+            b.total_amount, b.paid_total, b.balance, b.payment_status, b.status, b.checkin, b.checkout]);
+    });
+    const csv = rows.map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `horizon-inn-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+});
 
 /* ---------------- Availability calendar ---------------- */
 async function loadAvailability() {
@@ -637,6 +773,16 @@ document.getElementById('expenseForm').addEventListener('submit', async (e) => {
 /* ---------------- Reports ---------------- */
 let revenueChartInstance = null;
 let occupancyChartInstance = null;
+let paymentMethodChartInstance = null;
+let roomRevenueChartInstance = null;
+let lastRevenueData = [];
+let lastExpensesData = [];
+
+function reportDateRange() {
+    const from = document.getElementById('reportFrom').value;
+    const to = document.getElementById('reportTo').value;
+    return from && to ? `&from=${from}&to=${to}` : '';
+}
 
 async function loadReports() {
     try {
@@ -652,15 +798,20 @@ async function loadReports() {
         `;
         renderRevenueChart();
         renderOccupancyChart();
+        renderPaymentMethodChart();
+        renderRoomRevenueChart();
     } catch (err) { /* handled */ }
 }
 
 async function renderRevenueChart() {
     const range = document.getElementById('revenueRange').value;
+    const dateParams = reportDateRange();
     const [revenue, expenses] = await Promise.all([
-        apiGet(`/api/reports/revenue?range=${range}`),
-        apiGet(`/api/reports/expenses?range=${range}`)
+        apiGet(`/api/reports/revenue?range=${range}${dateParams}`),
+        apiGet(`/api/reports/expenses?range=${range}${dateParams}`)
     ]);
+    lastRevenueData = revenue;
+    lastExpensesData = expenses;
     const periods = Array.from(new Set([...revenue.map((r) => r.period), ...expenses.map((e) => e.period)])).sort();
     const revenueMap = Object.fromEntries(revenue.map((r) => [r.period, r.revenue]));
     const expenseMap = Object.fromEntries(expenses.map((e) => [e.period, e.total]));
@@ -680,12 +831,20 @@ async function renderRevenueChart() {
 }
 
 document.getElementById('revenueRange').addEventListener('change', renderRevenueChart);
+document.getElementById('reportFrom').addEventListener('change', loadReports);
+document.getElementById('reportTo').addEventListener('change', loadReports);
 
 async function renderOccupancyChart() {
-    const to = new Date().toISOString().slice(0, 10);
-    const fromDate = new Date();
-    fromDate.setDate(fromDate.getDate() - 30);
-    const from = fromDate.toISOString().slice(0, 10);
+    let from = document.getElementById('reportFrom').value;
+    let to = document.getElementById('reportTo').value;
+    if (!from || !to) {
+        const toDate = new Date();
+        toDate.setDate(toDate.getDate() + 30);
+        to = toDate.toISOString().slice(0, 10);
+        const fromDate = new Date();
+        fromDate.setDate(fromDate.getDate() - 14);
+        from = fromDate.toISOString().slice(0, 10);
+    }
 
     const data = await apiGet(`/api/reports/occupancy?from=${from}&to=${to}`);
     if (occupancyChartInstance) occupancyChartInstance.destroy();
@@ -698,6 +857,49 @@ async function renderOccupancyChart() {
         options: { responsive: true, scales: { y: { min: 0, max: 100, ticks: { callback: (v) => v + '%' } } } }
     });
 }
+
+async function renderPaymentMethodChart() {
+    const data = await apiGet(`/api/reports/payment-methods?${reportDateRange().replace('&', '')}`);
+    if (paymentMethodChartInstance) paymentMethodChartInstance.destroy();
+    const palette = ['#c6a15b', '#14161f', '#3d7a4f', '#2f5faa', '#a5473c'];
+    paymentMethodChartInstance = new Chart(document.getElementById('paymentMethodChart'), {
+        type: 'doughnut',
+        data: {
+            labels: data.map((d) => PAYMENT_METHOD_LABELS[d.method] || d.method),
+            datasets: [{ data: data.map((d) => d.total), backgroundColor: palette }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+}
+
+async function renderRoomRevenueChart() {
+    const data = await apiGet(`/api/reports/room-revenue?${reportDateRange().replace('&', '')}`);
+    if (roomRevenueChartInstance) roomRevenueChartInstance.destroy();
+    roomRevenueChartInstance = new Chart(document.getElementById('roomRevenueChart'), {
+        type: 'bar',
+        data: {
+            labels: data.map((d) => d.room_name),
+            datasets: [{ label: 'Revenue', data: data.map((d) => d.revenue), backgroundColor: '#c6a15b' }]
+        },
+        options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } } }
+    });
+}
+
+document.getElementById('reportExportBtn').addEventListener('click', () => {
+    const rows = [['Period', 'Revenue', 'Expenses']];
+    const periods = Array.from(new Set([...lastRevenueData.map((r) => r.period), ...lastExpensesData.map((e) => e.period)])).sort();
+    const revenueMap = Object.fromEntries(lastRevenueData.map((r) => [r.period, r.revenue]));
+    const expenseMap = Object.fromEntries(lastExpensesData.map((e) => [e.period, e.total]));
+    periods.forEach((p) => rows.push([p, revenueMap[p] || 0, expenseMap[p] || 0]));
+    const csv = rows.map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `horizon-inn-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+});
 
 /* ---------------- Staff ---------------- */
 async function loadStaff() {

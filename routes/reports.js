@@ -12,10 +12,11 @@ const PERIOD_FORMAT = {
   monthly: '%Y-%m'
 };
 
-function defaultRange(days) {
+function defaultRange(pastDays, futureDays = 0) {
   const to = new Date();
+  to.setDate(to.getDate() + futureDays);
   const from = new Date();
-  from.setDate(from.getDate() - days);
+  from.setDate(from.getDate() - pastDays);
   return { from: from.toISOString().slice(0, 10), to: to.toISOString().slice(0, 10) };
 }
 
@@ -23,7 +24,7 @@ function defaultRange(days) {
 router.get('/revenue', async (req, res) => {
   try {
     const range = PERIOD_FORMAT[req.query.range] ? req.query.range : 'daily';
-    const { from, to } = req.query.from && req.query.to ? req.query : defaultRange(90);
+    const { from, to } = req.query.from && req.query.to ? req.query : defaultRange(90, 180);
 
     const result = await db.execute({
       sql: `
@@ -71,7 +72,7 @@ router.get('/expenses', async (req, res) => {
 // Day-by-day occupancy rate over a date range
 router.get('/occupancy', async (req, res) => {
   try {
-    const { from, to } = req.query.from && req.query.to ? req.query : defaultRange(30);
+    const { from, to } = req.query.from && req.query.to ? req.query : defaultRange(14, 30);
 
     const roomsResult = await db.execute('SELECT id, total_units FROM rooms');
     const capacity = roomsResult.rows.reduce((sum, r) => sum + Number(r.total_units), 0);
@@ -108,6 +109,51 @@ router.get('/occupancy', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to load occupancy report' });
+  }
+});
+
+// Payments grouped by method — for the payment-method distribution chart
+router.get('/payment-methods', async (req, res) => {
+  try {
+    const { from, to } = req.query.from && req.query.to ? req.query : defaultRange(90);
+    const result = await db.execute({
+      sql: `
+        SELECT method, COALESCE(SUM(amount), 0) AS total, COUNT(*) AS count
+        FROM payments
+        WHERE date(recorded_at) BETWEEN ? AND ?
+        GROUP BY method
+        ORDER BY total DESC
+      `,
+      args: [from, to]
+    });
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load payment method report' });
+  }
+});
+
+// Revenue grouped by room type — "which rooms earn the most" view
+router.get('/room-revenue', async (req, res) => {
+  try {
+    const { from, to } = req.query.from && req.query.to ? req.query : defaultRange(90, 180);
+    const result = await db.execute({
+      sql: `
+        SELECT rooms.name AS room_name,
+               COALESCE(SUM(bookings.total_amount), 0) AS revenue,
+               COUNT(*) AS bookings
+        FROM bookings
+        JOIN rooms ON rooms.id = bookings.room_id
+        WHERE bookings.status != 'cancelled' AND bookings.checkin BETWEEN ? AND ?
+        GROUP BY rooms.id
+        ORDER BY revenue DESC
+      `,
+      args: [from, to]
+    });
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load room revenue report' });
   }
 });
 

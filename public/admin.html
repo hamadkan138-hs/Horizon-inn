@@ -56,6 +56,7 @@
 
             <div class="admin-tabs" id="adminTabs">
                 <button class="admin-tab active" data-tab="bookings">Bookings</button>
+                <button class="admin-tab" data-tab="payments">Payments</button>
                 <button class="admin-tab" data-tab="daily">Daily Summary</button>
                 <button class="admin-tab" data-tab="availability">Availability</button>
                 <button class="admin-tab" data-tab="guests">Guests</button>
@@ -101,6 +102,54 @@
                             </tr>
                         </thead>
                         <tbody id="bookingsBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Payments / Transactions -->
+            <section class="admin-panel" id="panel-payments" style="display: none;">
+                <div class="panel-toolbar">
+                    <select id="txnStatusFilter">
+                        <option value="">All payment statuses</option>
+                        <option value="unpaid">Unpaid</option>
+                        <option value="partial">Partial</option>
+                        <option value="paid">Paid</option>
+                    </select>
+                    <select id="txnMethodFilter">
+                        <option value="">All payment methods</option>
+                        <option value="pay_at_property">Pay at Property</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                        <option value="easypaisa">EasyPaisa</option>
+                        <option value="jazzcash">JazzCash</option>
+                    </select>
+                    <select id="txnRoomFilter">
+                        <option value="">All room types</option>
+                    </select>
+                    <input type="date" id="txnFrom" title="From date">
+                    <input type="date" id="txnTo" title="To date">
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-light);">
+                        <input type="checkbox" id="txnOverdueOnly" style="width: auto;"> Overdue only
+                    </label>
+                    <button class="action-btn details-toggle" id="txnExportBtn">Export CSV</button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="transactionsTable">
+                        <thead>
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Booking</th>
+                                <th>Customer</th>
+                                <th>Room</th>
+                                <th>Method</th>
+                                <th>Total</th>
+                                <th>Paid</th>
+                                <th>Balance</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionsBody"></tbody>
                     </table>
                 </div>
             </section>
@@ -242,14 +291,25 @@
                             <option value="monthly" selected>Monthly</option>
                         </select>
                     </label>
+                    <label>From: <input type="date" id="reportFrom"></label>
+                    <label>To: <input type="date" id="reportTo"></label>
+                    <button class="action-btn details-toggle" id="reportExportBtn">Export CSV</button>
                 </div>
                 <div class="chart-card">
                     <h3>Revenue vs Expenses</h3>
                     <canvas id="revenueChart" height="90"></canvas>
                 </div>
                 <div class="chart-card">
-                    <h3>Occupancy Rate (last 30 days)</h3>
+                    <h3>Occupancy Rate</h3>
                     <canvas id="occupancyChart" height="90"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Payment Method Distribution</h3>
+                    <canvas id="paymentMethodChart" height="90"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Revenue by Room Type</h3>
+                    <canvas id="roomRevenueChart" height="90"></canvas>
                 </div>
             </section>
 

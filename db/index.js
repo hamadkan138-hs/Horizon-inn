@@ -106,7 +106,12 @@ function init() {
           terms_accepted INTEGER NOT NULL DEFAULT 0,
           total_amount REAL NOT NULL DEFAULT 0,
           room_amount REAL NOT NULL DEFAULT 0,
-          tax_percent REAL NOT NULL DEFAULT 0
+          tax_percent REAL NOT NULL DEFAULT 0,
+          invoice_number TEXT NOT NULL DEFAULT '',
+          invoice_token TEXT NOT NULL DEFAULT '',
+          room_number TEXT NOT NULL DEFAULT '',
+          address TEXT NOT NULL DEFAULT '',
+          invoice_notes TEXT NOT NULL DEFAULT ''
         )
       `);
 
@@ -127,7 +132,12 @@ function init() {
         "terms_accepted INTEGER NOT NULL DEFAULT 0",
         "total_amount REAL NOT NULL DEFAULT 0",
         "room_amount REAL NOT NULL DEFAULT 0",
-        "tax_percent REAL NOT NULL DEFAULT 0"
+        "tax_percent REAL NOT NULL DEFAULT 0",
+        "invoice_number TEXT NOT NULL DEFAULT ''",
+        "invoice_token TEXT NOT NULL DEFAULT ''",
+        "room_number TEXT NOT NULL DEFAULT ''",
+        "address TEXT NOT NULL DEFAULT ''",
+        "invoice_notes TEXT NOT NULL DEFAULT ''"
       ]);
 
       // One-time backfill: bookings created before room_amount existed still have
@@ -136,6 +146,17 @@ function init() {
       await db.execute(`
         UPDATE bookings SET room_amount = total_amount
         WHERE room_amount = 0 AND total_amount > 0
+      `);
+
+      // Backfill invoice numbers/tokens for bookings created before invoicing existed.
+      await db.execute(`
+        UPDATE bookings
+        SET invoice_number = 'INV-' || strftime('%Y', created_at) || '-' || substr('0000' || id, -4, 4)
+        WHERE invoice_number = ''
+      `);
+      await db.execute(`
+        UPDATE bookings SET invoice_token = lower(hex(randomblob(12)))
+        WHERE invoice_token = ''
       `);
 
       await db.execute(`

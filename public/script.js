@@ -161,6 +161,7 @@ bookingForm.addEventListener('submit', async (e) => {
         phone: document.getElementById('phone').value,
         cnic: document.getElementById('cnic').value,
         maritalStatus: document.getElementById('maritalStatus').value,
+        address: document.getElementById('address').value,
         roomId: Number(roomSelect.value),
         checkin: checkinInput.value,
         checkout: checkoutInput.value,

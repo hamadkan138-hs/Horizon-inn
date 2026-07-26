@@ -11,6 +11,7 @@ const guestsRouter = require('./routes/guests');
 const reportsRouter = require('./routes/reports');
 const usersRouter = require('./routes/users');
 const authRouter = require('./routes/auth');
+const publicInvoiceRouter = require('./routes/publicInvoice');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,6 +28,7 @@ app.use('/api/guests', guestsRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/public-invoice', publicInvoiceRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
