@@ -25,6 +25,7 @@
                 <li><a href="#rooms">Rooms</a></li>
                 <li><a href="#booking">Booking</a></li>
                 <li><a href="#contact">Contact</a></li>
+                <li><a href="admin.html">Admin</a></li>
             </ul>
         </div>
     </nav>
@@ -72,67 +73,8 @@
     <section id="rooms" class="rooms">
         <div class="container">
             <h2>Our Luxurious Rooms</h2>
-            <div class="rooms-grid">
-                <!-- Deluxe Room -->
-                <div class="room-card">
-                    <div class="room-image" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
-                    <div class="room-content">
-                        <h3>Deluxe Room</h3>
-                        <p class="room-desc">Spacious room with premium bedding and modern amenities.</p>
-                        <ul class="room-features">
-                            <li><i class="fas fa-check"></i> King-size bed</li>
-                            <li><i class="fas fa-check"></i> Marble bathroom</li>
-                            <li><i class="fas fa-check"></i> City view balcony</li>
-                            <li><i class="fas fa-check"></i> Smart TV & streaming</li>
-                        </ul>
-                        <div class="room-pricing">
-                            <span class="price">$199</span>
-                            <span class="per-night">per night</span>
-                        </div>
-                        <a href="#booking" class="book-btn">Book Now</a>
-                    </div>
-                </div>
-
-                <!-- Suite Room -->
-                <div class="room-card featured">
-                    <div class="featured-badge">Popular</div>
-                    <div class="room-image" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
-                    <div class="room-content">
-                        <h3>Luxury Suite</h3>
-                        <p class="room-desc">Ultimate luxury with separate living area and panoramic views.</p>
-                        <ul class="room-features">
-                            <li><i class="fas fa-check"></i> Separate living room</li>
-                            <li><i class="fas fa-check"></i> Jacuzzi bathtub</li>
-                            <li><i class="fas fa-check"></i> Panoramic view</li>
-                            <li><i class="fas fa-check"></i> Personal butler service</li>
-                        </ul>
-                        <div class="room-pricing">
-                            <span class="price">$349</span>
-                            <span class="per-night">per night</span>
-                        </div>
-                        <a href="#booking" class="book-btn primary">Book Now</a>
-                    </div>
-                </div>
-
-                <!-- Presidential Suite -->
-                <div class="room-card">
-                    <div class="room-image" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
-                    <div class="room-content">
-                        <h3>Presidential Suite</h3>
-                        <p class="room-desc">The pinnacle of luxury with exclusive amenities and services.</p>
-                        <ul class="room-features">
-                            <li><i class="fas fa-check"></i> Multi-room layout</li>
-                            <li><i class="fas fa-check"></i> Private sauna</li>
-                            <li><i class="fas fa-check"></i> 360° panoramic view</li>
-                            <li><i class="fas fa-check"></i> 24/7 concierge service</li>
-                        </ul>
-                        <div class="room-pricing">
-                            <span class="price">$599</span>
-                            <span class="per-night">per night</span>
-                        </div>
-                        <a href="#booking" class="book-btn">Book Now</a>
-                    </div>
-                </div>
+            <div class="rooms-grid" id="roomsGrid">
+                <p class="loading-text">Loading rooms...</p>
             </div>
         </div>
     </section>
@@ -160,12 +102,9 @@
                             <input type="tel" id="phone" name="phone" required>
                         </div>
                         <div class="form-group">
-                            <label for="room">Room Type *</label>
-                            <select id="room" name="room" required>
-                                <option value="">Select a room</option>
-                                <option value="Deluxe Room">Deluxe Room - $199/night</option>
-                                <option value="Luxury Suite">Luxury Suite - $349/night</option>
-                                <option value="Presidential Suite">Presidential Suite - $599/night</option>
+                            <label for="roomId">Room Type *</label>
+                            <select id="roomId" name="roomId" required>
+                                <option value="">Loading rooms...</option>
                             </select>
                         </div>
                     </div>
@@ -193,6 +132,7 @@
                     </div>
 
                     <button type="submit" class="submit-btn">Complete Booking</button>
+                    <p class="form-message" id="bookingMessage"></p>
                 </form>
             </div>
         </div>
@@ -232,6 +172,23 @@
                             <p>24/7 Service Available</p>
                         </div>
                     </div>
+
+                    <form class="contact-form" id="contactForm">
+                        <div class="form-group">
+                            <label for="contactName">Name *</label>
+                            <input type="text" id="contactName" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contactEmail">Email *</label>
+                            <input type="email" id="contactEmail" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contactMessage">Message *</label>
+                            <textarea id="contactMessage" name="message" rows="4" required></textarea>
+                        </div>
+                        <button type="submit" class="submit-btn">Send Message</button>
+                        <p class="form-message" id="contactFormMessage"></p>
+                    </form>
                 </div>
 
                 <div class="map-container">
@@ -269,7 +226,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2024 Horizon Inn. All rights reserved.</p>
+                <p>&copy; 2026 Horizon Inn. All rights reserved.</p>
             </div>
         </div>
     </footer>

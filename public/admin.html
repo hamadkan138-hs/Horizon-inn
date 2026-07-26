@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horizon Inn - Admin</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-mountain"></i>
+                <span>Horizon Inn</span>
+            </div>
+            <ul class="nav-menu active" style="position: static; background: none; padding: 0; flex-direction: row;">
+                <li><a href="index.html">Back to site</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="admin-page" style="margin-top: 90px;">
+        <div id="loginPanel" class="booking-form-wrapper" style="max-width: 400px;">
+            <h1 style="font-size: 1.5rem; margin-bottom: 20px;">Admin Login</h1>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="adminUser">Username</label>
+                    <input type="text" id="adminUser" required>
+                </div>
+                <div class="form-group">
+                    <label for="adminPass">Password</label>
+                    <input type="password" id="adminPass" required>
+                </div>
+                <button type="submit" class="submit-btn">Log In</button>
+                <p class="form-message error" id="loginMessage"></p>
+            </form>
+        </div>
+
+        <div id="dashboard" style="display: none;">
+            <h1>Horizon Inn — Operations Dashboard</h1>
+            <p style="color: var(--text-light);">Manage bookings and messages in real time.</p>
+
+            <div class="admin-section">
+                <h2>Bookings</h2>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="bookingsTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Guest</th>
+                                <th>Room</th>
+                                <th>Check-in</th>
+                                <th>Check-out</th>
+                                <th>Guests</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookingsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h2>Contact Messages</h2>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="messagesTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Message</th>
+                                <th>Received</th>
+                            </tr>
+                        </thead>
+                        <tbody id="messagesBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
