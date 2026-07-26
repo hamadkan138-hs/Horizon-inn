@@ -1,18 +1,26 @@
-const ADMIN_USER = process.env.ADMIN_USER || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'horizon2026';
+const bcrypt = require('bcryptjs');
+const { db } = require('../db');
 
-function adminAuth(req, res, next) {
+async function adminAuth(req, res, next) {
   const header = req.headers.authorization || '';
   const [scheme, encoded] = header.split(' ');
 
   if (scheme === 'Basic' && encoded) {
-    const decoded = Buffer.from(encoded, 'base64').toString('utf8');
-    const separatorIndex = decoded.indexOf(':');
-    const user = decoded.slice(0, separatorIndex);
-    const password = decoded.slice(separatorIndex + 1);
+    try {
+      const decoded = Buffer.from(encoded, 'base64').toString('utf8');
+      const separatorIndex = decoded.indexOf(':');
+      const username = decoded.slice(0, separatorIndex);
+      const password = decoded.slice(separatorIndex + 1);
 
-    if (user === ADMIN_USER && password === ADMIN_PASSWORD) {
-      return next();
+      const result = await db.execute({ sql: 'SELECT * FROM users WHERE username = ?', args: [username] });
+      const user = result.rows[0];
+
+      if (user && bcrypt.compareSync(password, user.password_hash)) {
+        req.user = { id: Number(user.id), username: user.username, role: user.role };
+        return next();
+      }
+    } catch (err) {
+      console.error('Auth error:', err);
     }
   }
 
@@ -20,4 +28,14 @@ function adminAuth(req, res, next) {
   return res.status(401).json({ error: 'Authentication required' });
 }
 
+function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ error: 'You do not have permission to do that' });
+    }
+    next();
+  };
+}
+
 module.exports = adminAuth;
+module.exports.requireRole = requireRole;

@@ -5,18 +5,18 @@ const loginMessage = document.getElementById('loginMessage');
 
 const BOOKING_STATUSES = ['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled'];
 const STATUS_LABELS = {
-    pending: 'Pending',
-    confirmed: 'Confirmed',
-    checked_in: 'Checked In',
-    checked_out: 'Checked Out',
-    cancelled: 'Cancelled'
+    pending: 'Pending', confirmed: 'Confirmed', checked_in: 'Checked In',
+    checked_out: 'Checked Out', cancelled: 'Cancelled'
 };
 const PAYMENT_METHOD_LABELS = {
-    pay_at_property: 'Pay at Property',
-    bank_transfer: 'Bank Transfer',
-    easypaisa: 'EasyPaisa',
-    jazzcash: 'JazzCash'
+    pay_at_property: 'Pay at Property', bank_transfer: 'Bank Transfer',
+    easypaisa: 'EasyPaisa', jazzcash: 'JazzCash', cash: 'Cash'
 };
+
+let currentUser = null;
+let allBookings = [];
+let allRooms = [];
+let calendarDate = new Date();
 
 function getAuthHeader() {
     const token = sessionStorage.getItem('horizonAdminAuth');
@@ -25,40 +25,21 @@ function getAuthHeader() {
 
 async function apiGet(path) {
     const res = await fetch(path, { headers: getAuthHeader() });
-    if (res.status === 401) {
-        sessionStorage.removeItem('horizonAdminAuth');
-        showLogin();
-        throw new Error('Unauthorized');
-    }
-    if (!res.ok) throw new Error('Request failed');
+    if (res.status === 401) { sessionStorage.removeItem('horizonAdminAuth'); showLogin(); throw new Error('Unauthorized'); }
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Request failed');
     return res.json();
 }
 
-async function apiPatch(path, body) {
+async function apiSend(method, path, body) {
     const res = await fetch(path, {
-        method: 'PATCH',
+        method,
         headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
         body: JSON.stringify(body)
     });
-    if (res.status === 401) {
-        sessionStorage.removeItem('horizonAdminAuth');
-        showLogin();
-        throw new Error('Unauthorized');
-    }
-    if (!res.ok) throw new Error('Request failed');
-    return res.json();
-}
-
-function showLogin() {
-    loginPanel.style.display = 'block';
-    dashboard.style.display = 'none';
-}
-
-function showDashboard() {
-    loginPanel.style.display = 'none';
-    dashboard.style.display = 'block';
-    loadBookings();
-    loadMessages();
+    if (res.status === 401) { sessionStorage.removeItem('horizonAdminAuth'); showLogin(); throw new Error('Unauthorized'); }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    return data;
 }
 
 function escapeHtml(str) {
@@ -67,95 +48,579 @@ function escapeHtml(str) {
     return div.innerHTML;
 }
 
+function money(n) {
+    return `$${Number(n || 0).toFixed(2)}`;
+}
+
+function showLogin() {
+    loginPanel.style.display = 'block';
+    dashboard.style.display = 'none';
+}
+
+async function showDashboard() {
+    loginPanel.style.display = 'none';
+    dashboard.style.display = 'block';
+    try {
+        currentUser = await apiGet('/api/auth/me');
+        document.getElementById('whoami').textContent = `${currentUser.username} (${currentUser.role})`;
+        document.getElementById('staffTabBtn').style.display = currentUser.role === 'admin' ? 'inline-block' : 'none';
+    } catch (err) { return; }
+
+    loadBookings();
+    loadMessages();
+    updateNotifyBell();
+}
+
+/* ---------------- Tabs ---------------- */
+document.querySelectorAll('.admin-tab').forEach((btn) => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.admin-tab').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.admin-panel').forEach((p) => { p.style.display = 'none'; });
+        document.getElementById(`panel-${btn.dataset.tab}`).style.display = 'block';
+
+        if (btn.dataset.tab === 'availability') loadAvailability();
+        if (btn.dataset.tab === 'guests') loadGuests();
+        if (btn.dataset.tab === 'rooms') loadRoomsPanel();
+        if (btn.dataset.tab === 'expenses') loadExpenses();
+        if (btn.dataset.tab === 'reports') loadReports();
+        if (btn.dataset.tab === 'staff') loadStaff();
+        if (btn.dataset.tab === 'bookings') { localStorage.setItem('horizonLastSeen', new Date().toISOString()); updateNotifyBell(); }
+    });
+});
+
+/* ---------------- Notification bell ---------------- */
+function updateNotifyBell() {
+    const lastSeen = localStorage.getItem('horizonLastSeen') || '1970-01-01';
+    const newCount = allBookings.filter((b) => b.created_at > lastSeen).length;
+    const badge = document.getElementById('bellBadge');
+    badge.textContent = newCount;
+    badge.style.display = newCount > 0 ? 'flex' : 'none';
+}
+document.getElementById('notifyBell').addEventListener('click', () => {
+    localStorage.setItem('horizonLastSeen', new Date().toISOString());
+    updateNotifyBell();
+    document.querySelector('.admin-tab[data-tab="bookings"]').click();
+});
+
+/* ---------------- Bookings ---------------- */
+function whatsappLink(booking) {
+    let digits = (booking.phone || '').replace(/\D/g, '');
+    if (digits.startsWith('0')) digits = `92${digits.slice(1)}`;
+    const text = `Hello ${booking.name}, this is Horizon Inn confirming booking #${booking.id} for ${booking.room_name}, ${booking.checkin} to ${booking.checkout}. Status: ${STATUS_LABELS[booking.status]}. Total: ${money(booking.total_amount)}. Thank you!`;
+    return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+}
+
+function emailLink(booking) {
+    const subject = `Horizon Inn — Booking #${booking.id} ${STATUS_LABELS[booking.status]}`;
+    const body = `Hello ${booking.name},\n\nThis confirms your Horizon Inn booking:\n\nRoom: ${booking.room_name}\nCheck-in: ${booking.checkin}\nCheck-out: ${booking.checkout}\nStatus: ${STATUS_LABELS[booking.status]}\nTotal: ${money(booking.total_amount)}\n\nThank you for choosing Horizon Inn.`;
+    return `mailto:${booking.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 function detailField(label, value) {
     return `<div class="detail-field"><strong>${label}:</strong> ${escapeHtml(value) || '&mdash;'}</div>`;
 }
 
-async function loadBookings() {
+function bookingRowHtml(b) {
+    const balance = Math.max(0, Number(b.total_amount) - (b._paidTotal || 0));
+    return `
+        <tr>
+            <td>${b.id}</td>
+            <td>${escapeHtml(b.name)}<br><small>${escapeHtml(b.email)} &middot; ${escapeHtml(b.phone)}</small></td>
+            <td>${escapeHtml(b.room_name)}</td>
+            <td>${b.checkin}</td>
+            <td>${b.checkout}</td>
+            <td>${b.guests}</td>
+            <td>
+                <select class="status-select" data-id="${b.id}">
+                    ${BOOKING_STATUSES.map((s) => `<option value="${s}" ${s === b.status ? 'selected' : ''}>${STATUS_LABELS[s]}</option>`).join('')}
+                </select>
+            </td>
+            <td>
+                <div class="payment-method-label">${PAYMENT_METHOD_LABELS[b.payment_method] || b.payment_method}</div>
+                <span class="status-pill ${b.payment_status}">${b.payment_status}</span>
+                <div style="font-size: 0.78rem; color: var(--text-light); margin-top: 4px;">Total ${money(b.total_amount)}</div>
+            </td>
+            <td>
+                <button class="action-btn details-toggle" data-target="details-${b.id}" data-id="${b.id}">View</button><br><br>
+                <a class="action-btn confirm" href="${whatsappLink(b)}" target="_blank" rel="noopener">WhatsApp</a>
+                <a class="action-btn confirm" href="${emailLink(b)}">Email</a>
+                <a class="action-btn details-toggle" href="invoice.html?id=${b.id}" target="_blank" rel="noopener">Invoice</a>
+            </td>
+        </tr>
+        <tr class="detail-row" id="details-${b.id}" style="display: none;">
+            <td colspan="9"><div class="detail-loading" data-id="${b.id}">Loading details&hellip;</div></td>
+        </tr>
+    `;
+}
+
+async function renderBookingDetail(id) {
+    const cell = document.querySelector(`#details-${id} td`);
     try {
-        const bookings = await apiGet('/api/bookings');
-        const body = document.getElementById('bookingsBody');
-        body.innerHTML = bookings.map((b) => `
-            <tr>
-                <td>${b.id}</td>
-                <td>${escapeHtml(b.name)}<br><small>${escapeHtml(b.email)} &middot; ${escapeHtml(b.phone)}</small></td>
-                <td>${escapeHtml(b.room_name)}</td>
-                <td>${b.checkin}</td>
-                <td>${b.checkout}</td>
-                <td>${b.guests}</td>
-                <td>
-                    <select class="status-select status-${b.status}" data-id="${b.id}">
-                        ${BOOKING_STATUSES.map((s) => `<option value="${s}" ${s === b.status ? 'selected' : ''}>${STATUS_LABELS[s]}</option>`).join('')}
+        const b = await apiGet(`/api/bookings/${id}`);
+        const paidTotal = b.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+        const balance = Math.max(0, Number(b.total_amount) - paidTotal);
+
+        cell.innerHTML = `
+            <div class="detail-grid">
+                ${detailField('CNIC / Passport', b.cnic)}
+                ${detailField('Marital Status', b.marital_status)}
+                ${detailField('Arriving From', b.arrival_from)}
+                ${detailField('Departing To', b.departure_to)}
+                ${detailField('Arrival Time', b.arrival_time)}
+                ${detailField('Purpose of Stay', b.purpose_of_stay)}
+                ${detailField('Vehicle Number', b.vehicle_number)}
+                ${detailField('Payment Method', PAYMENT_METHOD_LABELS[b.payment_method] || b.payment_method)}
+                ${detailField('Transaction ID', b.transaction_id)}
+                ${detailField('Special Requests', b.special_requests)}
+                ${detailField('Terms Accepted', b.terms_accepted ? 'Yes' : 'No')}
+                ${detailField('Booked At', b.created_at)}
+            </div>
+
+            <div class="detail-subsection">
+                <h4>Payments &mdash; Total ${money(b.total_amount)}, Paid ${money(paidTotal)}, Balance ${money(balance)}</h4>
+                <table class="admin-table mini-table">
+                    <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Txn ID</th><th>Note</th><th>By</th></tr></thead>
+                    <tbody>
+                        ${b.payments.map((p) => `<tr><td>${p.recorded_at}</td><td>${money(p.amount)}</td><td>${escapeHtml(p.method)}</td><td>${escapeHtml(p.transaction_id)}</td><td>${escapeHtml(p.note)}</td><td>${escapeHtml(p.recorded_by)}</td></tr>`).join('') || '<tr><td colspan="6">No payments recorded yet.</td></tr>'}
+                    </tbody>
+                </table>
+                <form class="inline-form payment-form" data-id="${id}">
+                    <input type="number" name="amount" placeholder="Amount ($)" min="0.01" step="0.01" required>
+                    <select name="method">
+                        <option value="cash">Cash</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                        <option value="easypaisa">EasyPaisa</option>
+                        <option value="jazzcash">JazzCash</option>
                     </select>
-                </td>
-                <td>
-                    <div class="payment-method-label">${PAYMENT_METHOD_LABELS[b.payment_method] || b.payment_method}</div>
-                    <span class="status-pill ${b.payment_status}">${b.payment_status}</span>
-                    <button class="action-btn payment-toggle ${b.payment_status === 'paid' ? 'cancel' : 'confirm'}"
-                        data-id="${b.id}" data-payment="${b.payment_status === 'paid' ? 'unpaid' : 'paid'}">
-                        Mark ${b.payment_status === 'paid' ? 'Unpaid' : 'Paid'}
-                    </button>
-                </td>
-                <td><button class="action-btn details-toggle" data-target="details-${b.id}">View</button></td>
-            </tr>
-            <tr class="detail-row" id="details-${b.id}" style="display: none;">
-                <td colspan="9">
-                    <div class="detail-grid">
-                        ${detailField('CNIC / Passport', b.cnic)}
-                        ${detailField('Marital Status', b.marital_status)}
-                        ${detailField('Arriving From', b.arrival_from)}
-                        ${detailField('Departing To', b.departure_to)}
-                        ${detailField('Arrival Time', b.arrival_time)}
-                        ${detailField('Purpose of Stay', b.purpose_of_stay)}
-                        ${detailField('Vehicle Number', b.vehicle_number)}
-                        ${detailField('Payment Method', PAYMENT_METHOD_LABELS[b.payment_method] || b.payment_method)}
-                        ${detailField('Transaction ID', b.transaction_id)}
-                        ${detailField('Special Requests', b.special_requests)}
-                        ${detailField('Terms Accepted', b.terms_accepted ? 'Yes' : 'No')}
-                        ${detailField('Booked At', b.created_at)}
-                    </div>
-                </td>
-            </tr>
-        `).join('') || '<tr><td colspan="9">No bookings yet.</td></tr>';
+                    <input type="text" name="transactionId" placeholder="Transaction ID (optional)">
+                    <input type="text" name="note" placeholder="Note (optional)">
+                    <button type="submit" class="action-btn confirm">Record Payment</button>
+                </form>
+            </div>
 
-        body.querySelectorAll('.status-select').forEach((select) => {
-            select.addEventListener('change', async () => {
-                select.disabled = true;
-                try {
-                    await apiPatch(`/api/bookings/${select.dataset.id}`, { status: select.value });
-                    loadBookings();
-                } catch (err) {
-                    select.disabled = false;
-                }
-            });
+            <div class="detail-subsection">
+                <h4>Edit Booking</h4>
+                <form class="inline-form edit-booking-form" data-id="${id}">
+                    <input type="text" name="name" value="${escapeHtml(b.name)}" placeholder="Name">
+                    <input type="email" name="email" value="${escapeHtml(b.email)}" placeholder="Email">
+                    <input type="tel" name="phone" value="${escapeHtml(b.phone)}" placeholder="Phone">
+                    <input type="number" name="guests" value="${b.guests}" min="1" max="10" placeholder="Guests">
+                    <input type="date" name="checkin" value="${b.checkin}">
+                    <input type="date" name="checkout" value="${b.checkout}">
+                    <input type="text" name="specialRequests" value="${escapeHtml(b.special_requests)}" placeholder="Special requests">
+                    <button type="submit" class="action-btn confirm">Save Changes</button>
+                </form>
+                <p class="form-message" id="editMessage-${id}"></p>
+            </div>
+        `;
+
+        cell.querySelector('.payment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            try {
+                await apiSend('POST', `/api/bookings/${id}/payments`, {
+                    amount: Number(form.amount.value),
+                    method: form.method.value,
+                    transactionId: form.transactionId.value,
+                    note: form.note.value
+                });
+                loadBookings(true, id);
+            } catch (err) {
+                alert(err.message);
+            }
         });
 
-        body.querySelectorAll('.payment-toggle').forEach((btn) => {
-            btn.addEventListener('click', async () => {
-                btn.disabled = true;
-                await apiPatch(`/api/bookings/${btn.dataset.id}`, { paymentStatus: btn.dataset.payment });
-                loadBookings();
-            });
-        });
-
-        body.querySelectorAll('.details-toggle').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const row = document.getElementById(btn.dataset.target);
-                const isOpen = row.style.display !== 'none';
-                row.style.display = isOpen ? 'none' : 'table-row';
-                btn.textContent = isOpen ? 'View' : 'Hide';
-            });
+        cell.querySelector('.edit-booking-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const msg = document.getElementById(`editMessage-${id}`);
+            try {
+                await apiSend('PATCH', `/api/bookings/${id}/details`, {
+                    name: form.name.value, email: form.email.value, phone: form.phone.value,
+                    guests: Number(form.guests.value), checkin: form.checkin.value, checkout: form.checkout.value,
+                    specialRequests: form.specialRequests.value
+                });
+                msg.textContent = 'Saved.';
+                msg.className = 'form-message success';
+                loadBookings(true, id);
+            } catch (err) {
+                msg.textContent = err.message;
+                msg.className = 'form-message error';
+            }
         });
     } catch (err) {
-        // handled by apiGet (login redirect) or ignored
+        cell.innerHTML = `<p class="error-text">Failed to load details.</p>`;
     }
 }
 
+async function loadBookings(keepOpen, reopenId) {
+    try {
+        allBookings = await apiGet('/api/bookings');
+        applyBookingFilters();
+        updateNotifyBell();
+        if (keepOpen && reopenId) {
+            const row = document.getElementById(`details-${reopenId}`);
+            if (row) { row.style.display = 'table-row'; renderBookingDetail(reopenId); }
+        }
+    } catch (err) { /* handled by apiGet */ }
+}
+
+function applyBookingFilters() {
+    const search = document.getElementById('bookingSearch').value.toLowerCase();
+    const statusFilter = document.getElementById('bookingStatusFilter').value;
+    const filtered = allBookings.filter((b) => {
+        const matchesSearch = !search || [b.name, b.email, b.phone, b.cnic].some((f) => (f || '').toLowerCase().includes(search));
+        const matchesStatus = !statusFilter || b.status === statusFilter;
+        return matchesSearch && matchesStatus;
+    });
+
+    const body = document.getElementById('bookingsBody');
+    body.innerHTML = filtered.map(bookingRowHtml).join('') || '<tr><td colspan="9">No bookings match.</td></tr>';
+
+    body.querySelectorAll('.status-select').forEach((select) => {
+        select.addEventListener('change', async () => {
+            select.disabled = true;
+            try { await apiSend('PATCH', `/api/bookings/${select.dataset.id}`, { status: select.value }); loadBookings(); }
+            catch (err) { alert(err.message); select.disabled = false; }
+        });
+    });
+
+    body.querySelectorAll('.details-toggle[data-target]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const row = document.getElementById(btn.dataset.target);
+            const isOpen = row.style.display !== 'none';
+            row.style.display = isOpen ? 'none' : 'table-row';
+            btn.textContent = isOpen ? 'View' : 'Hide';
+            if (!isOpen) renderBookingDetail(btn.dataset.id);
+        });
+    });
+}
+
+document.getElementById('bookingSearch').addEventListener('input', applyBookingFilters);
+document.getElementById('bookingStatusFilter').addEventListener('change', applyBookingFilters);
+
+/* ---------------- Availability calendar ---------------- */
+async function loadAvailability() {
+    if (!allRooms.length) allRooms = await apiGet('/api/rooms');
+    const select = document.getElementById('availabilityRoom');
+    if (!select.options.length) {
+        select.innerHTML = allRooms.map((r) => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
+        select.addEventListener('change', renderCalendar);
+    }
+    renderCalendar();
+}
+
+function renderCalendar() {
+    const roomId = Number(document.getElementById('availabilityRoom').value || allRooms[0]?.id);
+    const room = allRooms.find((r) => r.id === roomId);
+    if (!room) return;
+
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
+    document.getElementById('availabilityMonthLabel').textContent = calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    const firstDay = new Date(year, month, 1);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const startWeekday = firstDay.getDay();
+
+    const roomBookings = allBookings.filter((b) => b.room_id === roomId && b.status !== 'cancelled');
+
+    let html = '<div class="calendar-weekdays">' + ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => `<div>${d}</div>`).join('') + '</div>';
+    html += '<div class="calendar-days">';
+    for (let i = 0; i < startWeekday; i++) html += '<div class="calendar-cell empty"></div>';
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const occupied = roomBookings.filter((b) => b.checkin <= dateStr && b.checkout > dateStr).length;
+        const ratio = occupied / room.total_units;
+        const level = ratio === 0 ? 'low' : ratio < 1 ? 'mid' : 'full';
+        html += `<div class="calendar-cell ${level}"><span class="cal-day">${day}</span><span class="cal-count">${occupied}/${room.total_units}</span></div>`;
+    }
+    html += '</div>';
+    document.getElementById('calendarGrid').innerHTML = html;
+}
+
+document.getElementById('prevMonth').addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() - 1); renderCalendar(); });
+document.getElementById('nextMonth').addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() + 1); renderCalendar(); });
+
+/* ---------------- Guests ---------------- */
+async function loadGuests() {
+    try {
+        const guests = await apiGet('/api/guests');
+        const body = document.getElementById('guestsBody');
+        body.innerHTML = guests.map((g, i) => `
+            <tr>
+                <td>${escapeHtml(g.name)}</td>
+                <td>${escapeHtml(g.cnic)}</td>
+                <td>${escapeHtml(g.email)}<br><small>${escapeHtml(g.phone)}</small></td>
+                <td>${g.visit_count}</td>
+                <td>${money(g.total_spent)}</td>
+                <td>${g.last_stay || '&mdash;'}</td>
+                <td><button class="action-btn details-toggle" data-guest="${encodeURIComponent(g.guest_key)}" data-row="guest-hist-${i}">View</button></td>
+            </tr>
+            <tr class="detail-row" id="guest-hist-${i}" style="display: none;"><td colspan="7"></td></tr>
+        `).join('') || '<tr><td colspan="7">No guests yet.</td></tr>';
+
+        body.querySelectorAll('[data-guest]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const row = document.getElementById(btn.dataset.row);
+                const isOpen = row.style.display !== 'none';
+                row.style.display = isOpen ? 'none' : 'table-row';
+                btn.textContent = isOpen ? 'View' : 'Hide';
+                if (!isOpen) {
+                    const history = await apiGet(`/api/guests/${btn.dataset.guest}/bookings`);
+                    row.querySelector('td').innerHTML = `
+                        <table class="admin-table mini-table">
+                            <thead><tr><th>Room</th><th>Check-in</th><th>Check-out</th><th>Status</th><th>Total</th></tr></thead>
+                            <tbody>${history.map((h) => `<tr><td>${escapeHtml(h.room_name)}</td><td>${h.checkin}</td><td>${h.checkout}</td><td>${STATUS_LABELS[h.status]}</td><td>${money(h.total_amount)}</td></tr>`).join('')}</tbody>
+                        </table>`;
+                }
+            });
+        });
+    } catch (err) { /* handled */ }
+}
+
+/* ---------------- Rooms & Pricing ---------------- */
+async function loadRoomsPanel() {
+    try {
+        allRooms = await apiGet('/api/rooms');
+        const canEdit = currentUser.role === 'admin';
+
+        document.getElementById('roomsSettingsList').innerHTML = allRooms.map((r) => `
+            <form class="room-edit-card" data-id="${r.id}">
+                <div class="form-row">
+                    <div class="form-group"><label>Name</label><input type="text" name="name" value="${escapeHtml(r.name)}" ${canEdit ? '' : 'disabled'}></div>
+                    <div class="form-group"><label>Price / Night ($)</label><input type="number" name="price" value="${r.price}" min="0" step="0.01" ${canEdit ? '' : 'disabled'}></div>
+                </div>
+                <div class="form-group"><label>Description</label><textarea name="description" rows="2" ${canEdit ? '' : 'disabled'}>${escapeHtml(r.description)}</textarea></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Total Units</label><input type="number" name="totalUnits" value="${r.total_units}" min="1" ${canEdit ? '' : 'disabled'}></div>
+                    <div class="form-group"><label>Featured</label><select name="featured" ${canEdit ? '' : 'disabled'}><option value="0" ${!r.featured ? 'selected' : ''}>No</option><option value="1" ${r.featured ? 'selected' : ''}>Yes</option></select></div>
+                </div>
+                ${canEdit ? '<button type="submit" class="action-btn confirm">Save Room</button>' : '<p style="color: var(--text-light); font-size: 0.85rem;">Only admins can edit room settings.</p>'}
+                <p class="form-message" id="roomMsg-${r.id}"></p>
+            </form>
+        `).join('');
+
+        if (canEdit) {
+            document.querySelectorAll('.room-edit-card').forEach((form) => {
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const id = form.dataset.id;
+                    const msg = document.getElementById(`roomMsg-${id}`);
+                    try {
+                        await apiSend('PATCH', `/api/rooms/${id}`, {
+                            name: form.name.value, description: form.description.value,
+                            price: Number(form.price.value), totalUnits: Number(form.totalUnits.value),
+                            featured: form.featured.value === '1'
+                        });
+                        msg.textContent = 'Saved.'; msg.className = 'form-message success';
+                    } catch (err) { msg.textContent = err.message; msg.className = 'form-message error'; }
+                });
+            });
+        }
+
+        document.getElementById('rateRuleForm').style.display = canEdit ? 'flex' : 'none';
+        document.getElementById('rateRulesTable').closest('div').style.display = canEdit ? 'block' : 'none';
+        if (!canEdit) return;
+
+        const rateRoomSelect = document.getElementById('rateRoomId');
+        rateRoomSelect.innerHTML = allRooms.map((r) => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
+
+        loadRateRules();
+    } catch (err) { /* handled */ }
+}
+
+async function loadRateRules() {
+    try {
+        const rules = await apiGet('/api/rate-rules');
+        document.getElementById('rateRulesBody').innerHTML = rules.map((r) => `
+            <tr>
+                <td>${escapeHtml(r.room_name)}</td>
+                <td>${escapeHtml(r.name)}</td>
+                <td>${r.start_date} &rarr; ${r.end_date}</td>
+                <td>${r.price_override ? money(r.price_override) + '/night' : r.discount_percent + '% off'}</td>
+                <td><button class="action-btn cancel" data-id="${r.id}">Delete</button></td>
+            </tr>
+        `).join('') || '<tr><td colspan="5">No seasonal rates set.</td></tr>';
+
+        document.querySelectorAll('#rateRulesBody .action-btn.cancel').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('Delete this rate rule?')) return;
+                await apiSend('DELETE', `/api/rate-rules/${btn.dataset.id}`, {});
+                loadRateRules();
+            });
+        });
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('rateRuleForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('rateRuleMessage');
+    try {
+        await apiSend('POST', '/api/rate-rules', {
+            roomId: Number(document.getElementById('rateRoomId').value),
+            name: document.getElementById('rateName').value,
+            startDate: document.getElementById('rateStart').value,
+            endDate: document.getElementById('rateEnd').value,
+            priceOverride: document.getElementById('ratePriceOverride').value ? Number(document.getElementById('ratePriceOverride').value) : null,
+            discountPercent: document.getElementById('rateDiscount').value ? Number(document.getElementById('rateDiscount').value) : null
+        });
+        msg.textContent = 'Rate rule added.'; msg.className = 'form-message success';
+        e.target.reset();
+        loadRateRules();
+    } catch (err) { msg.textContent = err.message; msg.className = 'form-message error'; }
+});
+
+/* ---------------- Expenses ---------------- */
+async function loadExpenses() {
+    try {
+        const expenses = await apiGet('/api/expenses');
+        const canDelete = currentUser.role === 'admin';
+        document.getElementById('expensesBody').innerHTML = expenses.map((ex) => `
+            <tr>
+                <td>${ex.expense_date}</td>
+                <td>${escapeHtml(ex.category)}</td>
+                <td>${escapeHtml(ex.description)}</td>
+                <td>${money(ex.amount)}</td>
+                <td>${canDelete ? `<button class="action-btn cancel" data-id="${ex.id}">Delete</button>` : ''}</td>
+            </tr>
+        `).join('') || '<tr><td colspan="5">No expenses recorded.</td></tr>';
+
+        document.querySelectorAll('#expensesBody .action-btn.cancel').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('Delete this expense?')) return;
+                await apiSend('DELETE', `/api/expenses/${btn.dataset.id}`, {});
+                loadExpenses();
+            });
+        });
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('expenseForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('expenseMessage');
+    try {
+        await apiSend('POST', '/api/expenses', {
+            category: document.getElementById('expenseCategory').value,
+            description: document.getElementById('expenseDescription').value,
+            amount: Number(document.getElementById('expenseAmount').value),
+            expenseDate: document.getElementById('expenseDate').value
+        });
+        msg.textContent = 'Expense added.'; msg.className = 'form-message success';
+        e.target.reset();
+        loadExpenses();
+    } catch (err) { msg.textContent = err.message; msg.className = 'form-message error'; }
+});
+
+/* ---------------- Reports ---------------- */
+let revenueChartInstance = null;
+let occupancyChartInstance = null;
+
+async function loadReports() {
+    try {
+        const summary = await apiGet('/api/reports/summary');
+        document.getElementById('summaryCards').innerHTML = `
+            <div class="summary-card"><span>Total Revenue</span><strong>${money(summary.totalRevenue)}</strong></div>
+            <div class="summary-card"><span>Collected</span><strong>${money(summary.totalCollected)}</strong></div>
+            <div class="summary-card"><span>Expenses</span><strong>${money(summary.totalExpenses)}</strong></div>
+            <div class="summary-card"><span>Net Earnings</span><strong>${money(summary.netEarnings)}</strong></div>
+            <div class="summary-card"><span>Total Bookings</span><strong>${summary.totalBookings}</strong></div>
+            <div class="summary-card"><span>Pending Review</span><strong>${summary.pendingCount}</strong></div>
+        `;
+        renderRevenueChart();
+        renderOccupancyChart();
+    } catch (err) { /* handled */ }
+}
+
+async function renderRevenueChart() {
+    const range = document.getElementById('revenueRange').value;
+    const [revenue, expenses] = await Promise.all([
+        apiGet(`/api/reports/revenue?range=${range}`),
+        apiGet(`/api/reports/expenses?range=${range}`)
+    ]);
+    const periods = Array.from(new Set([...revenue.map((r) => r.period), ...expenses.map((e) => e.period)])).sort();
+    const revenueMap = Object.fromEntries(revenue.map((r) => [r.period, r.revenue]));
+    const expenseMap = Object.fromEntries(expenses.map((e) => [e.period, e.total]));
+
+    if (revenueChartInstance) revenueChartInstance.destroy();
+    revenueChartInstance = new Chart(document.getElementById('revenueChart'), {
+        type: 'bar',
+        data: {
+            labels: periods,
+            datasets: [
+                { label: 'Revenue', data: periods.map((p) => revenueMap[p] || 0), backgroundColor: '#c6a15b' },
+                { label: 'Expenses', data: periods.map((p) => expenseMap[p] || 0), backgroundColor: '#a5473c' }
+            ]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+}
+
+document.getElementById('revenueRange').addEventListener('change', renderRevenueChart);
+
+async function renderOccupancyChart() {
+    const to = new Date().toISOString().slice(0, 10);
+    const fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - 30);
+    const from = fromDate.toISOString().slice(0, 10);
+
+    const data = await apiGet(`/api/reports/occupancy?from=${from}&to=${to}`);
+    if (occupancyChartInstance) occupancyChartInstance.destroy();
+    occupancyChartInstance = new Chart(document.getElementById('occupancyChart'), {
+        type: 'line',
+        data: {
+            labels: data.breakdown.map((d) => d.date),
+            datasets: [{ label: 'Occupancy Rate', data: data.breakdown.map((d) => Math.round(d.rate * 100)), borderColor: '#14161f', backgroundColor: 'rgba(20,22,31,0.08)', fill: true, tension: 0.3 }]
+        },
+        options: { responsive: true, scales: { y: { min: 0, max: 100, ticks: { callback: (v) => v + '%' } } } }
+    });
+}
+
+/* ---------------- Staff ---------------- */
+async function loadStaff() {
+    try {
+        const users = await apiGet('/api/users');
+        document.getElementById('staffBody').innerHTML = users.map((u) => `
+            <tr>
+                <td>${escapeHtml(u.username)}</td>
+                <td>${escapeHtml(u.role)}</td>
+                <td>${u.created_at}</td>
+                <td>${u.id === currentUser.id ? '' : `<button class="action-btn cancel" data-id="${u.id}">Remove</button>`}</td>
+            </tr>
+        `).join('');
+
+        document.querySelectorAll('#staffBody .action-btn.cancel').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('Remove this staff account?')) return;
+                try { await apiSend('DELETE', `/api/users/${btn.dataset.id}`, {}); loadStaff(); }
+                catch (err) { alert(err.message); }
+            });
+        });
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('staffForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('staffMessage');
+    try {
+        await apiSend('POST', '/api/users', {
+            username: document.getElementById('staffUsername').value,
+            password: document.getElementById('staffPassword').value,
+            role: document.getElementById('staffRole').value
+        });
+        msg.textContent = 'Staff account created.'; msg.className = 'form-message success';
+        e.target.reset();
+        loadStaff();
+    } catch (err) { msg.textContent = err.message; msg.className = 'form-message error'; }
+});
+
+/* ---------------- Messages ---------------- */
 async function loadMessages() {
     try {
         const messages = await apiGet('/api/contact');
-        const body = document.getElementById('messagesBody');
-        body.innerHTML = messages.map((m) => `
+        document.getElementById('messagesBody').innerHTML = messages.map((m) => `
             <tr>
                 <td>${m.id}</td>
                 <td>${escapeHtml(m.name)}</td>
@@ -164,11 +629,10 @@ async function loadMessages() {
                 <td>${m.created_at}</td>
             </tr>
         `).join('') || '<tr><td colspan="5">No messages yet.</td></tr>';
-    } catch (err) {
-        // handled by apiGet
-    }
+    } catch (err) { /* handled */ }
 }
 
+/* ---------------- Login ---------------- */
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const user = document.getElementById('adminUser').value;
@@ -176,11 +640,8 @@ loginForm.addEventListener('submit', async (e) => {
     const token = btoa(`${user}:${pass}`);
 
     try {
-        const res = await fetch('/api/bookings', { headers: { Authorization: `Basic ${token}` } });
-        if (!res.ok) {
-            loginMessage.textContent = 'Invalid username or password.';
-            return;
-        }
+        const res = await fetch('/api/auth/me', { headers: { Authorization: `Basic ${token}` } });
+        if (!res.ok) { loginMessage.textContent = 'Invalid username or password.'; return; }
         sessionStorage.setItem('horizonAdminAuth', token);
         loginMessage.textContent = '';
         showDashboard();

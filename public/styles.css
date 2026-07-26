@@ -976,7 +976,7 @@ h2::after {
 
 /* Admin */
 .admin-page {
-    max-width: 1100px;
+    max-width: 1320px;
     margin: 0 auto;
     padding: 40px 24px 80px;
 }
@@ -1062,13 +1062,16 @@ table.admin-table th {
 }
 
 .action-btn {
+    display: inline-block;
     padding: 7px 14px;
     border: none;
     cursor: pointer;
     font-size: 0.8rem;
     font-weight: 600;
     margin-right: 6px;
+    margin-bottom: 4px;
     letter-spacing: 0.02em;
+    text-decoration: none;
 }
 
 .action-btn.confirm {
@@ -1125,6 +1128,295 @@ table.admin-table th {
     letter-spacing: 0.05em;
     color: var(--text-light);
     margin-bottom: 3px;
+}
+
+.status-pill.partial {
+    background: #fdf0e2;
+    color: #b5701f;
+}
+
+/* Admin dashboard: header + notification bell */
+.dash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.bell-btn {
+    position: relative;
+    background: var(--white);
+    border: 1px solid #e4e1d8;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: var(--charcoal);
+    box-shadow: var(--shadow);
+    flex-shrink: 0;
+}
+
+.bell-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: var(--gold);
+    color: var(--charcoal);
+    font-size: 0.7rem;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+}
+
+/* Admin tabs */
+.admin-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 28px 0 30px;
+    border-bottom: 1px solid #e4e1d8;
+}
+
+.admin-tab {
+    background: none;
+    border: none;
+    padding: 12px 18px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    letter-spacing: 0.03em;
+    color: var(--text-light);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color var(--transition), border-color var(--transition);
+}
+
+.admin-tab:hover {
+    color: var(--charcoal);
+}
+
+.admin-tab.active {
+    color: var(--charcoal);
+    border-bottom-color: var(--gold);
+    font-weight: 600;
+}
+
+.admin-panel {
+    animation: fadeInUp 0.4s ease both;
+}
+
+.panel-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.panel-toolbar input,
+.panel-toolbar select {
+    padding: 10px 14px;
+    border: 1px solid #ddd;
+    background: var(--white);
+    font-family: inherit;
+    font-size: 0.88rem;
+}
+
+.panel-toolbar input {
+    flex: 1;
+    min-width: 220px;
+}
+
+/* Inline forms (rate rules, expenses, staff, payments, edit booking) */
+.inline-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.inline-form input,
+.inline-form select,
+.inline-form textarea {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    background: var(--white);
+    font-family: inherit;
+    font-size: 0.88rem;
+    flex: 1;
+    min-width: 140px;
+}
+
+.detail-subsection {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px dashed #d8d4c9;
+}
+
+.detail-subsection h4 {
+    font-size: 0.95rem;
+    color: var(--charcoal);
+    margin-bottom: 12px;
+}
+
+.mini-table {
+    box-shadow: none;
+    border: 1px solid #eee;
+    margin-bottom: 12px;
+}
+
+.mini-table th {
+    background: var(--cream);
+    color: var(--text-light);
+}
+
+/* Availability calendar */
+.calendar-grid {
+    background: var(--white);
+    box-shadow: var(--shadow);
+    padding: 20px;
+}
+
+.calendar-weekdays,
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+
+.calendar-weekdays div {
+    text-align: center;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-light);
+    padding-bottom: 8px;
+}
+
+.calendar-cell {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 0.78rem;
+}
+
+.calendar-cell.empty {
+    background: none;
+}
+
+.calendar-cell.low {
+    background: #eaf3ea;
+    color: #3d7a4f;
+}
+
+.calendar-cell.mid {
+    background: #fbf1e0;
+    color: #9a6c1f;
+}
+
+.calendar-cell.full {
+    background: #f6e9e8;
+    color: #a5473c;
+}
+
+.cal-day {
+    font-weight: 700;
+}
+
+.cal-count {
+    font-size: 0.68rem;
+}
+
+.calendar-legend {
+    margin-top: 14px;
+    font-size: 0.82rem;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.legend-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    margin-left: 10px;
+}
+
+.legend-swatch.legend-low { background: #eaf3ea; }
+.legend-swatch.legend-mid { background: #fbf1e0; }
+.legend-swatch.legend-full { background: #f6e9e8; }
+
+/* Room settings cards */
+.room-edit-card {
+    background: var(--white);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 20px;
+}
+
+/* Reports */
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.summary-card {
+    background: var(--white);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.summary-card span {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-light);
+}
+
+.summary-card strong {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--charcoal);
+}
+
+.report-controls {
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+    color: var(--text-light);
+}
+
+.report-controls select {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    font-family: inherit;
+}
+
+.chart-card {
+    background: var(--white);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.chart-card h3 {
+    font-size: 1rem;
+    color: var(--charcoal);
+    margin-bottom: 16px;
 }
 
 /* Responsive */

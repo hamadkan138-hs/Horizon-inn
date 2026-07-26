@@ -1,14 +1,16 @@
 const express = require('express');
 const { db } = require('../db');
 const adminAuth = require('../middleware/adminAuth');
+const { requireRole } = adminAuth;
 const { isRoomAvailable } = require('../lib/availability');
+const { computeTotalAmount } = require('../lib/pricing');
 
 const router = express.Router();
 
 const PAYMENT_METHODS = ['pay_at_property', 'bank_transfer', 'easypaisa', 'jazzcash'];
 const MARITAL_STATUSES = ['Single', 'Married', 'Divorced', 'Widowed'];
 const BOOKING_STATUSES = ['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled'];
-const PAYMENT_STATUSES = ['unpaid', 'paid'];
+const PAYMENT_STATUSES = ['unpaid', 'partial', 'paid'];
 
 function isValidDate(value) {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value));
@@ -58,19 +60,21 @@ router.post('/', async (req, res) => {
       return res.status(409).json({ error: 'This room type is fully booked for the selected dates' });
     }
 
+    const totalAmount = await computeTotalAmount(room, checkin, checkout);
+
     const insertResult = await db.execute({
       sql: `
         INSERT INTO bookings (
           room_id, name, email, phone, checkin, checkout, guests, special_requests,
           cnic, marital_status, arrival_from, departure_to, arrival_time, purpose_of_stay, vehicle_number,
-          payment_method, transaction_id, terms_accepted, status, payment_status
+          payment_method, transaction_id, terms_accepted, status, payment_status, total_amount
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid')
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?)
       `,
       args: [
         roomId, name, email, phone, checkin, checkout, guests, specialRequests || '',
         cnic, maritalStatus, arrivalFrom, departureTo, arrivalTime || '', purposeOfStay || '', vehicleNumber || '',
-        paymentMethod, transactionId || '', 1
+        paymentMethod, transactionId || '', 1, totalAmount
       ]
     });
 
@@ -98,6 +102,94 @@ router.get('/', adminAuth, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to load bookings' });
+  }
+});
+
+// Single booking with room + payment history (admin) — used by invoice view
+router.get('/:id', adminAuth, async (req, res) => {
+  try {
+    const result = await db.execute({
+      sql: `
+        SELECT bookings.*, rooms.name AS room_name, rooms.price AS room_price
+        FROM bookings
+        JOIN rooms ON rooms.id = bookings.room_id
+        WHERE bookings.id = ?
+      `,
+      args: [req.params.id]
+    });
+    const booking = result.rows[0];
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+    const paymentsResult = await db.execute({
+      sql: 'SELECT * FROM payments WHERE booking_id = ? ORDER BY recorded_at ASC',
+      args: [req.params.id]
+    });
+    res.json({ ...booking, payments: paymentsResult.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load booking' });
+  }
+});
+
+// Edit booking details (admin) — dates, room, guest count, and guest-provided info
+router.patch('/:id/details', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
+  try {
+    const editable = [
+      'name', 'email', 'phone', 'guests', 'checkin', 'checkout', 'cnic', 'marital_status',
+      'arrival_from', 'departure_to', 'arrival_time', 'purpose_of_stay', 'vehicle_number', 'special_requests'
+    ];
+    const fieldMap = {
+      name: 'name', email: 'email', phone: 'phone', guests: 'guests', checkin: 'checkin', checkout: 'checkout',
+      cnic: 'cnic', maritalStatus: 'marital_status', arrivalFrom: 'arrival_from', departureTo: 'departure_to',
+      arrivalTime: 'arrival_time', purposeOfStay: 'purpose_of_stay', vehicleNumber: 'vehicle_number',
+      specialRequests: 'special_requests'
+    };
+
+    const existing = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
+    const booking = existing.rows[0];
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    const updates = [];
+    const args = [];
+    for (const [bodyKey, column] of Object.entries(fieldMap)) {
+      if (req.body[bodyKey] !== undefined && editable.includes(column)) {
+        updates.push(`${column} = ?`);
+        args.push(req.body[bodyKey]);
+      }
+    }
+    if (!updates.length) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    const nextCheckin = req.body.checkin || booking.checkin;
+    const nextCheckout = req.body.checkout || booking.checkout;
+    if (!isValidDate(nextCheckin) || !isValidDate(nextCheckout) || nextCheckin >= nextCheckout) {
+      return res.status(400).json({ error: 'Invalid check-in/check-out dates' });
+    }
+
+    if (req.body.checkin || req.body.checkout) {
+      const roomResult = await db.execute({ sql: 'SELECT * FROM rooms WHERE id = ?', args: [booking.room_id] });
+      const room = roomResult.rows[0];
+      const available = await isRoomAvailable(room, nextCheckin, nextCheckout, booking.id);
+      if (!available) {
+        return res.status(409).json({ error: 'Room is not available for the new dates' });
+      }
+      const totalAmount = await computeTotalAmount(room, nextCheckin, nextCheckout);
+      updates.push('total_amount = ?');
+      args.push(totalAmount);
+    }
+
+    args.push(req.params.id);
+    await db.execute({ sql: `UPDATE bookings SET ${updates.join(', ')} WHERE id = ?`, args });
+
+    const updated = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
+    res.json(updated.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update booking details' });
   }
 });
 
@@ -133,6 +225,49 @@ router.patch('/:id', adminAuth, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to update booking' });
+  }
+});
+
+// Record a payment against a booking (admin) — builds transaction history and
+// auto-derives payment_status from total paid vs total_amount.
+router.post('/:id/payments', adminAuth, async (req, res) => {
+  try {
+    const { amount, method, transactionId, note } = req.body;
+    if (!amount || amount <= 0 || !method) {
+      return res.status(400).json({ error: 'Amount and method are required' });
+    }
+
+    const bookingResult = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
+    const booking = bookingResult.rows[0];
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    await db.execute({
+      sql: `
+        INSERT INTO payments (booking_id, amount, method, transaction_id, note, recorded_by)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `,
+      args: [req.params.id, amount, method, transactionId || '', note || '', req.user.username]
+    });
+
+    const paidResult = await db.execute({
+      sql: 'SELECT COALESCE(SUM(amount), 0) AS paid FROM payments WHERE booking_id = ?',
+      args: [req.params.id]
+    });
+    const paidTotal = Number(paidResult.rows[0].paid);
+    const newStatus = paidTotal <= 0 ? 'unpaid' : (paidTotal >= booking.total_amount ? 'paid' : 'partial');
+
+    await db.execute({ sql: 'UPDATE bookings SET payment_status = ? WHERE id = ?', args: [newStatus, req.params.id] });
+
+    const paymentsResult = await db.execute({
+      sql: 'SELECT * FROM payments WHERE booking_id = ? ORDER BY recorded_at ASC',
+      args: [req.params.id]
+    });
+    res.status(201).json({ payments: paymentsResult.rows, paidTotal, paymentStatus: newStatus });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to record payment' });
   }
 });
 
