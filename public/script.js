@@ -6,6 +6,28 @@ navMenu.querySelectorAll('a').forEach((link) => {
     link.addEventListener('click', () => navMenu.classList.remove('active'));
 });
 
+// Navbar background on scroll
+const navbar = document.querySelector('.navbar');
+if (navbar) {
+    const toggleNavbarBg = () => navbar.classList.toggle('scrolled', window.scrollY > 40);
+    toggleNavbarBg();
+    window.addEventListener('scroll', toggleNavbarBg, { passive: true });
+}
+
+// Fade-in sections as they scroll into view
+const revealTargets = document.querySelectorAll('.reveal');
+if (revealTargets.length) {
+    const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                revealObserver.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.15 });
+    revealTargets.forEach((el) => revealObserver.observe(el));
+}
+
 const roomsGrid = document.getElementById('roomsGrid');
 const roomSelect = document.getElementById('roomId');
 const checkinInput = document.getElementById('checkin');
@@ -13,14 +35,14 @@ const checkoutInput = document.getElementById('checkout');
 
 let currentRooms = [];
 
-function roomCardHtml(room) {
+function roomCardHtml(room, index) {
     const featuresHtml = room.features.map((f) => `<li><i class="fas fa-check"></i> ${f}</li>`).join('');
     const availabilityHtml = typeof room.available === 'boolean'
         ? `<span class="availability-badge ${room.available ? 'available' : 'unavailable'}">${room.available ? 'Available' : 'Fully booked'}</span>`
         : '';
 
     return `
-        <div class="room-card ${room.featured ? 'featured' : ''}">
+        <div class="room-card fade-in-up ${room.featured ? 'featured' : ''}" style="animation-delay: ${index * 0.12}s">
             ${room.featured ? '<div class="featured-badge">Popular</div>' : ''}
             <div class="room-image" style="background: ${room.gradient};"></div>
             <div class="room-content">

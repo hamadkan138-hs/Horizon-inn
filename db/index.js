@@ -13,6 +13,10 @@ if (DATABASE_URL.startsWith('file:')) {
 
 const db = createClient(AUTH_TOKEN ? { url: DATABASE_URL, authToken: AUTH_TOKEN } : { url: DATABASE_URL });
 
+function imageStyle(filename) {
+  return `url('/images/${filename}') center/cover no-repeat`;
+}
+
 const SEED_ROOMS = [
   {
     slug: 'deluxe-room',
@@ -20,7 +24,7 @@ const SEED_ROOMS = [
     description: 'Spacious room with premium bedding and modern amenities.',
     price: 199,
     features: JSON.stringify(['King-size bed', 'Marble bathroom', 'City view balcony', 'Smart TV & streaming']),
-    gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    gradient: imageStyle('deluxe-room.jpg'),
     total_units: 6,
     featured: 0
   },
@@ -30,7 +34,7 @@ const SEED_ROOMS = [
     description: 'Ultimate luxury with separate living area and panoramic views.',
     price: 349,
     features: JSON.stringify(['Separate living room', 'Jacuzzi bathtub', 'Panoramic view', 'Personal butler service']),
-    gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    gradient: imageStyle('luxury-suite.jpg'),
     total_units: 4,
     featured: 1
   },
@@ -40,7 +44,7 @@ const SEED_ROOMS = [
     description: 'The pinnacle of luxury with exclusive amenities and services.',
     price: 599,
     features: JSON.stringify(['Multi-room layout', 'Private sauna', '360° panoramic view', '24/7 concierge service']),
-    gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+    gradient: imageStyle('presidential-suite.jpg'),
     total_units: 2,
     featured: 0
   }
@@ -91,19 +95,25 @@ function init() {
         )
       `);
 
-      const countResult = await db.execute('SELECT COUNT(*) AS n FROM rooms');
-      const roomCount = Number(countResult.rows[0].n);
-
-      if (roomCount === 0) {
-        for (const room of SEED_ROOMS) {
-          await db.execute({
-            sql: `
-              INSERT INTO rooms (slug, name, description, price, features, gradient, total_units, featured)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            `,
-            args: [room.slug, room.name, room.description, room.price, room.features, room.gradient, room.total_units, room.featured]
-          });
-        }
+      // Upsert (not insert-only-if-empty) so a redeploy refreshes room copy/photos
+      // in an already-seeded database without disturbing existing bookings, which
+      // reference rooms by id and keep working since the id is preserved on conflict.
+      for (const room of SEED_ROOMS) {
+        await db.execute({
+          sql: `
+            INSERT INTO rooms (slug, name, description, price, features, gradient, total_units, featured)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(slug) DO UPDATE SET
+              name = excluded.name,
+              description = excluded.description,
+              price = excluded.price,
+              features = excluded.features,
+              gradient = excluded.gradient,
+              total_units = excluded.total_units,
+              featured = excluded.featured
+          `,
+          args: [room.slug, room.name, room.description, room.price, room.features, room.gradient, room.total_units, room.featured]
+        });
       }
     })();
   }
