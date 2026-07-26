@@ -1,6 +1,7 @@
+"""Updated routes/rooms.py with database integration"""
 from flask import Blueprint, request, jsonify
 from app import db
-from models.room import Room
+from database import Room
 
 rooms_bp = Blueprint('rooms', __name__, url_prefix='/api/rooms')
 
@@ -8,11 +9,11 @@ rooms_bp = Blueprint('rooms', __name__, url_prefix='/api/rooms')
 def get_all_rooms():
     """
     Get all rooms with optional filters
-    Query params: available (bool), room_type (str)
+    Query params: available (true/false), room_type (string)
     """
     try:
         # Get query parameters
-        available = request.args.get('available', type=bool)
+        available = request.args.get('available', type=lambda x: x.lower() == 'true')
         room_type = request.args.get('room_type', type=str)
         
         # Build query
@@ -78,7 +79,7 @@ def create_room():
         if not all(field in data for field in required_fields):
             return jsonify({
                 'success': False,
-                'error': 'Missing required fields'
+                'error': 'Missing required fields: ' + ', '.join(required_fields)
             }), 400
         
         # Check if room already exists
@@ -86,19 +87,20 @@ def create_room():
         if existing_room:
             return jsonify({
                 'success': False,
-                'error': 'Room already exists'
+                'error': 'Room with this number already exists'
             }), 409
         
         # Create new room
         new_room = Room(
             room_number=data['room_number'],
             room_type=data['room_type'],
-            price_per_night=data['price_per_night'],
+            price_per_night=int(data['price_per_night']),
             capacity=data.get('capacity', 2),
-            floor=data['floor'],
+            floor=int(data['floor']),
             description=data.get('description', ''),
-            amenities=','.join(data.get('amenities', [])),
-            image_url=data.get('image_url', '')
+            amenities=','.join(data.get('amenities', [])) if isinstance(data.get('amenities'), list) else data.get('amenities', ''),
+            image_url=data.get('image_url', ''),
+            is_available=data.get('is_available', True)
         )
         
         db.session.add(new_room)
@@ -138,7 +140,7 @@ def update_room(room_id):
         if 'room_type' in data:
             room.room_type = data['room_type']
         if 'price_per_night' in data:
-            room.price_per_night = data['price_per_night']
+            room.price_per_night = int(data['price_per_night'])
         if 'capacity' in data:
             room.capacity = data['capacity']
         if 'is_available' in data:
@@ -146,7 +148,10 @@ def update_room(room_id):
         if 'description' in data:
             room.description = data['description']
         if 'amenities' in data:
-            room.amenities = ','.join(data['amenities'])
+            if isinstance(data['amenities'], list):
+                room.amenities = ','.join(data['amenities'])
+            else:
+                room.amenities = data['amenities']
         if 'image_url' in data:
             room.image_url = data['image_url']
         

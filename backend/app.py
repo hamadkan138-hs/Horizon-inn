@@ -1,3 +1,4 @@
+"""Updated app.py with database models"""
 import os
 from flask import Flask
 from flask_cors import CORS
@@ -19,15 +20,21 @@ def create_app():
     app = Flask(__name__)
     
     # Configuration
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///horizon_inn.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+        'DATABASE_URL',
+        'sqlite:///horizon_inn.db'  # Default SQLite for development
+    )
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
-    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key')
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key-change-in-production')
     
     # Initialize extensions with app
     db.init_app(app)
     jwt.init_app(app)
-    CORS(app)
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    
+    # Import models
+    from database import User, Room, Booking
     
     # Register blueprints
     from routes.rooms import rooms_bp
@@ -41,11 +48,26 @@ def create_app():
     # Create database tables
     with app.app_context():
         db.create_all()
+        print("✓ Database tables created successfully")
     
     # Health check endpoint
     @app.route('/api/health', methods=['GET'])
     def health():
-        return {'status': 'ok', 'message': 'Horizon Inn API is running'}, 200
+        return {
+            'status': 'ok',
+            'message': 'Horizon Inn API is running',
+            'database': 'connected'
+        }, 200
+    
+    # Root endpoint
+    @app.route('/', methods=['GET'])
+    def index():
+        return {
+            'name': 'Horizon Inn API',
+            'version': '1.0.0',
+            'description': 'Hotel Management System API',
+            'docs': '/api/docs'
+        }, 200
     
     return app
 

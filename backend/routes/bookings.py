@@ -1,8 +1,8 @@
+"""Updated routes/bookings.py with database integration"""
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 from app import db
-from models.booking import Booking
-from models.room import Room
+from database import Booking, Room, User
 
 bookings_bp = Blueprint('bookings', __name__, url_prefix='/api/bookings')
 
@@ -66,7 +66,7 @@ def create_booking():
         if not all(field in data for field in required_fields):
             return jsonify({
                 'success': False,
-                'error': 'Missing required fields'
+                'error': 'Missing required fields: ' + ', '.join(required_fields)
             }), 400
         
         # Check if room exists
@@ -78,8 +78,21 @@ def create_booking():
             }), 404
         
         # Parse dates
-        check_in = datetime.fromisoformat(data['check_in'].replace('Z', '+00:00'))
-        check_out = datetime.fromisoformat(data['check_out'].replace('Z', '+00:00'))
+        try:
+            check_in = datetime.fromisoformat(data['check_in'].replace('Z', '+00:00'))
+            check_out = datetime.fromisoformat(data['check_out'].replace('Z', '+00:00'))
+        except ValueError:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid date format. Use ISO format (YYYY-MM-DD)'
+            }), 400
+        
+        # Validate dates
+        if check_in >= check_out:
+            return jsonify({
+                'success': False,
+                'error': 'Check-out must be after check-in'
+            }), 400
         
         # Calculate total price
         nights = (check_out - check_in).days
@@ -100,6 +113,7 @@ def create_booking():
             check_out=check_out,
             number_of_guests=data.get('number_of_guests', 1),
             total_price=total_price,
+            status='pending',
             special_requests=data.get('special_requests', '')
         )
         
@@ -111,6 +125,52 @@ def create_booking():
             'message': 'Booking created successfully',
             'data': new_booking.to_dict()
         }), 201
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@bookings_bp.route('/<int:booking_id>', methods=['PUT'])
+def update_booking(booking_id):
+    """
+    Update booking status
+    """
+    try:
+        booking = Booking.query.get(booking_id)
+        
+        if not booking:
+            return jsonify({
+                'success': False,
+                'error': 'Booking not found'
+            }), 404
+        
+        data = request.get_json()
+        
+        # Update status
+        if 'status' in data:
+            valid_statuses = ['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled']
+            if data['status'] not in valid_statuses:
+                return jsonify({
+                    'success': False,
+                    'error': f'Invalid status. Must be one of: {valid_statuses}'
+                }), 400
+            booking.status = data['status']
+        
+        # Update special requests
+        if 'special_requests' in data:
+            booking.special_requests = data['special_requests']
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Booking updated successfully',
+            'data': booking.to_dict()
+        }), 200
     
     except Exception as e:
         db.session.rollback()

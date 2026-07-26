@@ -1,7 +1,8 @@
+"""Updated routes/auth.py with database integration"""
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token
 from app import db
-from models.user import User
+from database import User
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
@@ -33,10 +34,17 @@ def login():
                 'error': 'Admin access required'
             }), 403
         
+        if not user.is_active:
+            return jsonify({
+                'success': False,
+                'error': 'User account is inactive'
+            }), 403
+        
         access_token = create_access_token(identity=user.id)
         
         return jsonify({
             'success': True,
+            'message': 'Login successful',
             'token': access_token,
             'user': user.to_dict()
         }), 200
@@ -56,23 +64,26 @@ def register():
     try:
         data = request.get_json()
         
-        required_fields = ['email', 'password', 'name']
+        required_fields = ['email', 'password', 'first_name', 'last_name']
         if not all(field in data for field in required_fields):
             return jsonify({
                 'success': False,
-                'error': 'Missing required fields'
+                'error': 'Missing required fields: ' + ', '.join(required_fields)
             }), 400
         
         if User.query.filter_by(email=data['email']).first():
             return jsonify({
                 'success': False,
-                'error': 'Email already exists'
+                'error': 'Email already registered'
             }), 409
         
         new_user = User(
             email=data['email'],
-            name=data['name'],
-            phone=data.get('phone', '')
+            first_name=data['first_name'],
+            last_name=data['last_name'],
+            phone=data.get('phone', ''),
+            is_admin=False,
+            is_active=True
         )
         new_user.set_password(data['password'])
         
