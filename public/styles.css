@@ -743,6 +743,78 @@ h2::after {
     border-color: var(--gold);
 }
 
+.form-fieldset {
+    border: none;
+    padding: 0;
+    margin: 0 0 36px;
+}
+
+.form-fieldset legend {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    color: var(--charcoal);
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ece8de;
+    width: 100%;
+}
+
+.payment-instructions {
+    background: var(--cream);
+    border-left: 2px solid var(--gold);
+    padding: 14px 18px;
+    font-size: 0.88rem;
+    color: var(--text-light);
+    line-height: 1.6;
+    margin-top: 4px;
+}
+
+.terms-box {
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--cream);
+    border: 1px solid #ece8de;
+    padding: 20px;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    line-height: 1.7;
+}
+
+.terms-box p {
+    margin-bottom: 12px;
+}
+
+.terms-box p:last-child {
+    margin-bottom: 0;
+}
+
+.terms-box strong {
+    color: var(--charcoal);
+}
+
+.checkbox-group {
+    margin-top: 16px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: var(--text-dark);
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    accent-color: var(--gold);
+    flex-shrink: 0;
+}
+
 .submit-btn {
     width: 100%;
     background: var(--charcoal);
@@ -962,7 +1034,8 @@ table.admin-table th {
     letter-spacing: 0.03em;
 }
 
-.status-pill.confirmed {
+.status-pill.confirmed,
+.status-pill.paid {
     background: #eaf3ea;
     color: #3d7a4f;
 }
@@ -970,6 +1043,22 @@ table.admin-table th {
 .status-pill.cancelled {
     background: #f6e9e8;
     color: #a5473c;
+}
+
+.status-pill.pending,
+.status-pill.unpaid {
+    background: #fbf1e0;
+    color: #9a6c1f;
+}
+
+.status-pill.checked_in {
+    background: #e7eefb;
+    color: #2f5faa;
+}
+
+.status-pill.checked_out {
+    background: #ece7f6;
+    color: #6a4fa0;
 }
 
 .action-btn {
@@ -990,6 +1079,52 @@ table.admin-table th {
 .action-btn.cancel {
     background: #f6e9e8;
     color: #a5473c;
+}
+
+.action-btn.details-toggle {
+    background: #eee;
+    color: var(--charcoal);
+}
+
+.payment-method-label {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-bottom: 6px;
+}
+
+.status-select {
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    background: var(--white);
+    font-family: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+    color: var(--text-dark);
+}
+
+.detail-row td {
+    background: var(--cream);
+    padding: 20px 24px;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px 24px;
+}
+
+.detail-field {
+    font-size: 0.85rem;
+    color: var(--text-dark);
+}
+
+.detail-field strong {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-light);
+    margin-bottom: 3px;
 }
 
 /* Responsive */

@@ -80,10 +80,45 @@ function init() {
           checkout TEXT NOT NULL,
           guests INTEGER NOT NULL,
           special_requests TEXT DEFAULT '',
-          status TEXT NOT NULL DEFAULT 'confirmed',
-          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+          status TEXT NOT NULL DEFAULT 'pending',
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          cnic TEXT NOT NULL DEFAULT '',
+          marital_status TEXT NOT NULL DEFAULT '',
+          arrival_from TEXT NOT NULL DEFAULT '',
+          departure_to TEXT NOT NULL DEFAULT '',
+          arrival_time TEXT NOT NULL DEFAULT '',
+          purpose_of_stay TEXT NOT NULL DEFAULT '',
+          vehicle_number TEXT NOT NULL DEFAULT '',
+          payment_method TEXT NOT NULL DEFAULT 'pay_at_property',
+          transaction_id TEXT NOT NULL DEFAULT '',
+          payment_status TEXT NOT NULL DEFAULT 'unpaid',
+          terms_accepted INTEGER NOT NULL DEFAULT 0
         )
       `);
+
+      // Bookings table existed before these columns were added in a later version.
+      // ALTER TABLE ADD COLUMN is idempotent-safe here: each one either succeeds once
+      // or fails with "duplicate column name" on repeat startups, which we ignore.
+      const bookingColumns = [
+        "cnic TEXT NOT NULL DEFAULT ''",
+        "marital_status TEXT NOT NULL DEFAULT ''",
+        "arrival_from TEXT NOT NULL DEFAULT ''",
+        "departure_to TEXT NOT NULL DEFAULT ''",
+        "arrival_time TEXT NOT NULL DEFAULT ''",
+        "purpose_of_stay TEXT NOT NULL DEFAULT ''",
+        "vehicle_number TEXT NOT NULL DEFAULT ''",
+        "payment_method TEXT NOT NULL DEFAULT 'pay_at_property'",
+        "transaction_id TEXT NOT NULL DEFAULT ''",
+        "payment_status TEXT NOT NULL DEFAULT 'unpaid'",
+        "terms_accepted INTEGER NOT NULL DEFAULT 0"
+      ];
+      for (const columnDef of bookingColumns) {
+        try {
+          await db.execute(`ALTER TABLE bookings ADD COLUMN ${columnDef}`);
+        } catch (err) {
+          if (!/duplicate column name/i.test(err.message)) throw err;
+        }
+      }
 
       await db.execute(`
         CREATE TABLE IF NOT EXISTS messages (

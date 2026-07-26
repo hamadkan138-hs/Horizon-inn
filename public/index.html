@@ -125,51 +125,144 @@
             <h2>Book Your Stay</h2>
             <div class="booking-form-wrapper reveal">
                 <form class="booking-form" id="bookingForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="name">Full Name *</label>
-                            <input type="text" id="name" name="name" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="email">Email Address *</label>
-                            <input type="email" id="email" name="email" required>
-                        </div>
-                    </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="phone">Phone Number *</label>
-                            <input type="tel" id="phone" name="phone" required>
+                    <fieldset class="form-fieldset">
+                        <legend>Guest Details</legend>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="name">Full Name *</label>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email Address *</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="roomId">Room Type *</label>
-                            <select id="roomId" name="roomId" required>
-                                <option value="">Loading rooms...</option>
-                            </select>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="phone">Phone Number *</label>
+                                <input type="tel" id="phone" name="phone" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="cnic">CNIC / Passport Number *</label>
+                                <input type="text" id="cnic" name="cnic" placeholder="e.g. 12345-1234567-1" required>
+                            </div>
                         </div>
-                    </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="maritalStatus">Marital Status *</label>
+                                <select id="maritalStatus" name="maritalStatus" required>
+                                    <option value="">Select</option>
+                                    <option value="Single">Single</option>
+                                    <option value="Married">Married</option>
+                                    <option value="Divorced">Divorced</option>
+                                    <option value="Widowed">Widowed</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="guests">Number of Guests *</label>
+                                <input type="number" id="guests" name="guests" min="1" max="4" required>
+                            </div>
+                        </div>
+                    </fieldset>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="checkin">Check-in Date *</label>
-                            <input type="date" id="checkin" name="checkin" required>
+                    <fieldset class="form-fieldset">
+                        <legend>Stay Details</legend>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="roomId">Room Type *</label>
+                                <select id="roomId" name="roomId" required>
+                                    <option value="">Loading rooms...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="purposeOfStay">Purpose of Stay</label>
+                                <select id="purposeOfStay" name="purposeOfStay">
+                                    <option value="">Select</option>
+                                    <option value="Leisure/Tourism">Leisure / Tourism</option>
+                                    <option value="Business">Business</option>
+                                    <option value="Family Visit">Family Visit</option>
+                                    <option value="Medical">Medical</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="checkout">Check-out Date *</label>
-                            <input type="date" id="checkout" name="checkout" required>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="checkin">Check-in Date *</label>
+                                <input type="date" id="checkin" name="checkin" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="checkout">Check-out Date *</label>
+                                <input type="date" id="checkout" name="checkout" required>
+                            </div>
                         </div>
-                    </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="arrivalTime">Expected Arrival Time</label>
+                                <input type="time" id="arrivalTime" name="arrivalTime">
+                            </div>
+                            <div class="form-group">
+                                <label for="vehicleNumber">Vehicle Number (if any)</label>
+                                <input type="text" id="vehicleNumber" name="vehicleNumber" placeholder="e.g. LEA-1234">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="arrivalFrom">Arriving From (City/Address) *</label>
+                                <input type="text" id="arrivalFrom" name="arrivalFrom" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="departureTo">Departing To (City/Address) *</label>
+                                <input type="text" id="departureTo" name="departureTo" required>
+                            </div>
+                        </div>
+                    </fieldset>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="guests">Number of Guests *</label>
-                            <input type="number" id="guests" name="guests" min="1" max="4" required>
+                    <fieldset class="form-fieldset">
+                        <legend>Payment</legend>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="paymentMethod">Payment Method *</label>
+                                <select id="paymentMethod" name="paymentMethod" required>
+                                    <option value="pay_at_property">Pay at Property</option>
+                                    <option value="bank_transfer">Bank Transfer (Advance)</option>
+                                    <option value="easypaisa">EasyPaisa (Advance)</option>
+                                    <option value="jazzcash">JazzCash (Advance)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="transactionIdGroup" style="display: none;">
+                                <label for="transactionId">Transaction ID *</label>
+                                <input type="text" id="transactionId" name="transactionId" placeholder="From your payment receipt">
+                            </div>
                         </div>
+                        <div class="payment-instructions" id="paymentInstructions" style="display: none;"></div>
+                    </fieldset>
+
+                    <fieldset class="form-fieldset">
+                        <legend>Special Requests</legend>
                         <div class="form-group">
-                            <label for="special">Special Requests</label>
+                            <label for="special">Anything else we should know?</label>
                             <textarea id="special" name="special" rows="4" placeholder="Any special requests or requirements?"></textarea>
                         </div>
-                    </div>
+                    </fieldset>
+
+                    <fieldset class="form-fieldset">
+                        <legend>Terms &amp; Conditions</legend>
+                        <div class="terms-box">
+                            <p><strong>Check-in / Check-out:</strong> Check-in from 2:00 PM, check-out by 12:00 PM. Early check-in or late check-out is subject to availability.</p>
+                            <p><strong>Identification:</strong> A valid CNIC or passport matching the booking details is required from every guest at check-in.</p>
+                            <p><strong>Cancellation Policy:</strong> Cancellations made 24 hours or more before check-in are fully refundable. Cancellations within 24 hours, or no-shows, are non-refundable.</p>
+                            <p><strong>Damage Policy:</strong> Guests are responsible for any damage to the room or property beyond normal wear and tear, and will be charged for repair or replacement.</p>
+                            <p><strong>House Rules:</strong> No smoking indoors. Quiet hours are from 11:00 PM to 7:00 AM. Only registered guests are permitted in guest rooms. Pets are not allowed unless pre-approved.</p>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="termsAccepted" name="termsAccepted" required>
+                                <span>I have read and agree to the Terms &amp; Conditions above *</span>
+                            </label>
+                        </div>
+                    </fieldset>
 
                     <button type="submit" class="submit-btn">Complete Booking</button>
                     <p class="form-message" id="bookingMessage"></p>

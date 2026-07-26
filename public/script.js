@@ -120,6 +120,35 @@ loadRooms();
 // Booking form
 const bookingForm = document.getElementById('bookingForm');
 const bookingMessage = document.getElementById('bookingMessage');
+const paymentMethodSelect = document.getElementById('paymentMethod');
+const transactionIdGroup = document.getElementById('transactionIdGroup');
+const transactionIdInput = document.getElementById('transactionId');
+const paymentInstructions = document.getElementById('paymentInstructions');
+
+const PAYMENT_INSTRUCTIONS = {
+    bank_transfer: 'Bank: [Add your bank name] &middot; Account Title: Horizon Inn &middot; Account Number: [Add your account number] &middot; Please transfer the total amount and enter the transaction/reference ID below.',
+    easypaisa: 'EasyPaisa Account: [Add your EasyPaisa number] &middot; Please send the total amount and enter the transaction ID below.',
+    jazzcash: 'JazzCash Account: [Add your JazzCash number] &middot; Please send the total amount and enter the transaction ID below.'
+};
+
+function updatePaymentMethodUI() {
+    const method = paymentMethodSelect.value;
+    const needsTransaction = method !== 'pay_at_property';
+
+    transactionIdGroup.style.display = needsTransaction ? 'flex' : 'none';
+    transactionIdInput.required = needsTransaction;
+    if (!needsTransaction) transactionIdInput.value = '';
+
+    if (needsTransaction && PAYMENT_INSTRUCTIONS[method]) {
+        paymentInstructions.innerHTML = PAYMENT_INSTRUCTIONS[method];
+        paymentInstructions.style.display = 'block';
+    } else {
+        paymentInstructions.style.display = 'none';
+    }
+}
+
+paymentMethodSelect.addEventListener('change', updatePaymentMethodUI);
+updatePaymentMethodUI();
 
 bookingForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -130,11 +159,21 @@ bookingForm.addEventListener('submit', async (e) => {
         name: document.getElementById('name').value,
         email: document.getElementById('email').value,
         phone: document.getElementById('phone').value,
+        cnic: document.getElementById('cnic').value,
+        maritalStatus: document.getElementById('maritalStatus').value,
         roomId: Number(roomSelect.value),
         checkin: checkinInput.value,
         checkout: checkoutInput.value,
         guests: Number(document.getElementById('guests').value),
-        specialRequests: document.getElementById('special').value
+        purposeOfStay: document.getElementById('purposeOfStay').value,
+        arrivalTime: document.getElementById('arrivalTime').value,
+        vehicleNumber: document.getElementById('vehicleNumber').value,
+        arrivalFrom: document.getElementById('arrivalFrom').value,
+        departureTo: document.getElementById('departureTo').value,
+        paymentMethod: paymentMethodSelect.value,
+        transactionId: transactionIdInput.value,
+        specialRequests: document.getElementById('special').value,
+        termsAccepted: document.getElementById('termsAccepted').checked
     };
 
     const submitBtn = bookingForm.querySelector('.submit-btn');
@@ -152,9 +191,10 @@ bookingForm.addEventListener('submit', async (e) => {
             bookingMessage.textContent = data.error || 'Something went wrong. Please try again.';
             bookingMessage.classList.add('error');
         } else {
-            bookingMessage.textContent = `Booking confirmed! Confirmation #${data.booking.id} — we'll email you at ${data.booking.email}.`;
+            bookingMessage.textContent = `Booking request received! Confirmation #${data.booking.id} — status: Pending review. We'll confirm shortly by email at ${data.booking.email}.`;
             bookingMessage.classList.add('success');
             bookingForm.reset();
+            updatePaymentMethodUI();
             loadRooms();
         }
     } catch (err) {
