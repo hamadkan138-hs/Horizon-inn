@@ -28,6 +28,29 @@ if (revealTargets.length) {
     revealTargets.forEach((el) => revealObserver.observe(el));
 }
 
+// Highlight the nav link for whichever section is in view
+const navLinks = Array.from(document.querySelectorAll('.nav-menu a[href^="#"]'));
+const sections = navLinks
+    .map((link) => document.querySelector(link.getAttribute('href')))
+    .filter(Boolean);
+
+if (sections.length) {
+    const setActiveLink = (id) => {
+        navLinks.forEach((link) => {
+            link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
+        });
+    };
+
+    const sectionObserver = new IntersectionObserver((entries) => {
+        const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible) setActiveLink(visible.target.id);
+    }, { threshold: 0.4, rootMargin: '-80px 0px -40% 0px' });
+
+    sections.forEach((section) => sectionObserver.observe(section));
+}
+
 const roomsGrid = document.getElementById('roomsGrid');
 const roomSelect = document.getElementById('roomId');
 const checkinInput = document.getElementById('checkin');
