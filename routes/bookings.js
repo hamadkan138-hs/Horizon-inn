@@ -105,7 +105,10 @@ router.post('/', async (req, res) => {
 // room for overlap purposes.
 router.post('/quick', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
   try {
-    const { guestName, phone, roomId, checkin, checkout, advanceAmount, paymentMethod, transactionId } = req.body;
+    const {
+      guestName, phone, roomId, checkin, checkout, advanceAmount, paymentMethod, transactionId,
+      cnic, address, checkInNow
+    } = req.body;
 
     if (!guestName || !phone || !roomId || !checkin || !checkout) {
       return res.status(400).json({ error: 'Guest name, phone, room and dates are required' });
@@ -113,10 +116,12 @@ router.post('/quick', adminAuth, requireRole('admin', 'staff'), async (req, res)
     if (!isValidDate(checkin) || !isValidDate(checkout) || checkin >= checkout) {
       return res.status(400).json({ error: 'Check-out date must be after check-in date' });
     }
-    if (!advanceAmount || Number(advanceAmount) <= 0) {
-      return res.status(400).json({ error: 'Advance amount must be greater than zero' });
-    }
+    // An advance payment is optional here: the front desk's walk-in check-in
+    // flow collects no money up front (guest settles at checkout), while the
+    // Availability tab's advance-booking form always sends a real amount.
+    const hasAdvance = advanceAmount !== undefined && advanceAmount !== null && advanceAmount !== '' && Number(advanceAmount) > 0;
     const method = PAYMENT_METHODS.includes(paymentMethod) ? paymentMethod : 'pay_at_property';
+    const status = checkInNow ? 'checked_in' : 'confirmed';
 
     const roomResult = await db.execute({ sql: 'SELECT * FROM rooms WHERE id = ?', args: [roomId] });
     const room = roomResult.rows[0];
@@ -132,13 +137,13 @@ router.post('/quick', adminAuth, requireRole('admin', 'staff'), async (req, res)
     const insertResult = await db.execute({
       sql: `
         INSERT INTO bookings (
-          room_id, name, email, phone, checkin, checkout, guests,
+          room_id, name, email, phone, cnic, address, checkin, checkout, guests,
           payment_method, transaction_id, terms_accepted, status, payment_status, total_amount, room_amount,
           invoice_token
         )
-        VALUES (?, ?, '', ?, ?, ?, 1, ?, ?, 1, 'confirmed', 'unpaid', ?, ?, lower(hex(randomblob(12))))
+        VALUES (?, ?, '', ?, ?, ?, ?, ?, 1, ?, ?, 1, ?, 'unpaid', ?, ?, lower(hex(randomblob(12))))
       `,
-      args: [roomId, guestName, phone, checkin, checkout, method, transactionId || '', roomAmount, roomAmount]
+      args: [roomId, guestName, phone, cnic || '', address || '', checkin, checkout, method, transactionId || '', status, roomAmount, roomAmount]
     });
 
     const bookingId = Number(insertResult.lastInsertRowid);
@@ -146,21 +151,28 @@ router.post('/quick', adminAuth, requireRole('admin', 'staff'), async (req, res)
     const invoiceNumber = `INV-${year}-${String(bookingId).padStart(4, '0')}`;
     await db.execute({ sql: 'UPDATE bookings SET invoice_number = ? WHERE id = ?', args: [invoiceNumber, bookingId] });
 
-    await db.execute({
-      sql: `
-        INSERT INTO payments (booking_id, amount, method, transaction_id, note, recorded_by)
-        VALUES (?, ?, ?, ?, 'Advance payment (tax included)', ?)
-      `,
-      args: [bookingId, advanceAmount, method, transactionId || '', req.user.username]
-    });
+    let totals = null;
+    if (hasAdvance) {
+      await db.execute({
+        sql: `
+          INSERT INTO payments (booking_id, amount, method, transaction_id, note, recorded_by)
+          VALUES (?, ?, ?, ?, 'Advance payment (tax included)', ?)
+        `,
+        args: [bookingId, advanceAmount, method, transactionId || '', req.user.username]
+      });
+      totals = await recomputeBookingTotal(bookingId);
+    }
 
-    const totals = await recomputeBookingTotal(bookingId);
     const bookingResult = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [bookingId] });
 
-    res.status(201).json({ booking: bookingResult.rows[0], advanceAmount: Number(advanceAmount), ...totals });
+    res.status(201).json({
+      booking: bookingResult.rows[0],
+      advanceAmount: hasAdvance ? Number(advanceAmount) : 0,
+      ...totals
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to create advance booking' });
+    res.status(500).json({ error: 'Failed to create booking' });
   }
 });
 
