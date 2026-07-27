@@ -53,6 +53,18 @@ async function apiGet(path) {
     return res.json();
 }
 
+async function apiSend(method, path, body) {
+    const res = await fetch(path, {
+        method,
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify(body)
+    });
+    if (res.status === 401 || res.status === 403) { localStorage.removeItem('horizonInvestorAuth'); showLogin(); throw new Error('Unauthorized'); }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    return data;
+}
+
 function money(n) {
     const num = Math.round(Number(n || 0));
     return num < 0 ? `-Rs. ${Math.abs(num).toLocaleString('en-US')}` : `Rs. ${num.toLocaleString('en-US')}`;
@@ -305,6 +317,296 @@ loginForm.addEventListener('submit', async (e) => {
     }
 });
 
+/* ================================================================
+   Tabs
+================================================================ */
+const TAB_LOADERS = {
+    myinvestment: loadMyInvestmentTab,
+    valuation: loadValuationTab,
+    projects: loadProjectsTab
+};
+
+document.getElementById('investorTabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('.admin-tab');
+    if (!btn) return;
+    document.querySelectorAll('#investorTabs .admin-tab').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.admin-panel').forEach((p) => { p.style.display = 'none'; });
+    document.getElementById(`panel-${btn.dataset.tab}`).style.display = 'block';
+    if (TAB_LOADERS[btn.dataset.tab]) TAB_LOADERS[btn.dataset.tab]();
+});
+
+/* ================================================================
+   My Investment
+================================================================ */
+const COMPLIANCE_LABELS = { pending: 'Pending', verified: 'Verified', signed: 'Signed', rejected: 'Rejected' };
+let myInvestorProfile = null;
+
+async function loadMyInvestmentTab() {
+    const container = document.getElementById('myInvestmentContent');
+    if (currentUser.role !== 'investor') {
+        container.innerHTML = `
+            <div class="glass-card">
+                <p style="color: var(--text-2);">This admin account isn't linked to an investor profile — "My Investment" is personalized per investor. Use the Investor Accounts panel in Admin to create and manage investor profiles.</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = `<p style="color: var(--text-2);">Loading your investment profile&hellip;</p>`;
+    try {
+        const [me, requests] = await Promise.all([
+            apiGet('/api/investor-accounts/me'),
+            apiGet('/api/investor-accounts/withdrawal-requests')
+        ]);
+        myInvestorProfile = me;
+
+        const complianceBadge = (label, status) => `
+            <div>
+                <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); display: block; margin-bottom: 6px;">${label}</span>
+                <span class="compliance-badge ${status}">${COMPLIANCE_LABELS[status] || status}</span>
+            </div>
+        `;
+
+        const requestRows = requests.map((r) => `
+            <tr>
+                <td>${r.requestedAt.slice(0, 10)}</td>
+                <td>${r.type === 'dividend' ? 'Dividend' : 'Capital'}</td>
+                <td>${money(r.amount)}</td>
+                <td><span class="compliance-badge ${r.status === 'completed' ? 'verified' : r.status === 'rejected' ? 'rejected' : 'pending'}">${r.status}</span></td>
+            </tr>
+        `).join('') || '<tr><td colspan="4">No withdrawal requests yet.</td></tr>';
+
+        container.innerHTML = `
+            <div class="glass-card">
+                <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 20px; align-items: flex-start;">
+                    <div>
+                        <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-2);">Investor Code</span>
+                        <h2 style="text-align: left; margin: 4px 0 0; font-size: 1.5rem;">${me.investorCode}</h2>
+                    </div>
+                    <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+                        ${complianceBadge('SPA Status', me.spaStatus)}
+                        ${complianceBadge('Accredited Investor', me.accreditedStatus)}
+                        ${complianceBadge('AML / KYC', me.amlKycStatus)}
+                    </div>
+                </div>
+            </div>
+
+            <div class="summary-cards">
+                <div class="summary-card"><div class="kpi-icon"><i class="fas fa-coins"></i></div><span>Capital Invested</span><strong>${money(me.capitalInvested)}</strong></div>
+                <div class="summary-card"><div class="kpi-icon"><i class="fas fa-chart-pie"></i></div><span>Ownership Share</span><strong>${me.ownershipPercent}%</strong></div>
+                <div class="summary-card"><div class="kpi-icon"><i class="fas fa-building-columns"></i></div><span>Current Equity Value</span><strong>${money(me.equityValue)}</strong></div>
+                <div class="summary-card"><div class="kpi-icon"><i class="fas fa-sack-dollar"></i></div><span>Accrued Dividend (All-Time)</span><strong class="emerald">${money(me.accruedDividend)}</strong></div>
+            </div>
+
+            <div class="glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <h3><i class="fas fa-hand-holding-dollar"></i> Dividend Earnings</h3>
+                    <span class="turnaround-badge"><i class="fas fa-bolt"></i> ${me.dividendTurnaroundHours}-Hour Processing Time</span>
+                </div>
+                <p style="color: var(--text-2); margin: 10px 0;">Available to withdraw right now (after already-withdrawn and pending requests):</p>
+                <p style="font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--emerald); margin-bottom: 16px;">${money(me.availableToWithdraw)}</p>
+                <button class="action-btn confirm withdraw-btn" id="openDividendWithdrawBtn" ${me.availableToWithdraw <= 0 ? 'disabled' : ''}>
+                    <i class="fas fa-hand-holding-dollar"></i> Withdraw Earnings
+                </button>
+            </div>
+
+            <div class="glass-card">
+                <h3><i class="fas fa-lock"></i> Principal Capital</h3>
+                <p style="color: var(--text-2); margin: 10px 0 4px;">Lockup period: ${me.lockup.lockupStart} &rarr; ${me.lockup.lockupEnd}</p>
+                <div class="lockup-bar"><div class="lockup-bar-fill" style="width: ${me.lockup.progressPercent}%;"></div></div>
+                <p style="color: var(--text-2); font-size: 0.85rem; margin-bottom: 16px;">
+                    ${me.lockup.unlocked
+                        ? '<span class="emerald"><i class="fas fa-lock-open"></i> Capital unlocked — release is available.</span>'
+                        : `<i class="fas fa-hourglass-half"></i> ${me.lockup.daysRemaining} day(s) remaining until capital can be released.`}
+                </p>
+                <button class="action-btn withdraw-btn" id="openCapitalWithdrawBtn" ${me.lockup.unlocked ? '' : 'disabled'}>
+                    <i class="fas fa-unlock"></i> Capital Release
+                </button>
+            </div>
+
+            <div class="glass-card">
+                <h3 style="margin-bottom: 14px;">My Withdrawal Requests</h3>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table">
+                        <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
+                        <tbody>${requestRows}</tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        const dividendBtn = document.getElementById('openDividendWithdrawBtn');
+        if (dividendBtn) dividendBtn.addEventListener('click', () => openWithdrawModal('dividend', me));
+        const capitalBtn = document.getElementById('openCapitalWithdrawBtn');
+        if (capitalBtn) capitalBtn.addEventListener('click', () => openWithdrawModal('capital', me));
+    } catch (err) {
+        container.innerHTML = `<div class="glass-card"><p class="danger-text">${err.message}</p></div>`;
+    }
+}
+
+/* ---------------- Withdraw modal ---------------- */
+const withdrawOverlay = document.getElementById('withdrawModalOverlay');
+let withdrawType = 'dividend';
+
+function openWithdrawModal(type, profile) {
+    withdrawType = type;
+    document.getElementById('withdrawModalTitle').textContent = type === 'dividend' ? 'Withdraw Earnings' : 'Capital Release';
+    document.getElementById('withdrawModalSubtitle').textContent = type === 'dividend'
+        ? `Up to ${money(profile.availableToWithdraw)} available. Requests are reviewed and paid out by Horizon Inn within ${profile.dividendTurnaroundHours} hours.`
+        : `Principal capital release request. Processed manually by Horizon Inn once approved.`;
+    document.getElementById('withdrawAmount').value = '';
+    document.getElementById('withdrawMessage').textContent = '';
+    withdrawOverlay.style.display = 'flex';
+}
+document.getElementById('closeWithdrawModalBtn').addEventListener('click', () => { withdrawOverlay.style.display = 'none'; });
+withdrawOverlay.addEventListener('click', (e) => { if (e.target === withdrawOverlay) withdrawOverlay.style.display = 'none'; });
+
+document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('withdrawMessage');
+    const amount = Number(document.getElementById('withdrawAmount').value);
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    msg.textContent = '';
+    submitBtn.disabled = true;
+    try {
+        await apiSend('POST', '/api/investor-accounts/withdrawal-requests', { type: withdrawType, amount });
+        withdrawOverlay.style.display = 'none';
+        alert(`Request submitted. ${withdrawType === 'dividend' ? 'Dividend' : 'Capital release'} requests are processed manually by Horizon Inn.`);
+        loadMyInvestmentTab();
+    } catch (err) {
+        msg.textContent = err.message;
+        msg.className = 'form-message error';
+    } finally {
+        submitBtn.disabled = false;
+    }
+});
+
+/* ================================================================
+   Hotel Valuation & Metrics
+================================================================ */
+let equityBreakdownChartInstance = null;
+let assetGrowthChartInstance = null;
+
+async function loadValuationTab() {
+    try {
+        const [valuation, occupancy, summary90] = await Promise.all([
+            apiGet('/api/investor-accounts/valuation'),
+            apiGet('/api/investor/occupancy'),
+            apiGet(`/api/investor/summary?from=${ninetyDaysAgo()}&to=${todayStr()}`)
+        ]);
+
+        const amount = valuation.current ? valuation.current.amount : 0;
+        const annualizedYield = amount > 0 ? ((summary90.netProfit / amount) * 4 * 100) : 0;
+
+        document.getElementById('valuationSummaryCards').innerHTML = `
+            <div class="summary-card"><div class="kpi-icon"><i class="fas fa-building"></i></div><span>Total Property Valuation</span><strong>${money(amount)}</strong></div>
+            <div class="summary-card"><div class="kpi-icon"><i class="fas fa-coins"></i></div><span>Total Capital Raised</span><strong>${money(valuation.totalCapitalRaised)}</strong></div>
+            <div class="summary-card"><div class="kpi-icon"><i class="fas fa-vault"></i></div><span>Remaining Share Pool</span><strong>${money(valuation.remainingPool)}</strong></div>
+        `;
+
+        document.getElementById('kpiMetricsCards').innerHTML = `
+            <div class="summary-card"><div class="kpi-icon"><i class="fas fa-door-open"></i></div><span>Occupancy Rate (14d window)</span><strong>${percent(occupancy.overallRate)}</strong></div>
+            <div class="summary-card"><div class="kpi-icon"><i class="fas fa-arrow-trend-up"></i></div><span>Est. Annualized Yield</span><strong class="${annualizedYield >= 0 ? 'emerald' : 'danger-text'}">${annualizedYield.toFixed(1)}%</strong></div>
+            <div class="summary-card"><div class="kpi-icon"><i class="fas fa-scale-unbalanced"></i></div><span>Trailing 90-Day Net Income</span><strong class="${summary90.netProfit >= 0 ? 'emerald' : 'danger-text'}">${money(summary90.netProfit)}</strong></div>
+        `;
+
+        if (equityBreakdownChartInstance) equityBreakdownChartInstance.destroy();
+        equityBreakdownChartInstance = new Chart(document.getElementById('equityBreakdownChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Capital Raised', 'Remaining Share Pool'],
+                datasets: [{ data: [valuation.totalCapitalRaised, valuation.remainingPool], backgroundColor: ['#d4af37', 'rgba(255,255,255,0.08)'], borderColor: '#1a1c24', borderWidth: 2 }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        });
+
+        if (assetGrowthChartInstance) assetGrowthChartInstance.destroy();
+        assetGrowthChartInstance = new Chart(document.getElementById('assetGrowthChart'), {
+            type: 'line',
+            data: {
+                labels: valuation.history.map((h) => h.createdAt.slice(0, 10)),
+                datasets: [{
+                    label: 'Valuation',
+                    data: valuation.history.map((h) => h.amount),
+                    borderColor: (c) => bronzeGoldGradient(c.chart.ctx, c.chart.chartArea, false),
+                    backgroundColor: (c) => gloryFade(c.chart.ctx, c.chart.chartArea),
+                    borderWidth: 2.5, pointBackgroundColor: '#e9cf9a', pointBorderColor: '#17130a', pointRadius: 4, fill: true, tension: 0.25
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: 'rgba(233,207,154,0.08)' } } } }
+        });
+    } catch (err) { /* handled */ }
+}
+
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+function ninetyDaysAgo() { const d = new Date(); d.setDate(d.getDate() - 90); return d.toISOString().slice(0, 10); }
+
+/* ================================================================
+   Upcoming Projects & ROI Calculator
+================================================================ */
+let roiBaseline = { valuation: 0, monthlyNetIncome: 0 };
+
+async function loadProjectsTab() {
+    try {
+        const [projects, valuation, summary90] = await Promise.all([
+            apiGet('/api/investor-accounts/projects'),
+            apiGet('/api/investor-accounts/valuation'),
+            apiGet(`/api/investor/summary?from=${ninetyDaysAgo()}&to=${todayStr()}`)
+        ]);
+
+        roiBaseline.valuation = valuation.current ? valuation.current.amount : 0;
+        roiBaseline.monthlyNetIncome = summary90.netProfit / 3;
+        document.getElementById('roiValuationRef').textContent = money(roiBaseline.valuation);
+
+        document.getElementById('projectGrid').innerHTML = projects.map((p) => `
+            <div class="glass-card project-card">
+                <div class="project-media"><i class="fas fa-hotel"></i></div>
+                <div class="project-body">
+                    <span class="status-chip">${p.status}</span>
+                    <h4>${escapeHtml(p.name)}</h4>
+                    <p style="color: var(--text-2); font-size: 0.85rem; margin: 8px 0;">${escapeHtml(p.description)}</p>
+                    <p style="font-size: 0.82rem;"><i class="fas fa-location-dot" style="color: var(--gold-light);"></i> ${escapeHtml(p.location)}</p>
+                    <p style="font-size: 0.82rem; margin-top: 6px;"><i class="fas fa-arrow-trend-up" style="color: var(--emerald);"></i> ${escapeHtml(p.growthPotential)}</p>
+                    <div class="meta-row">
+                        <span>Capital Needed<br><strong style="color: var(--gold-light);">${money(p.targetCapital)}</strong></span>
+                        <span style="text-align: right;">Target Launch<br><strong style="color: var(--gold-light);">${escapeHtml(p.timeline || 'TBD')}</strong></span>
+                    </div>
+                </div>
+            </div>
+        `).join('') || '<p style="color: var(--text-2);">No upcoming projects listed yet.</p>';
+
+        updateRoiCalculator();
+    } catch (err) { /* handled */ }
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str == null ? '' : str;
+    return div.innerHTML;
+}
+
+function updateRoiCalculator() {
+    const amount = Number(document.getElementById('roiAmount').value || 0);
+    const ownership = roiBaseline.valuation > 0 ? (amount / roiBaseline.valuation) * 100 : 0;
+    const monthlyDividend = Math.max(0, roiBaseline.monthlyNetIncome * (ownership / 100));
+    const annualRoi = amount > 0 ? ((monthlyDividend * 12) / amount) * 100 : 0;
+
+    document.getElementById('roiOwnership').textContent = `${ownership.toFixed(2)}%`;
+    document.getElementById('roiMonthly').textContent = money(monthlyDividend);
+    document.getElementById('roiAnnual').textContent = `${annualRoi.toFixed(1)}%`;
+}
+
+document.getElementById('roiSlider').addEventListener('input', (e) => {
+    document.getElementById('roiAmount').value = e.target.value;
+    updateRoiCalculator();
+});
+document.getElementById('roiAmount').addEventListener('input', (e) => {
+    document.getElementById('roiSlider').value = Math.min(2000000, Number(e.target.value) || 0);
+    updateRoiCalculator();
+});
+
+/* ---------------- Boot ---------------- */
 if (localStorage.getItem('horizonInvestorAuth')) {
     showDashboard();
 } else {

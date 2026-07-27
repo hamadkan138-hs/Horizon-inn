@@ -70,6 +70,7 @@
                 <button class="admin-tab" data-tab="media" id="mediaTabBtn" style="display: none;">Media Library</button>
                 <button class="admin-tab" data-tab="content" id="contentTabBtn" style="display: none;">Site Content</button>
                 <button class="admin-tab" data-tab="staff" id="staffTabBtn" style="display: none;">Staff</button>
+                <button class="admin-tab" data-tab="investors" id="investorsTabBtn" style="display: none;">Investor Accounts</button>
                 <button class="admin-tab" data-tab="messages">Messages</button>
             </div>
 
@@ -584,12 +585,11 @@
                     <select id="staffRole">
                         <option value="staff">Staff</option>
                         <option value="admin">Admin</option>
-                        <option value="investor">Investor (read-only financials)</option>
                     </select>
                     <button type="submit" class="action-btn confirm">Add Staff Account</button>
                 </form>
                 <p class="form-message" id="staffMessage"></p>
-                <p style="font-size: 0.82rem; color: var(--text-light); margin-top: 6px;">Investor accounts sign in separately at <code>/investor.html</code> and only ever see financial totals — never guest names, contact details, or booking data.</p>
+                <p style="font-size: 0.82rem; color: var(--text-light); margin-top: 6px;">Investor accounts are created from the <strong>Investor Accounts</strong> tab instead — that also sets up their capital, compliance status, and lockup terms, not just a login. They sign in separately at <code>/investor.html</code> and only ever see financial totals — never guest names, contact details, or booking data.</p>
                 <div style="overflow-x: auto; margin-top: 16px;">
                     <table class="admin-table" id="staffTable">
                         <thead>
@@ -601,6 +601,67 @@
                             </tr>
                         </thead>
                         <tbody id="staffBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Investor Accounts -->
+            <section class="admin-panel" id="panel-investors" style="display: none;">
+                <h3 style="text-align: left; margin-bottom: 10px;">Hotel Valuation</h3>
+                <p style="font-size: 0.82rem; color: var(--text-light);">Drives every investor's ownership % and the Hotel Valuation tab on the investor dashboard. Recording a new figure keeps the old one in history (for the asset growth chart) rather than overwriting it.</p>
+                <form id="valuationForm" class="inline-form" style="margin-top: 10px;">
+                    <input type="number" id="valuationAmount" placeholder="New valuation (Rs.)" min="1" required>
+                    <input type="text" id="valuationNote" placeholder="Note (optional, e.g. Q3 2026 appraisal)">
+                    <button type="submit" class="action-btn confirm">Record Valuation</button>
+                </form>
+                <p class="form-message" id="valuationMessage"></p>
+                <p style="margin-top: 10px;">Current: <strong id="currentValuationDisplay">&mdash;</strong></p>
+
+                <h3 style="text-align: left; margin-top: 34px; margin-bottom: 10px;">Investor Accounts</h3>
+                <form id="investorAccountForm" class="inline-form">
+                    <input type="text" id="newInvestorUsername" placeholder="Username" required>
+                    <input type="number" id="newInvestorCapital" placeholder="Capital invested (Rs.)" min="1" required>
+                    <input type="number" id="newInvestorLockup" placeholder="Lockup months" min="0" value="6" style="max-width: 130px;">
+                    <button type="submit" class="action-btn confirm">Create Investor Account</button>
+                </form>
+                <p class="form-message" id="investorAccountMessage"></p>
+                <div style="overflow-x: auto; margin-top: 16px;">
+                    <table class="admin-table" id="investorAccountsTable">
+                        <thead>
+                            <tr>
+                                <th>Code</th><th>Username</th><th>Capital</th><th>Ownership</th>
+                                <th>SPA</th><th>Accredited</th><th>AML/KYC</th><th>Lockup</th><th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="investorAccountsBody"></tbody>
+                    </table>
+                </div>
+
+                <h3 style="text-align: left; margin-top: 34px; margin-bottom: 10px;">Withdrawal Requests</h3>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="withdrawalRequestsTable">
+                        <thead><tr><th>Requested</th><th>Investor</th><th>Type</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+                        <tbody id="withdrawalRequestsBody"></tbody>
+                    </table>
+                </div>
+
+                <h3 style="text-align: left; margin-top: 34px; margin-bottom: 10px;">Upcoming Projects</h3>
+                <form id="projectForm" class="inline-form">
+                    <input type="text" id="projectName" placeholder="Project name" required>
+                    <input type="text" id="projectLocation" placeholder="Location">
+                    <input type="number" id="projectCapital" placeholder="Capital needed (Rs.)" min="0" step="1000">
+                    <input type="text" id="projectTimeline" placeholder="Target launch (e.g. Q2 2027)">
+                </form>
+                <form id="projectForm2" class="inline-form" style="margin-top: -8px;">
+                    <input type="text" id="projectDescription" placeholder="Short description" style="flex: 2;">
+                    <input type="text" id="projectGrowth" placeholder="Growth potential (e.g. 18% yield uplift)" style="flex: 2;">
+                    <button type="button" class="action-btn confirm" id="addProjectBtn">Add Project</button>
+                </form>
+                <p class="form-message" id="projectMessage"></p>
+                <div style="overflow-x: auto; margin-top: 16px;">
+                    <table class="admin-table" id="projectsTable">
+                        <thead><tr><th>Name</th><th>Location</th><th>Capital Needed</th><th>Timeline</th><th>Status</th><th></th></tr></thead>
+                        <tbody id="projectsBody"></tbody>
                     </table>
                 </div>
             </section>

@@ -82,6 +82,7 @@ async function showDashboard() {
         document.getElementById('staffTabBtn').style.display = currentUser.role === 'admin' ? 'inline-block' : 'none';
         document.getElementById('mediaTabBtn').style.display = currentUser.role === 'admin' ? 'inline-block' : 'none';
         document.getElementById('contentTabBtn').style.display = currentUser.role === 'admin' ? 'inline-block' : 'none';
+        document.getElementById('investorsTabBtn').style.display = currentUser.role === 'admin' ? 'inline-block' : 'none';
     } catch (err) { return; }
 
     loadBookings();
@@ -108,6 +109,7 @@ document.querySelectorAll('.admin-tab').forEach((btn) => {
         if (btn.dataset.tab === 'staff') loadStaff();
         if (btn.dataset.tab === 'media') loadMediaLibrary();
         if (btn.dataset.tab === 'content') loadSiteContent();
+        if (btn.dataset.tab === 'investors') loadInvestorsPanel();
         if (btn.dataset.tab === 'bookings') { localStorage.setItem('horizonLastSeen', new Date().toISOString()); updateNotifyBell(); }
     });
 });
@@ -1470,6 +1472,223 @@ async function loadMessages() {
         `).join('') || '<tr><td colspan="5">No messages yet.</td></tr>';
     } catch (err) { /* handled */ }
 }
+
+/* ---------------- Investor Accounts ---------------- */
+const COMPLIANCE_OPTIONS = ['pending', 'verified', 'signed', 'rejected'];
+
+async function loadInvestorsPanel() {
+    await Promise.all([loadValuationAdmin(), loadInvestorAccounts(), loadWithdrawalRequestsAdmin(), loadProjectsAdmin()]);
+}
+
+async function loadValuationAdmin() {
+    try {
+        const data = await apiGet('/api/investor-accounts/valuation');
+        document.getElementById('currentValuationDisplay').textContent = data.current
+            ? `${money(data.current.amount)} (set ${data.current.createdAt.slice(0, 10)}${data.current.note ? ' — ' + escapeHtml(data.current.note) : ''})`
+            : 'Not set yet';
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('valuationForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('valuationMessage');
+    try {
+        await apiSend('POST', '/api/investor-accounts/valuation', {
+            amount: Number(document.getElementById('valuationAmount').value),
+            note: document.getElementById('valuationNote').value
+        });
+        msg.textContent = 'Valuation recorded.';
+        msg.className = 'form-message success';
+        e.target.reset();
+        loadValuationAdmin();
+        loadInvestorAccounts();
+    } catch (err) {
+        msg.textContent = err.message;
+        msg.className = 'form-message error';
+    }
+});
+
+async function loadInvestorAccounts() {
+    try {
+        const investors = await apiGet('/api/investor-accounts');
+        document.getElementById('investorAccountsBody').innerHTML = investors.map((inv) => `
+            <tr data-id="${inv.id}">
+                <td>${inv.investorCode}</td>
+                <td>${escapeHtml(inv.username)}</td>
+                <td><input type="number" class="inv-capital" value="${inv.capitalInvested}" min="0" step="1000" style="width: 110px;"></td>
+                <td>${inv.ownershipPercent}%</td>
+                <td>
+                    <select class="inv-spa">${COMPLIANCE_OPTIONS.map((o) => `<option value="${o}" ${o === inv.spaStatus ? 'selected' : ''}>${o}</option>`).join('')}</select>
+                </td>
+                <td>
+                    <select class="inv-accredited">${COMPLIANCE_OPTIONS.map((o) => `<option value="${o}" ${o === inv.accreditedStatus ? 'selected' : ''}>${o}</option>`).join('')}</select>
+                </td>
+                <td>
+                    <select class="inv-aml">${COMPLIANCE_OPTIONS.map((o) => `<option value="${o}" ${o === inv.amlKycStatus ? 'selected' : ''}>${o}</option>`).join('')}</select>
+                </td>
+                <td><input type="number" class="inv-lockup" value="${inv.lockupMonths}" min="0" style="width: 70px;"> mo</td>
+                <td>
+                    <button class="action-btn confirm inv-save-btn">Save</button>
+                    <button class="action-btn cancel inv-delete-btn">Delete</button>
+                </td>
+            </tr>
+        `).join('') || '<tr><td colspan="9">No investor accounts yet.</td></tr>';
+
+        document.querySelectorAll('.inv-save-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const row = btn.closest('tr');
+                const id = row.dataset.id;
+                try {
+                    await apiSend('PATCH', `/api/investor-accounts/${id}`, {
+                        capitalInvested: Number(row.querySelector('.inv-capital').value),
+                        spaStatus: row.querySelector('.inv-spa').value,
+                        accreditedStatus: row.querySelector('.inv-accredited').value,
+                        amlKycStatus: row.querySelector('.inv-aml').value,
+                        lockupMonths: Number(row.querySelector('.inv-lockup').value)
+                    });
+                    loadInvestorAccounts();
+                } catch (err) { alert(err.message); }
+            });
+        });
+        document.querySelectorAll('.inv-delete-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('Delete this investor account? This also removes their login.')) return;
+                const id = btn.closest('tr').dataset.id;
+                try {
+                    await apiSend('DELETE', `/api/investor-accounts/${id}`, {});
+                    loadInvestorAccounts();
+                } catch (err) { alert(err.message); }
+            });
+        });
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('investorAccountForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('investorAccountMessage');
+    try {
+        const result = await apiSend('POST', '/api/investor-accounts', {
+            username: document.getElementById('newInvestorUsername').value,
+            capitalInvested: Number(document.getElementById('newInvestorCapital').value),
+            lockupMonths: Number(document.getElementById('newInvestorLockup').value) || 6
+        });
+        msg.textContent = `Created ${result.investorCode} — username "${result.username}", password "${result.generatedPassword}". Copy this now — it will not be shown again.`;
+        msg.className = 'form-message success';
+        e.target.reset();
+        document.getElementById('newInvestorLockup').value = 6;
+        loadInvestorAccounts();
+    } catch (err) {
+        msg.textContent = err.message;
+        msg.className = 'form-message error';
+    }
+});
+
+async function loadWithdrawalRequestsAdmin() {
+    try {
+        const requests = await apiGet('/api/investor-accounts/withdrawal-requests');
+        document.getElementById('withdrawalRequestsBody').innerHTML = requests.map((r) => `
+            <tr data-id="${r.id}">
+                <td>${r.requestedAt.slice(0, 16)}</td>
+                <td>${r.investorCode} (${escapeHtml(r.username)})</td>
+                <td>${r.type === 'dividend' ? 'Dividend' : 'Capital'}</td>
+                <td>${money(r.amount)}</td>
+                <td><span class="status-pill ${r.status === 'completed' ? 'paid' : r.status === 'rejected' ? 'cancelled' : 'pending'}">${r.status}</span></td>
+                <td>
+                    ${r.status === 'pending' || r.status === 'processing' ? `
+                        <button class="action-btn confirm wr-complete-btn">Mark Completed</button>
+                        <button class="action-btn cancel wr-reject-btn">Reject</button>
+                    ` : ''}
+                </td>
+            </tr>
+        `).join('') || '<tr><td colspan="6">No withdrawal requests yet.</td></tr>';
+
+        document.querySelectorAll('.wr-complete-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const id = btn.closest('tr').dataset.id;
+                if (!confirm('Mark this request completed? Only do this after you have actually paid the investor.')) return;
+                try {
+                    await apiSend('PATCH', `/api/investor-accounts/withdrawal-requests/${id}`, { status: 'completed' });
+                    loadWithdrawalRequestsAdmin();
+                } catch (err) { alert(err.message); }
+            });
+        });
+        document.querySelectorAll('.wr-reject-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const id = btn.closest('tr').dataset.id;
+                try {
+                    await apiSend('PATCH', `/api/investor-accounts/withdrawal-requests/${id}`, { status: 'rejected' });
+                    loadWithdrawalRequestsAdmin();
+                } catch (err) { alert(err.message); }
+            });
+        });
+    } catch (err) { /* handled */ }
+}
+
+async function loadProjectsAdmin() {
+    try {
+        const projects = await apiGet('/api/investor-accounts/projects');
+        document.getElementById('projectsBody').innerHTML = projects.map((p) => `
+            <tr data-id="${p.id}">
+                <td>${escapeHtml(p.name)}</td>
+                <td>${escapeHtml(p.location)}</td>
+                <td>${money(p.targetCapital)}</td>
+                <td>${escapeHtml(p.timeline)}</td>
+                <td>
+                    <select class="proj-status">
+                        <option value="planned" ${p.status === 'planned' ? 'selected' : ''}>Planned</option>
+                        <option value="active" ${p.status === 'active' ? 'selected' : ''}>Active</option>
+                        <option value="funded" ${p.status === 'funded' ? 'selected' : ''}>Funded</option>
+                    </select>
+                </td>
+                <td>
+                    <button class="action-btn confirm proj-save-btn">Save</button>
+                    <button class="action-btn cancel proj-delete-btn">Delete</button>
+                </td>
+            </tr>
+        `).join('') || '<tr><td colspan="6">No projects listed yet.</td></tr>';
+
+        document.querySelectorAll('.proj-save-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const row = btn.closest('tr');
+                try {
+                    await apiSend('PATCH', `/api/investor-accounts/projects/${row.dataset.id}`, { status: row.querySelector('.proj-status').value });
+                    loadProjectsAdmin();
+                } catch (err) { alert(err.message); }
+            });
+        });
+        document.querySelectorAll('.proj-delete-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('Delete this project listing?')) return;
+                try {
+                    await apiSend('DELETE', `/api/investor-accounts/projects/${btn.closest('tr').dataset.id}`, {});
+                    loadProjectsAdmin();
+                } catch (err) { alert(err.message); }
+            });
+        });
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('addProjectBtn').addEventListener('click', async () => {
+    const msg = document.getElementById('projectMessage');
+    try {
+        await apiSend('POST', '/api/investor-accounts/projects', {
+            name: document.getElementById('projectName').value,
+            location: document.getElementById('projectLocation').value,
+            targetCapital: Number(document.getElementById('projectCapital').value) || 0,
+            timeline: document.getElementById('projectTimeline').value,
+            description: document.getElementById('projectDescription').value,
+            growthPotential: document.getElementById('projectGrowth').value
+        });
+        msg.textContent = 'Project added.';
+        msg.className = 'form-message success';
+        document.getElementById('projectForm').reset();
+        document.getElementById('projectForm2').reset();
+        loadProjectsAdmin();
+    } catch (err) {
+        msg.textContent = err.message;
+        msg.className = 'form-message error';
+    }
+});
 
 /* ---------------- Login ---------------- */
 loginForm.addEventListener('submit', async (e) => {
