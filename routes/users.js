@@ -21,7 +21,12 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { username, password, role } = req.body;
-    if (!username || !password || !['admin', 'staff', 'investor'].includes(role)) {
+    // 'investor' is deliberately excluded — an investor-role login with no
+    // matching row in the investors table is broken (their dashboard 404s
+    // with "no investor profile linked"). Investor accounts must always be
+    // created atomically via POST /api/investor-accounts instead, which
+    // creates the login and the profile together.
+    if (!username || !password || !['admin', 'staff'].includes(role)) {
       return res.status(400).json({ error: 'Username, password, and a valid role are required' });
     }
     if (password.length < 6) {
@@ -57,6 +62,9 @@ router.delete('/:id', async (req, res) => {
     const existing = await db.execute({ sql: 'SELECT * FROM users WHERE id = ?', args: [req.params.id] });
     if (!existing.rows[0]) {
       return res.status(404).json({ error: 'Staff account not found' });
+    }
+    if (existing.rows[0].role === 'investor') {
+      return res.status(400).json({ error: 'Remove investor accounts from the Investor Accounts tab instead — it also cleans up their capital and withdrawal records.' });
     }
     await db.execute({ sql: 'DELETE FROM users WHERE id = ?', args: [req.params.id] });
     res.json({ deleted: true });
