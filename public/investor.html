@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horizon Inn - Investor Dashboard</title>
+    <link rel="icon" type="image/png" href="images/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <style>
+        .investor-note { background: #f8f7f3; border-left: 3px solid var(--gold); padding: 10px 16px; font-size: 0.85rem; color: var(--text-light); margin-bottom: 22px; }
+        .date-presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+        .date-presets button.active { background: var(--charcoal); color: #fff; }
+        @media print {
+            .navbar, .date-presets, .inline-form, #investorExportBtn, #investorPrintBtn { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar scrolled">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <img src="images/logo-mark.png" alt="Horizon Inn" class="nav-logo">
+                <span>Horizon Inn</span>
+            </div>
+            <ul class="nav-menu active" style="position: static; background: none; padding: 0; flex-direction: row;">
+                <li><a href="index.html">Back to site</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="admin-page" style="margin-top: 90px;">
+        <div id="loginPanel" class="booking-form-wrapper" style="max-width: 400px;">
+            <h1 style="font-size: 1.5rem; margin-bottom: 20px;">Investor Login</h1>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="investorUser">Username</label>
+                    <input type="text" id="investorUser" required>
+                </div>
+                <div class="form-group">
+                    <label for="investorPass">Password</label>
+                    <input type="password" id="investorPass" required>
+                </div>
+                <button type="submit" class="submit-btn">Log In</button>
+                <p class="form-message error" id="loginMessage"></p>
+            </form>
+        </div>
+
+        <div id="dashboard" style="display: none;">
+            <div class="dash-header">
+                <div>
+                    <h1>Horizon Inn — Investor Dashboard</h1>
+                    <p style="color: var(--text-light);">
+                        Signed in as <strong id="whoami"></strong>
+                        &middot; <span style="color: #3d7a4f;"><i class="fas fa-circle" style="font-size: 0.55rem;"></i> Live</span>
+                        &middot; <span id="lastUpdated"></span>
+                    </p>
+                </div>
+                <div>
+                    <button class="action-btn confirm" id="investorPrintBtn"><i class="fas fa-print"></i> Print / PDF</button>
+                    <button class="action-btn confirm" id="investorExportBtn"><i class="fas fa-file-export"></i> Export CSV</button>
+                    <button class="action-btn cancel" id="investorLogoutBtn">Log Out</button>
+                </div>
+            </div>
+
+            <div class="investor-note">
+                <i class="fas fa-shield-halved"></i>
+                This view shows financial totals only. Guest names, contact details, and booking records are not accessible from this account.
+            </div>
+
+            <div class="date-presets" id="datePresets">
+                <button type="button" class="action-btn" data-preset="7">Last 7 Days</button>
+                <button type="button" class="action-btn" data-preset="30">This Month</button>
+                <button type="button" class="action-btn" data-preset="90">This Quarter</button>
+                <button type="button" class="action-btn" data-preset="365">This Year</button>
+            </div>
+            <form id="rangeForm" class="inline-form">
+                <label style="font-size: 0.85rem; color: var(--text-light);">From</label>
+                <input type="date" id="rangeFrom">
+                <label style="font-size: 0.85rem; color: var(--text-light);">To</label>
+                <input type="date" id="rangeTo">
+                <button type="submit" class="action-btn confirm">Apply</button>
+            </form>
+
+            <div class="summary-cards" id="summaryCards"></div>
+
+            <div class="chart-card">
+                <h3>Revenue Trend</h3>
+                <canvas id="revenueTrendChart" height="90"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Income by Category</h3>
+                <canvas id="incomeBreakdownChart" height="90"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Expense Breakdown</h3>
+                <canvas id="expenseBreakdownChart" height="90"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Profit Analysis (ROI Trend)</h3>
+                <canvas id="profitChart" height="90"></canvas>
+            </div>
+
+            <h2 style="text-align: left; font-size: 1.3rem; margin-top: 40px;">Transaction Ledger</h2>
+            <p class="investor-note" style="margin-top: 10px;">Every income and expense entry in the selected range, categorized and anonymized. References are invoice numbers or business notes only.</p>
+            <div style="overflow-x: auto; margin-top: 16px;">
+                <table class="admin-table" id="ledgerTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Reference</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ledgerBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="investor.js"></script>
+</body>
+</html>

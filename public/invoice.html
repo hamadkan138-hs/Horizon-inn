@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horizon Inn - Invoice</title>
+    <link rel="icon" type="image/png" href="images/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Lora', serif; color: #23242c; max-width: 800px; margin: 40px auto; padding: 0 24px; line-height: 1.6; }
+        h1, h2, h3, h4 { font-family: 'Playfair Display', serif; }
+        .invoice-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px; border-bottom: 2px solid #c6a15b; padding-bottom: 20px; margin-bottom: 24px; }
+        .invoice-header h1 { margin: 0; color: #14161f; font-size: 1.7rem; }
+        .hotel-contact { font-size: 0.85rem; color: #6f7180; margin-top: 6px; }
+        .invoice-meta { text-align: right; font-size: 0.9rem; color: #6f7180; }
+        .invoice-meta strong { color: #14161f; }
+        .status-badge { display: inline-block; padding: 3px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 4px; }
+        .status-badge.paid { background: #eaf3ea; color: #3d7a4f; }
+        .status-badge.partial { background: #fdf0e2; color: #9a6c1f; }
+        .status-badge.unpaid { background: #f6e9e8; color: #a5473c; }
+        .invoice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 30px; }
+        .invoice-block h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: #6f7180; margin: 0 0 10px; }
+        .invoice-block p { margin: 2px 0; font-size: 0.92rem; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+        th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        th { background: #14161f; color: #e0c48a; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        td.num, th.num { text-align: right; }
+        tr.discount-row td { color: #3d7a4f; }
+        .section-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: #6f7180; margin: 0 0 10px; }
+        .totals { margin-left: auto; width: 300px; margin-bottom: 30px; }
+        .totals div { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.92rem; }
+        .totals .grand { font-weight: 700; font-size: 1.25rem; border-top: 2px solid #14161f; padding-top: 10px; margin-top: 4px; }
+        .totals .balance-due { color: #a5473c; font-weight: 700; }
+        .totals .balance-clear { color: #3d7a4f; font-weight: 700; }
+        .notes-box { background: #f8f7f3; border-left: 3px solid #c6a15b; padding: 14px 18px; font-size: 0.9rem; color: #444; margin-bottom: 30px; white-space: pre-wrap; }
+        .footer-note { text-align: center; color: #6f7180; font-size: 0.95rem; padding-top: 20px; border-top: 1px solid #eee; }
+        .footer-note strong { color: #14161f; font-family: 'Playfair Display', serif; }
+        .actions { margin-bottom: 30px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn { background: #14161f; color: #fff; border: none; padding: 12px 26px; cursor: pointer; font-size: 0.82rem; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; display: inline-block; }
+        .btn:hover { background: #c6a15b; color: #14161f; }
+        @media print {
+            @page { size: A4; margin: 16mm; }
+            .actions { display: none; }
+            body { margin: 0; max-width: 100%; }
+        }
+        @media (max-width: 600px) {
+            .invoice-grid { grid-template-columns: 1fr; }
+            .invoice-meta { text-align: left; }
+            .totals { width: 100%; }
+            table { font-size: 0.8rem; }
+            th, td { padding: 8px 4px; }
+        }
+        #status { color: #6f7180; }
+    </style>
+</head>
+<body>
+    <p id="status">Loading invoice&hellip;</p>
+    <div id="invoiceContent" style="display: none;">
+        <div class="actions">
+            <button class="btn" onclick="window.print()">Print / Save as PDF</button>
+        </div>
+
+        <div class="invoice-header">
+            <div style="display: flex; align-items: flex-start; gap: 14px;">
+                <img src="images/logo-mark.png" alt="" style="width: 48px; height: auto; margin-top: 4px;">
+                <div>
+                    <h1>Horizon Inn</h1>
+                    <div class="hotel-contact" id="hotelContact">
+                        123 Sunset Boulevard, Mountain View, CA 94043<br>
+                        +1 (555) 123-4567 &middot; info@horizoninn.com
+                    </div>
+                </div>
+            </div>
+            <div class="invoice-meta">
+                <div>Invoice <strong id="invNumber"></strong></div>
+                <div>Booking ID: <strong id="invBookingId"></strong></div>
+                <div id="invDate"></div>
+                <div><span class="status-badge" id="invStatusBadge"></span></div>
+            </div>
+        </div>
+
+        <div class="invoice-grid">
+            <div class="invoice-block">
+                <h3>Billed To</h3>
+                <p id="guestName" style="font-weight: 600;"></p>
+                <p id="guestContact"></p>
+                <p id="guestCnic"></p>
+                <p id="guestAddress"></p>
+            </div>
+            <div class="invoice-block">
+                <h3>Stay Details</h3>
+                <p id="stayRoom"></p>
+                <p id="stayRoomNumber"></p>
+                <p id="stayDates"></p>
+                <p id="stayOccupancy"></p>
+            </div>
+        </div>
+
+        <p class="section-label">Charges</p>
+        <table>
+            <thead><tr><th>Description</th><th class="num">Nights</th><th class="num">Rate</th><th class="num">Amount</th></tr></thead>
+            <tbody id="chargeRows"></tbody>
+        </table>
+
+        <p class="section-label">Payments Received</p>
+        <table>
+            <thead><tr><th>Date</th><th>Method</th><th>Transaction ID</th><th class="num">Amount</th></tr></thead>
+            <tbody id="paymentsBody"></tbody>
+        </table>
+
+        <div class="totals">
+            <div><span>Subtotal</span><span id="subtotal"></span></div>
+            <div id="discountLine" style="display: none;"><span>Discount</span><span id="discountAmount"></span></div>
+            <div id="taxLine" style="display: none;"><span>Tax</span><span id="taxAmount"></span></div>
+            <div class="grand"><span>Grand Total</span><span id="totalDue"></span></div>
+            <div><span>Amount Paid</span><span id="totalPaid"></span></div>
+            <div><span>Balance</span><span id="totalBalance"></span></div>
+            <div><span>Payment Status</span><strong id="paymentStatusText"></strong></div>
+            <div id="paymentTimeLine" style="display: none;"><span>Payment Date &amp; Time</span><span id="paymentTimeText"></span></div>
+        </div>
+
+        <div id="notesWrapper" style="display: none;">
+            <p class="section-label">Notes</p>
+            <div class="notes-box" id="notesText"></div>
+        </div>
+
+        <div class="footer-note">
+            <p><strong>Thank you for staying at Horizon Inn.</strong></p>
+            <p>We hope to welcome you back again soon.</p>
+        </div>
+    </div>
+
+    <script src="invoice.js"></script>
+</body>
+</html>

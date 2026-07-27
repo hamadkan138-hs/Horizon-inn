@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horizon Inn - Admin</title>
+    <link rel="icon" type="image/png" href="images/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <nav class="navbar scrolled">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <img src="images/logo-mark.png" alt="Horizon Inn" class="nav-logo">
+                <span>Horizon Inn</span>
+            </div>
+            <ul class="nav-menu active" style="position: static; background: none; padding: 0; flex-direction: row; gap: 20px;">
+                <li><a href="room-management.html">Room Management</a></li>
+                <li><a href="frontdesk.html">Front Desk</a></li>
+                <li><a href="index.html">Back to site</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="admin-page" style="margin-top: 90px;">
+        <div id="loginPanel" class="booking-form-wrapper" style="max-width: 400px;">
+            <h1 style="font-size: 1.5rem; margin-bottom: 20px;">Admin Login</h1>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="adminUser">Username</label>
+                    <input type="text" id="adminUser" required>
+                </div>
+                <div class="form-group">
+                    <label for="adminPass">Password</label>
+                    <input type="password" id="adminPass" required>
+                </div>
+                <button type="submit" class="submit-btn">Log In</button>
+                <p class="form-message error" id="loginMessage"></p>
+            </form>
+        </div>
+
+        <div id="dashboard" style="display: none;">
+            <div class="dash-header">
+                <div>
+                    <h1>Horizon Inn — Operations Dashboard</h1>
+                    <p style="color: var(--text-light);">Signed in as <strong id="whoami"></strong></p>
+                </div>
+                <button class="bell-btn" id="notifyBell" title="New bookings">
+                    <i class="fas fa-bell"></i>
+                    <span class="bell-badge" id="bellBadge" style="display: none;">0</span>
+                </button>
+            </div>
+
+            <div class="admin-tabs" id="adminTabs">
+                <button class="admin-tab active" data-tab="bookings">Bookings</button>
+                <button class="admin-tab" data-tab="payments">Payments</button>
+                <button class="admin-tab" data-tab="daily">Daily Summary</button>
+                <button class="admin-tab" data-tab="handover">Cash &amp; Handover</button>
+                <button class="admin-tab" data-tab="availability">Availability</button>
+                <button class="admin-tab" data-tab="guests">Guests</button>
+                <button class="admin-tab" data-tab="rooms">Rooms &amp; Pricing</button>
+                <button class="admin-tab" data-tab="expenses">Expenses</button>
+                <button class="admin-tab" data-tab="reports">Reports</button>
+                <button class="admin-tab" data-tab="media" id="mediaTabBtn" style="display: none;">Media Library</button>
+                <button class="admin-tab" data-tab="content" id="contentTabBtn" style="display: none;">Site Content</button>
+                <button class="admin-tab" data-tab="staff" id="staffTabBtn" style="display: none;">Staff</button>
+                <button class="admin-tab" data-tab="messages">Messages</button>
+            </div>
+
+            <!-- Bookings -->
+            <section class="admin-panel" id="panel-bookings">
+                <div class="panel-toolbar">
+                    <input type="text" id="bookingSearch" placeholder="Search by name, email, phone, CNIC...">
+                    <select id="bookingStatusFilter">
+                        <option value="">All statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="checked_in">Checked In</option>
+                        <option value="checked_out">Checked Out</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                    <select id="bookingPaymentFilter">
+                        <option value="">All payment statuses</option>
+                        <option value="unpaid">Unpaid</option>
+                        <option value="partial">Partial</option>
+                        <option value="paid">Paid</option>
+                    </select>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="bookingsTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Guest</th>
+                                <th>Room</th>
+                                <th>Check-in</th>
+                                <th>Check-out</th>
+                                <th>Guests</th>
+                                <th>Status</th>
+                                <th>Payment</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookingsBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Checkout confirmation modal -->
+            <div class="modal-overlay" id="checkoutModalOverlay" style="display: none;">
+                <div class="modal-box">
+                    <h3 style="margin-bottom: 4px;">Complete Checkout</h3>
+                    <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 18px;" id="checkoutModalSubtitle"></p>
+
+                    <div class="modal-summary" id="checkoutModalSummary"></div>
+
+                    <form id="checkoutForm">
+                        <div class="form-group">
+                            <label>Payment Method</label>
+                            <select id="checkoutMethod">
+                                <option value="cash">Cash</option>
+                                <option value="bank_transfer">Bank Transfer</option>
+                                <option value="easypaisa">EasyPaisa</option>
+                                <option value="jazzcash">JazzCash</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount to Collect Now (Rs.)</label>
+                            <input type="number" id="checkoutAmount" min="0" step="0.01">
+                            <p style="font-size: 0.78rem; color: var(--text-light); margin-top: 4px;">Leave at 0 if this stay is already fully paid or the balance will be collected later.</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Transaction ID (optional)</label>
+                            <input type="text" id="checkoutTransactionId">
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button type="submit" class="action-btn confirm">Confirm Checkout</button>
+                            <button type="button" class="action-btn cancel" id="closeCheckoutModalBtn">Cancel</button>
+                        </div>
+                        <p class="form-message" id="checkoutMessage"></p>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Payments / Transactions -->
+            <section class="admin-panel" id="panel-payments" style="display: none;">
+                <div class="panel-toolbar">
+                    <select id="txnStatusFilter">
+                        <option value="">All payment statuses</option>
+                        <option value="unpaid">Unpaid</option>
+                        <option value="partial">Partial</option>
+                        <option value="paid">Paid</option>
+                    </select>
+                    <select id="txnMethodFilter">
+                        <option value="">All payment methods</option>
+                        <option value="pay_at_property">Pay at Property</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                        <option value="easypaisa">EasyPaisa</option>
+                        <option value="jazzcash">JazzCash</option>
+                    </select>
+                    <select id="txnRoomFilter">
+                        <option value="">All room types</option>
+                    </select>
+                    <input type="date" id="txnFrom" title="From date">
+                    <input type="date" id="txnTo" title="To date">
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-light);">
+                        <input type="checkbox" id="txnOverdueOnly" style="width: auto;"> Overdue only
+                    </label>
+                    <button class="action-btn details-toggle" id="txnExportBtn">Export CSV</button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="transactionsTable">
+                        <thead>
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Booking</th>
+                                <th>Customer</th>
+                                <th>Room</th>
+                                <th>Method</th>
+                                <th>Total</th>
+                                <th>Paid</th>
+                                <th>Balance</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionsBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Daily Summary -->
+            <section class="admin-panel" id="panel-daily" style="display: none;">
+                <div class="panel-toolbar">
+                    <input type="date" id="dailyDate">
+                    <button type="button" id="sendDailyEmailBtn" class="submit-btn" style="width: auto; padding: 10px 18px;">Send Summary Email Now</button>
+                    <span id="sendDailyEmailMessage" style="font-size: 0.85rem; margin-left: 10px;"></span>
+                </div>
+                <div class="summary-cards" id="dailyCards"></div>
+
+                <h2 style="text-align: left; font-size: 1.2rem; margin-top: 30px;">Check-ins</h2>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="dailyCheckinsTable">
+                        <thead><tr><th>Guest</th><th>Room</th><th>Guests</th><th>Status</th><th>Balance Due</th></tr></thead>
+                        <tbody id="dailyCheckinsBody"></tbody>
+                    </table>
+                </div>
+
+                <h2 style="text-align: left; font-size: 1.2rem; margin-top: 30px;">Check-outs</h2>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="dailyCheckoutsTable">
+                        <thead><tr><th>Guest</th><th>Room</th><th>Guests</th><th>Status</th><th>Balance Due</th></tr></thead>
+                        <tbody id="dailyCheckoutsBody"></tbody>
+                    </table>
+                </div>
+
+                <h2 style="text-align: left; font-size: 1.2rem; margin-top: 30px;">Outstanding Balances (all active bookings)</h2>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="outstandingTable">
+                        <thead><tr><th>Guest</th><th>Room</th><th>Status</th><th>Total</th><th>Balance</th></tr></thead>
+                        <tbody id="outstandingBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Cash & Handover -->
+            <section class="admin-panel" id="panel-handover" style="display: none;">
+                <div class="investor-note" style="margin-bottom: 20px;">
+                    <i class="fas fa-lock"></i>
+                    Every row here is a completed, checked-out stay. None of these records can be edited or deleted &mdash; not even by an admin &mdash; once the guest has checked out. This is the permanent financial ledger.
+                </div>
+
+                <div class="summary-cards" id="handoverSummaryCards"></div>
+
+                <div class="panel-toolbar" style="margin-top: 24px;">
+                    <span id="handoverDateLabel" style="font-weight: 600; font-size: 1.05rem;"></span>
+                    <button type="button" class="action-btn details-toggle" id="handoverViewToggle">View Full Details</button>
+                    <button type="button" class="action-btn confirm" id="openHandoverModalBtn" style="margin-left: auto;">Handover Cash</button>
+                </div>
+
+                <!-- Simple view: plain readable list, no table -->
+                <div id="handoverSimpleView">
+                    <ul class="simple-list" id="handoverSimpleList"></ul>
+                    <div class="simple-total" id="handoverSimpleTotal"></div>
+                </div>
+
+                <!-- Detailed view: full 9-column ledger -->
+                <div id="handoverDetailedView" style="display: none; overflow-x: auto;">
+                    <table class="admin-table" id="handoverLedgerTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Invoice #</th>
+                                <th>Guest</th>
+                                <th>Room</th>
+                                <th>Check-in</th>
+                                <th>Check-out</th>
+                                <th>Total (PKR)</th>
+                                <th>Payment Method</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="handoverLedgerBody"></tbody>
+                    </table>
+                </div>
+
+                <h2 style="text-align: left; font-size: 1.2rem; margin-top: 40px;">Handover History</h2>
+                <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 12px;">Every past handover, permanently locked. Click one to see exactly which bookings it covered.</p>
+                <ul class="simple-list" id="handoverHistoryList"></ul>
+            </section>
+
+            <!-- Handover confirmation modal -->
+            <div class="modal-overlay" id="handoverModalOverlay" style="display: none;">
+                <div class="modal-box">
+                    <h3 style="margin-bottom: 4px;">Confirm Handover</h3>
+                    <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 18px;">This will lock every unhanded-over checked-out booking and expense into a single, permanent handover record.</p>
+
+                    <div class="modal-summary" id="handoverModalSummary"></div>
+
+                    <form id="handoverForm">
+                        <div class="form-group">
+                            <label>Staff Name</label>
+                            <input type="text" id="handoverStaffName" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>Date &amp; Time</label>
+                            <input type="text" id="handoverDateTime" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>Hand Over To</label>
+                            <select id="handoverReceiverType" required>
+                                <option value="owner">Owner</option>
+                                <option value="bank">Deposit to Bank</option>
+                                <option value="staff">Next Staff on Duty (Shift Handover)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label id="handoverReceiverNameLabel">Owner Name</label>
+                            <input type="text" id="handoverReceiverName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Note (optional)</label>
+                            <input type="text" id="handoverNote">
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button type="submit" class="action-btn confirm">Confirm Handover</button>
+                            <button type="button" class="action-btn cancel" id="closeHandoverModalBtn">Cancel</button>
+                        </div>
+                        <p class="form-message" id="handoverMessage"></p>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Availability -->
+            <section class="admin-panel" id="panel-availability" style="display: none;">
+                <h2 style="text-align: left; font-size: 1.2rem;">Room Status Board</h2>
+                <div class="room-status-board" id="roomStatusBoard"></div>
+
+                <h2 style="text-align: left; font-size: 1.2rem; margin-top: 30px;">Advance Booking (Room Lock)</h2>
+                <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 12px;">Pay an advance to lock a room for a guest before their full registration is filled in at check-in.</p>
+                <form id="quickBookingForm" class="inline-form">
+                    <select id="quickRoomId" required></select>
+                    <input type="text" id="quickGuestName" placeholder="Guest name" required>
+                    <input type="tel" id="quickPhone" placeholder="Phone number" required>
+                    <input type="date" id="quickCheckin" required>
+                    <input type="date" id="quickCheckout" required>
+                    <input type="number" id="quickAdvance" placeholder="Advance (Rs., tax included)" min="1" required>
+                    <select id="quickPaymentMethod">
+                        <option value="pay_at_property">Cash</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                        <option value="easypaisa">EasyPaisa</option>
+                        <option value="jazzcash">JazzCash</option>
+                    </select>
+                    <input type="text" id="quickTransactionId" placeholder="Transaction ID (if applicable)">
+                    <button type="submit" class="action-btn confirm">Lock Room</button>
+                </form>
+                <p class="form-message" id="quickBookingMessage"></p>
+
+                <h2 style="text-align: left; font-size: 1.2rem; margin-top: 30px;">Calendar</h2>
+                <div class="panel-toolbar">
+                    <select id="availabilityRoom"></select>
+                    <button class="action-btn details-toggle" id="prevMonth">&larr; Prev</button>
+                    <span id="availabilityMonthLabel" style="font-weight: 600;"></span>
+                    <button class="action-btn details-toggle" id="nextMonth">Next &rarr;</button>
+                </div>
+                <div class="calendar-grid" id="calendarGrid"></div>
+                <p class="calendar-legend">
+                    <span class="legend-swatch legend-low"></span> Available
+                    <span class="legend-swatch legend-mid"></span> Filling up
+                    <span class="legend-swatch legend-full"></span> Fully booked
+                </p>
+            </section>
+
+            <!-- Guests -->
+            <section class="admin-panel" id="panel-guests" style="display: none;">
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="guestsTable">
+                        <thead>
+                            <tr>
+                                <th>Guest</th>
+                                <th>CNIC / Passport</th>
+                                <th>Contact</th>
+                                <th>Visits</th>
+                                <th>Total Spent</th>
+                                <th>Last Stay</th>
+                                <th>History</th>
+                            </tr>
+                        </thead>
+                        <tbody id="guestsBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Rooms & Pricing -->
+            <section class="admin-panel" id="panel-rooms" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="text-align: left; font-size: 1.3rem; margin: 0;">Room Settings</h2>
+                    <button type="button" class="action-btn confirm" id="newRoomToggleBtn" style="display: none;">+ Add New Room</button>
+                </div>
+                <form id="newRoomForm" class="room-edit-card" style="display: none; margin-top: 16px;">
+                    <div class="form-group"><label>Name</label><input type="text" name="name" required></div>
+                    <div class="form-row form-row-3">
+                        <div class="form-group"><label>Price / Night &mdash; 1 Guest (Rs.)</label><input type="number" name="price1p" min="0" step="1" placeholder="Optional"></div>
+                        <div class="form-group"><label>Price / Night &mdash; 2 Guests (Rs.)</label><input type="number" name="price" min="0" step="1" required></div>
+                        <div class="form-group"><label>Price / Night &mdash; 3 Guests (Rs.)</label><input type="number" name="price3p" min="0" step="1" placeholder="Optional"></div>
+                    </div>
+                    <div class="form-group"><label>Description</label><textarea name="description" rows="2" required></textarea></div>
+                    <div class="form-group"><label>Amenities (one per line)</label><textarea name="features" rows="3" placeholder="Complimentary breakfast for 2&#10;Inverter AC (heat & cool)"></textarea></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Total Units</label><input type="number" name="totalUnits" min="1" value="1" required></div>
+                        <div class="form-group"><label>Featured</label><select name="featured"><option value="0">No</option><option value="1">Yes</option></select></div>
+                    </div>
+                    <button type="submit" class="action-btn confirm">Create Room</button>
+                    <button type="button" class="action-btn cancel" id="newRoomCancelBtn">Cancel</button>
+                    <p class="form-message" id="newRoomMessage"></p>
+                </form>
+                <div id="roomsSettingsList" style="margin-top: 16px;"></div>
+
+                <h2 style="text-align: left; font-size: 1.3rem; margin-top: 40px;">Seasonal Rates &amp; Discounts</h2>
+                <form id="rateRuleForm" class="inline-form">
+                    <select id="rateRoomId" required></select>
+                    <input type="text" id="rateName" placeholder="e.g. Eid Weekend" required>
+                    <input type="date" id="rateStart" required>
+                    <input type="date" id="rateEnd" required>
+                    <input type="number" id="ratePriceOverride" placeholder="Fixed price (Rs.)" min="0" step="0.01">
+                    <input type="number" id="rateDiscount" placeholder="or Discount (%)" min="0" max="100" step="1">
+                    <button type="submit" class="action-btn confirm">Add Rate Rule</button>
+                </form>
+                <p class="form-message" id="rateRuleMessage"></p>
+                <div style="overflow-x: auto; margin-top: 16px;">
+                    <table class="admin-table" id="rateRulesTable">
+                        <thead>
+                            <tr>
+                                <th>Room</th>
+                                <th>Name</th>
+                                <th>Dates</th>
+                                <th>Price / Discount</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="rateRulesBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Expenses -->
+            <section class="admin-panel" id="panel-expenses" style="display: none;">
+                <form id="expenseForm" class="inline-form">
+                    <input type="text" id="expenseCategory" placeholder="Category (e.g. Utilities)" required>
+                    <input type="text" id="expenseDescription" placeholder="Description">
+                    <input type="number" id="expenseAmount" placeholder="Amount (Rs.)" min="0" step="0.01" required>
+                    <input type="date" id="expenseDate" required>
+                    <button type="submit" class="action-btn confirm">Add Expense</button>
+                </form>
+                <p class="form-message" id="expenseMessage"></p>
+                <div style="overflow-x: auto; margin-top: 16px;">
+                    <table class="admin-table" id="expensesTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="expensesBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Reports -->
+            <section class="admin-panel" id="panel-reports" style="display: none;">
+                <div class="summary-cards" id="summaryCards"></div>
+                <div class="report-controls">
+                    <label>Group by:
+                        <select id="revenueRange">
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly" selected>Monthly</option>
+                        </select>
+                    </label>
+                    <label>From: <input type="date" id="reportFrom"></label>
+                    <label>To: <input type="date" id="reportTo"></label>
+                    <button class="action-btn details-toggle" id="reportExportBtn">Export CSV</button>
+                </div>
+                <div class="chart-card">
+                    <h3>Revenue vs Expenses</h3>
+                    <canvas id="revenueChart" height="90"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Occupancy Rate</h3>
+                    <canvas id="occupancyChart" height="90"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Payment Method Distribution</h3>
+                    <canvas id="paymentMethodChart" height="90"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Revenue by Room Type</h3>
+                    <canvas id="roomRevenueChart" height="90"></canvas>
+                </div>
+            </section>
+
+            <!-- Media Library -->
+            <section class="admin-panel" id="panel-media" style="display: none;">
+                <form id="mediaUploadForm" class="inline-form">
+                    <input type="file" id="mediaFiles" accept="image/jpeg,image/png,image/webp" multiple required>
+                    <select id="mediaCategory">
+                        <option value="general">General</option>
+                        <option value="gallery">Homepage Gallery</option>
+                        <option value="room">Room Photo</option>
+                    </select>
+                    <button type="submit" class="action-btn confirm">Upload</button>
+                </form>
+                <p class="form-message" id="mediaMessage"></p>
+                <p style="font-size: 0.82rem; color: var(--text-light); margin: 6px 0 16px;">JPEG, PNG or WEBP, up to 4MB each. Images tagged "Homepage Gallery" appear automatically in the public Gallery section.</p>
+                <div class="media-grid" id="mediaGrid"></div>
+            </section>
+
+            <!-- Site Content -->
+            <section class="admin-panel" id="panel-content" style="display: none;">
+                <form id="siteContentForm">
+                    <h4>Homepage Hero</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Eyebrow text</label><input type="text" name="hero_eyebrow"></div>
+                        <div class="form-group"><label>Heading</label><input type="text" name="hero_heading"></div>
+                    </div>
+                    <div class="form-group"><label>Subtext</label><input type="text" name="hero_subtext"></div>
+
+                    <h4 style="margin-top: 22px;">Promotional Offer Banner</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Show banner on site</label>
+                            <select name="offers_enabled"><option value="0">Off</option><option value="1">On</option></select>
+                        </div>
+                        <div class="form-group"><label>Offer text</label><input type="text" name="offers_text" placeholder="e.g. 10% off stays of 3+ nights this month"></div>
+                    </div>
+
+                    <h4 style="margin-top: 22px;">Contact Details</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Phone</label><input type="text" name="contact_phone"></div>
+                        <div class="form-group"><label>Email</label><input type="text" name="contact_email"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Address</label><input type="text" name="contact_address"></div>
+                        <div class="form-group"><label>Hours</label><input type="text" name="contact_hours"></div>
+                    </div>
+                    <div class="form-group"><label>Google Maps embed URL</label><input type="text" name="contact_map_embed" placeholder="https://www.google.com/maps?q=...&output=embed"></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Google Maps "Get Directions" link</label><input type="text" name="contact_map_link" placeholder="https://maps.app.goo.gl/..."></div>
+                        <div class="form-group"><label>Facebook Page URL</label><input type="text" name="contact_facebook" placeholder="https://www.facebook.com/..."></div>
+                    </div>
+
+                    <h4 style="margin-top: 22px;">Payment Methods &mdash; Bank Transfer</h4>
+                    <p style="font-size: 0.82rem; color: var(--text-light); margin-bottom: 10px;">Shown to guests on the booking form when they choose Bank Transfer. Leave blank to hide this method's details.</p>
+                    <div class="form-row">
+                        <div class="form-group"><label>Account Title</label><input type="text" name="payment_bank_title"></div>
+                        <div class="form-group"><label>Bank Name</label><input type="text" name="payment_bank_name"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Account Number</label><input type="text" name="payment_bank_account"></div>
+                        <div class="form-group"><label>IBAN</label><input type="text" name="payment_bank_iban"></div>
+                    </div>
+                    <div class="form-group"><label>Branch (optional)</label><input type="text" name="payment_bank_branch"></div>
+
+                    <h4 style="margin-top: 22px;">Payment Methods &mdash; EasyPaisa</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Account Title</label><input type="text" name="payment_easypaisa_title"></div>
+                        <div class="form-group"><label>Mobile Number</label><input type="text" name="payment_easypaisa_number"></div>
+                    </div>
+
+                    <h4 style="margin-top: 22px;">Payment Methods &mdash; JazzCash</h4>
+                    <p style="font-size: 0.82rem; color: var(--text-light); margin-bottom: 10px;">Leave both blank and guests will see a message to contact you directly instead of a broken account number.</p>
+                    <div class="form-row">
+                        <div class="form-group"><label>Account Title</label><input type="text" name="payment_jazzcash_title"></div>
+                        <div class="form-group"><label>Mobile Number</label><input type="text" name="payment_jazzcash_number"></div>
+                    </div>
+
+                    <h4 style="margin-top: 22px;">Policies &amp; Terms</h4>
+                    <div class="form-group"><label>Shown on the booking form (one policy per blank line)</label><textarea name="policies_text" rows="8"></textarea></div>
+
+                    <h4 style="margin-top: 22px;">Investor Dashboard</h4>
+                    <p style="font-size: 0.82rem; color: var(--text-light); margin-bottom: 10px;">Private — never shown on the public site. Used only to calculate the ROI figure investors see.</p>
+                    <div class="form-group" style="max-width: 300px;"><label>Total Capital Invested (Rs.)</label><input type="number" name="investor_capital_invested" min="0" step="1000"></div>
+
+                    <button type="submit" class="action-btn confirm">Save Site Content</button>
+                    <p class="form-message" id="contentMessage"></p>
+                </form>
+            </section>
+
+            <!-- Staff -->
+            <section class="admin-panel" id="panel-staff" style="display: none;">
+                <form id="staffForm" class="inline-form">
+                    <input type="text" id="staffUsername" placeholder="Username" required>
+                    <input type="password" id="staffPassword" placeholder="Password (min 6 chars)" required>
+                    <select id="staffRole">
+                        <option value="staff">Staff</option>
+                        <option value="admin">Admin</option>
+                        <option value="investor">Investor (read-only financials)</option>
+                    </select>
+                    <button type="submit" class="action-btn confirm">Add Staff Account</button>
+                </form>
+                <p class="form-message" id="staffMessage"></p>
+                <p style="font-size: 0.82rem; color: var(--text-light); margin-top: 6px;">Investor accounts sign in separately at <code>/investor.html</code> and only ever see financial totals — never guest names, contact details, or booking data.</p>
+                <div style="overflow-x: auto; margin-top: 16px;">
+                    <table class="admin-table" id="staffTable">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Added</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="staffBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Messages -->
+            <section class="admin-panel" id="panel-messages" style="display: none;">
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="messagesTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Message</th>
+                                <th>Received</th>
+                            </tr>
+                        </thead>
+                        <tbody id="messagesBody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
