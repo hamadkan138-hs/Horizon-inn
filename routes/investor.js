@@ -168,6 +168,149 @@ router.get('/occupancy', async (req, res) => {
   }
 });
 
+// Splits income into Room Bookings vs the categorized extra charges (see
+// booking_charges.category) so investors can see what's actually driving
+// revenue beyond nightly room rates — no query here touches a guest column.
+router.get('/income-breakdown', async (req, res) => {
+  try {
+    const { from, to } = resolveRange(req, 90, 180);
+
+    const roomResult = await db.execute({
+      sql: `SELECT COALESCE(SUM(room_amount), 0) AS total FROM bookings WHERE status != 'cancelled' AND checkin BETWEEN ? AND ?`,
+      args: [from, to]
+    });
+    const chargesResult = await db.execute({
+      sql: `
+        SELECT bc.category, COALESCE(SUM(bc.amount), 0) AS total
+        FROM booking_charges bc
+        JOIN bookings b ON b.id = bc.booking_id
+        WHERE b.status != 'cancelled' AND b.checkin BETWEEN ? AND ? AND bc.amount > 0
+        GROUP BY bc.category
+      `,
+      args: [from, to]
+    });
+
+    const byCategory = { amenity: 0, event_rental: 0, other: 0 };
+    chargesResult.rows.forEach((r) => { byCategory[r.category] = Number(r.total); });
+
+    res.json({
+      roomBookings: Number(roomResult.rows[0].total),
+      amenities: byCategory.amenity,
+      eventRentals: byCategory.event_rental,
+      otherIncome: byCategory.other
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load income breakdown' });
+  }
+});
+
+// Reads directly from the settings table rather than the public
+// GET /api/settings (which deliberately excludes this key — see
+// routes/settings.js) since an investor/admin figure like this has no
+// reason to ever be reachable by an unauthenticated request.
+async function getCapitalInvested() {
+  const result = await db.execute("SELECT value FROM settings WHERE key = 'investor_capital_invested'");
+  const n = Number(result.rows[0] ? result.rows[0].value : '');
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+router.get('/capital-invested', async (req, res) => {
+  try {
+    res.json({ capitalInvested: await getCapitalInvested() });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load capital invested' });
+  }
+});
+
+// ROI here is plainly Net Profit ÷ Capital Invested for the selected range —
+// there's no fabricated "expected return" or valuation model behind it. If
+// the admin hasn't set a capital figure yet, roiPercent comes back null
+// rather than a misleading number.
+router.get('/roi', async (req, res) => {
+  try {
+    const { from, to } = resolveRange(req, 90, 180);
+    const revenueResult = await db.execute({
+      sql: `SELECT COALESCE(SUM(total_amount), 0) AS total FROM bookings WHERE status != 'cancelled' AND checkin BETWEEN ? AND ?`,
+      args: [from, to]
+    });
+    const expensesResult = await db.execute({
+      sql: `SELECT COALESCE(SUM(amount), 0) AS total FROM expenses WHERE expense_date BETWEEN ? AND ?`,
+      args: [from, to]
+    });
+    const netProfit = Number(revenueResult.rows[0].total) - Number(expensesResult.rows[0].total);
+    const capitalInvested = await getCapitalInvested();
+
+    res.json({
+      netProfit,
+      capitalInvested,
+      roiPercent: capitalInvested > 0 ? Math.round((netProfit / capitalInvested) * 10000) / 100 : null
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load ROI' });
+  }
+});
+
+// A single categorized, chronological feed of every income and expense
+// entry in range — the "transaction ledger" the dashboard's raw invoice
+// list used to stand in for. Every field here is either an aggregate
+// amount, a category label, an invoice number, or a business-operational
+// note (e.g. "Electricity bill – July") — never a guest name, contact
+// detail, or payment method.
+router.get('/ledger', async (req, res) => {
+  try {
+    const { from, to } = resolveRange(req, 90, 180);
+    const CATEGORY_LABELS = { amenity: 'Amenity', event_rental: 'Event Rental', other: 'Other Income' };
+
+    const [roomRows, chargeRows, expenseRows] = await Promise.all([
+      db.execute({
+        sql: `SELECT invoice_number, checkin, room_amount FROM bookings WHERE status != 'cancelled' AND checkin BETWEEN ? AND ?`,
+        args: [from, to]
+      }),
+      db.execute({
+        sql: `
+          SELECT bc.category, bc.description, bc.amount, bc.created_at, b.invoice_number
+          FROM booking_charges bc
+          JOIN bookings b ON b.id = bc.booking_id
+          WHERE b.status != 'cancelled' AND b.checkin BETWEEN ? AND ?
+        `,
+        args: [from, to]
+      }),
+      db.execute({
+        sql: `SELECT category, description, amount, expense_date FROM expenses WHERE expense_date BETWEEN ? AND ?`,
+        args: [from, to]
+      })
+    ]);
+
+    const ledger = [];
+    roomRows.rows.forEach((r) => {
+      if (Number(r.room_amount) === 0) return;
+      ledger.push({ date: r.checkin, type: 'income', category: 'Room Booking', reference: r.invoice_number, amount: Number(r.room_amount) });
+    });
+    chargeRows.rows.forEach((c) => {
+      ledger.push({
+        date: String(c.created_at).slice(0, 10),
+        type: Number(c.amount) >= 0 ? 'income' : 'adjustment',
+        category: CATEGORY_LABELS[c.category] || 'Other Income',
+        reference: c.invoice_number,
+        note: c.description,
+        amount: Number(c.amount)
+      });
+    });
+    expenseRows.rows.forEach((e) => {
+      ledger.push({ date: e.expense_date, type: 'expense', category: e.category, reference: e.description, amount: -Number(e.amount) });
+    });
+
+    ledger.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+    res.json(ledger.slice(0, 500));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load transaction ledger' });
+  }
+});
+
 // Deliberately selects ONLY invoice_number / created_at / total_amount — never
 // name, email, phone, cnic, room, or any other guest-identifying column.
 router.get('/invoices', async (req, res) => {

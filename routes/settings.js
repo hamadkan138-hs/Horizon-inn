@@ -5,12 +5,20 @@ const { requireRole } = adminAuth;
 
 const router = express.Router();
 
+// Keys that live in this same key/value table but must never reach the
+// public, unauthenticated GET below — unlike contact info or payment
+// details, they have no guest-facing purpose. Read via a dedicated
+// authenticated route instead (see routes/investor.js).
+const PRIVATE_KEYS = new Set(['investor_capital_invested']);
+
 // Public — the site (and invoice page) needs these to render without logging in.
 router.get('/', async (req, res) => {
   try {
     const result = await db.execute('SELECT key, value FROM settings');
     const settings = {};
-    result.rows.forEach((row) => { settings[row.key] = row.value; });
+    result.rows.forEach((row) => {
+      if (!PRIVATE_KEYS.has(row.key)) settings[row.key] = row.value;
+    });
     res.json(settings);
   } catch (err) {
     console.error(err);

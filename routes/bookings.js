@@ -10,6 +10,7 @@ const { assertBookingUnlocked, BookingLockedError } = require('../lib/lock');
 const router = express.Router();
 
 const PAYMENT_METHODS = ['pay_at_property', 'bank_transfer', 'easypaisa', 'jazzcash'];
+const CHARGE_CATEGORIES = ['amenity', 'event_rental', 'other'];
 const MARITAL_STATUSES = ['Single', 'Married', 'Divorced', 'Widowed'];
 const BOOKING_STATUSES = ['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled'];
 const PAYMENT_STATUSES = ['unpaid', 'partial', 'paid'];
@@ -418,9 +419,12 @@ router.patch('/:id/tax', adminAuth, requireRole('admin'), async (req, res) => {
 // pickup. A negative amount represents a discount and is subtracted.
 router.post('/:id/charges', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
   try {
-    const { description, amount } = req.body;
+    const { description, amount, category } = req.body;
     if (!description || !amount) {
       return res.status(400).json({ error: 'Description and a non-zero amount are required (negative = discount)' });
+    }
+    if (category !== undefined && !CHARGE_CATEGORIES.includes(category)) {
+      return res.status(400).json({ error: `Category must be one of: ${CHARGE_CATEGORIES.join(', ')}` });
     }
     const existing = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
     if (!existing.rows[0]) {
@@ -428,8 +432,8 @@ router.post('/:id/charges', adminAuth, requireRole('admin', 'staff'), async (req
     }
     assertBookingUnlocked(existing.rows[0]);
     await db.execute({
-      sql: 'INSERT INTO booking_charges (booking_id, description, amount) VALUES (?, ?, ?)',
-      args: [req.params.id, description, amount]
+      sql: 'INSERT INTO booking_charges (booking_id, description, amount, category) VALUES (?, ?, ?, ?)',
+      args: [req.params.id, description, amount, category || 'other']
     });
     const totals = await recomputeBookingTotal(req.params.id);
     const chargesResult = await db.execute({

@@ -5,9 +5,11 @@ const loginMessage = document.getElementById('loginMessage');
 
 let currentUser = null;
 let revenueTrendChartInstance = null;
+let incomeBreakdownChartInstance = null;
 let expenseBreakdownChartInstance = null;
 let profitChartInstance = null;
-let lastInvoices = [];
+let lastLedger = [];
+let refreshTimer = null;
 
 function getAuthHeader() {
     const token = localStorage.getItem('horizonInvestorAuth');
@@ -26,9 +28,15 @@ function money(n) {
     return num < 0 ? `-Rs. ${Math.abs(num).toLocaleString('en-US')}` : `Rs. ${num.toLocaleString('en-US')}`;
 }
 
+function percent(n) {
+    return `${(Number(n || 0) * 100).toFixed(1)}%`;
+}
+
 function showLogin() {
     loginPanel.style.display = 'block';
     dashboard.style.display = 'none';
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = null;
 }
 
 function currentRange() {
@@ -52,21 +60,31 @@ async function showDashboard() {
     } catch (err) { return; }
 
     loadAll();
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(() => loadAll(), 60000);
 }
 
 async function loadAll() {
     try {
         const range = currentRange();
-        const summary = await apiGet(`/api/investor/summary${range}`);
+        const [summary, occupancy, roi] = await Promise.all([
+            apiGet(`/api/investor/summary${range}`),
+            apiGet(`/api/investor/occupancy${range}`),
+            apiGet(`/api/investor/roi${range}`)
+        ]);
+
         document.getElementById('summaryCards').innerHTML = `
             <div class="summary-card"><span>Total Revenue</span><strong>${money(summary.totalRevenue)}</strong></div>
-            <div class="summary-card"><span>Collected Payments</span><strong>${money(summary.totalCollected)}</strong></div>
             <div class="summary-card"><span>Total Expenses</span><strong>${money(summary.totalExpenses)}</strong></div>
-            <div class="summary-card"><span>Net Profit</span><strong>${money(summary.netProfit)}</strong></div>
+            <div class="summary-card"><span>Net Profit / Loss</span><strong>${money(summary.netProfit)}</strong></div>
+            <div class="summary-card"><span>Occupancy Rate</span><strong>${percent(occupancy.overallRate)}</strong></div>
+            <div class="summary-card"><span>ROI</span><strong>${roi.roiPercent !== null ? `${roi.roiPercent}%` : 'Not set'}</strong></div>
+            <div class="summary-card"><span>Collected Payments</span><strong>${money(summary.totalCollected)}</strong></div>
             <div class="summary-card"><span>Bookings</span><strong>${summary.totalBookings}</strong></div>
         `;
 
-        await Promise.all([renderRevenueTrend(), renderExpenseBreakdown(), renderProfitChart(), loadInvoices()]);
+        await Promise.all([renderRevenueTrend(), renderIncomeBreakdown(), renderExpenseBreakdown(), renderProfitChart(), loadLedger()]);
+        document.getElementById('lastUpdated').textContent = `Updated ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
     } catch (err) { /* handled */ }
 }
 
@@ -81,6 +99,23 @@ async function renderRevenueTrend() {
             datasets: [{ label: 'Revenue', data: data.map((d) => d.revenue), backgroundColor: '#c6a15b' }]
         },
         options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+}
+
+async function renderIncomeBreakdown() {
+    const range = currentRange();
+    const data = await apiGet(`/api/investor/income-breakdown${range}`);
+    if (incomeBreakdownChartInstance) incomeBreakdownChartInstance.destroy();
+    incomeBreakdownChartInstance = new Chart(document.getElementById('incomeBreakdownChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Room Bookings', 'Amenities', 'Event Rentals', 'Other'],
+            datasets: [{
+                data: [data.roomBookings, data.amenities, data.eventRentals, data.otherIncome],
+                backgroundColor: ['#14161f', '#c6a15b', '#3d7a4f', '#2f5faa']
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
     });
 }
 
@@ -127,17 +162,20 @@ async function renderProfitChart() {
     });
 }
 
-async function loadInvoices() {
+const LEDGER_TYPE_LABELS = { income: 'Income', expense: 'Expense', adjustment: 'Adjustment' };
+
+async function loadLedger() {
     const range = currentRange();
-    lastInvoices = await apiGet(`/api/investor/invoices${range}`);
-    document.getElementById('invoicesBody').innerHTML = lastInvoices.map((inv) => `
+    lastLedger = await apiGet(`/api/investor/ledger${range}`);
+    document.getElementById('ledgerBody').innerHTML = lastLedger.map((row) => `
         <tr>
-            <td>${inv.invoiceNumber}</td>
-            <td>${inv.date}</td>
-            <td>${inv.time}</td>
-            <td>${money(inv.amount)}</td>
+            <td>${row.date}</td>
+            <td><span class="status-pill ${row.type === 'expense' ? 'cancelled' : 'confirmed'}">${LEDGER_TYPE_LABELS[row.type] || row.type}</span></td>
+            <td>${row.category}</td>
+            <td>${row.reference || '—'}${row.note ? ` <span style="color: var(--text-light);">(${row.note})</span>` : ''}</td>
+            <td>${money(row.amount)}</td>
         </tr>
-    `).join('') || '<tr><td colspan="4">No invoices in this range.</td></tr>';
+    `).join('') || '<tr><td colspan="5">No transactions in this range.</td></tr>';
 }
 
 document.getElementById('datePresets').addEventListener('click', (e) => {
@@ -163,8 +201,8 @@ document.getElementById('rangeForm').addEventListener('submit', (e) => {
 document.getElementById('investorPrintBtn').addEventListener('click', () => window.print());
 
 document.getElementById('investorExportBtn').addEventListener('click', () => {
-    const rows = [['Invoice Number', 'Date', 'Time', 'Amount']];
-    lastInvoices.forEach((inv) => rows.push([inv.invoiceNumber, inv.date, inv.time, inv.amount]));
+    const rows = [['Date', 'Type', 'Category', 'Reference', 'Amount']];
+    lastLedger.forEach((row) => rows.push([row.date, LEDGER_TYPE_LABELS[row.type] || row.type, row.category, row.reference || '', row.amount]));
     const csv = rows.map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);

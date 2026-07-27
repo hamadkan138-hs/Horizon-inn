@@ -319,6 +319,12 @@ function init() {
       // yet, keep working exactly as before).
       await addColumnsIfMissing('bookings', ['physical_room_id INTEGER']);
 
+      // Lets the investor dashboard split income into Room Bookings vs
+      // Amenities (barbecue, bonfire, etc.) vs Event Rentals instead of one
+      // undifferentiated "extra charges" bucket. Existing rows default to
+      // 'other' rather than guessing a category for historical data.
+      await addColumnsIfMissing('booking_charges', ["category TEXT NOT NULL DEFAULT 'other'"]);
+
       const DEFAULT_SETTINGS = {
         hero_eyebrow: 'Est. 2026 · Boutique Hospitality',
         hero_heading: 'Welcome to Horizon Inn',
@@ -347,7 +353,13 @@ function init() {
         payment_easypaisa_title: 'Hamad Ullah',
         payment_easypaisa_number: '0333 3564462',
         payment_jazzcash_title: '',
-        payment_jazzcash_number: ''
+        payment_jazzcash_number: '',
+        // Total owner/investor capital invested in the property. Used only
+        // to compute the ROI figure on the investor dashboard — deliberately
+        // excluded from the public GET /api/settings response (see
+        // routes/settings.js) since, unlike contact/payment info, it has no
+        // reason to ever be visible to an unauthenticated site visitor.
+        investor_capital_invested: ''
       };
       for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
         await db.execute({

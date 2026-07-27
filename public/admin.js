@@ -12,6 +12,7 @@ const PAYMENT_METHOD_LABELS = {
     pay_at_property: 'Pay at Property', bank_transfer: 'Bank Transfer',
     easypaisa: 'EasyPaisa', jazzcash: 'JazzCash', cash: 'Cash'
 };
+const CHARGE_CATEGORY_LABELS = { amenity: 'Amenity', event_rental: 'Event Rental', other: 'Other' };
 
 let currentUser = null;
 let allBookings = [];
@@ -230,14 +231,19 @@ async function renderBookingDetail(id) {
             <div class="detail-subsection">
                 <h4>Charges &mdash; Room ${money(b.room_amount)}, Extras ${money(chargesTotal)}, Tax ${b.tax_percent}%</h4>
                 <table class="admin-table mini-table">
-                    <thead><tr><th>Description</th><th>Amount</th><th></th></tr></thead>
+                    <thead><tr><th>Description</th><th>Category</th><th>Amount</th><th></th></tr></thead>
                     <tbody>
-                        <tr><td>${escapeHtml(b.room_name)} (room charge)</td><td>${money(b.room_amount)}</td><td></td></tr>
-                        ${b.charges.map((c) => `<tr ${c.amount < 0 ? 'class="discount-row"' : ''}><td>${escapeHtml(c.description)}</td><td>${money(c.amount)}</td><td><button class="action-btn cancel remove-charge-btn" data-booking="${id}" data-charge="${c.id}">Remove</button></td></tr>`).join('')}
+                        <tr><td>${escapeHtml(b.room_name)} (room charge)</td><td>Room Booking</td><td>${money(b.room_amount)}</td><td></td></tr>
+                        ${b.charges.map((c) => `<tr ${c.amount < 0 ? 'class="discount-row"' : ''}><td>${escapeHtml(c.description)}</td><td>${CHARGE_CATEGORY_LABELS[c.category] || 'Other'}</td><td>${money(c.amount)}</td><td><button class="action-btn cancel remove-charge-btn" data-booking="${id}" data-charge="${c.id}">Remove</button></td></tr>`).join('')}
                     </tbody>
                 </table>
                 <form class="inline-form charge-form" data-id="${id}">
-                    <input type="text" name="description" placeholder="Extra service or discount (e.g. Breakfast, Loyalty Discount)" required>
+                    <input type="text" name="description" placeholder="Extra service or discount (e.g. Barbecue, Bonfire)" required>
+                    <select name="category">
+                        <option value="amenity">Amenity</option>
+                        <option value="event_rental">Event Rental</option>
+                        <option value="other" selected>Other</option>
+                    </select>
                     <input type="number" name="amount" placeholder="Amount (negative = discount)" step="0.01" required>
                     <button type="submit" class="action-btn confirm">Add Charge</button>
                 </form>
@@ -321,7 +327,8 @@ async function renderBookingDetail(id) {
             try {
                 await apiSend('POST', `/api/bookings/${id}/charges`, {
                     description: form.description.value,
-                    amount: Number(form.amount.value)
+                    amount: Number(form.amount.value),
+                    category: form.category.value
                 });
                 loadBookings(true, id);
             } catch (err) {
@@ -1424,6 +1431,10 @@ async function loadSiteContent() {
         Object.keys(settings).forEach((key) => {
             if (form[key] !== undefined) form[key].value = settings[key];
         });
+        // Deliberately not part of the public settings payload above — see
+        // routes/settings.js — so it's fetched separately here.
+        const { capitalInvested } = await apiGet('/api/investor/capital-invested');
+        if (capitalInvested) form['investor_capital_invested'].value = capitalInvested;
     } catch (err) { /* handled */ }
 }
 
