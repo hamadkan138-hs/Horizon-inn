@@ -551,6 +551,25 @@ async function loadDailySummary() {
 
 document.getElementById('dailyDate').addEventListener('change', loadDailySummary);
 
+document.getElementById('sendDailyEmailBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('sendDailyEmailBtn');
+    const msg = document.getElementById('sendDailyEmailMessage');
+    btn.disabled = true;
+    msg.textContent = 'Sending...';
+    msg.style.color = '';
+    try {
+        await apiSend('POST', '/api/reports/daily-summary/send-now', {});
+        msg.textContent = 'Sent!';
+        msg.style.color = '#3d7a4f';
+    } catch (err) {
+        msg.textContent = err.message;
+        msg.style.color = '#a5473c';
+    } finally {
+        btn.disabled = false;
+        setTimeout(() => { msg.textContent = ''; }, 6000);
+    }
+});
+
 /* ---------------- Cash & Handover (locked ledger) ---------------- */
 let handoverDetailedVisible = false;
 

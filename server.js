@@ -1,6 +1,8 @@
 const path = require('path');
 const express = require('express');
+const cron = require('node-cron');
 const { init } = require('./db');
+const { sendDailySummaryEmail } = require('./lib/mailer');
 
 const roomsRouter = require('./routes/rooms');
 const bookingsRouter = require('./routes/bookings');
@@ -47,6 +49,19 @@ init()
     app.listen(PORT, () => {
       console.log(`Horizon Inn server running on port ${PORT}`);
     });
+
+    // Automated daily summary email — only runs if EMAIL_USER and
+    // EMAIL_APP_PASSWORD are configured (see README for setup). Scheduled
+    // in Pakistan time directly so it doesn't drift with the server's own
+    // timezone or need UTC conversion.
+    if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD) {
+      cron.schedule('0 8 * * *', () => {
+        sendDailySummaryEmail().catch((err) => console.error('Daily summary email failed:', err));
+      }, { timezone: 'Asia/Karachi' });
+      console.log('Daily summary email scheduled for 8:00 AM PKT.');
+    } else {
+      console.log('Daily summary email disabled — set EMAIL_USER and EMAIL_APP_PASSWORD to enable it.');
+    }
   })
   .catch((err) => {
     console.error('Failed to initialize database:', err);

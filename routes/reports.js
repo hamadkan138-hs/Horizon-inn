@@ -2,6 +2,8 @@ const express = require('express');
 const { db } = require('../db');
 const adminAuth = require('../middleware/adminAuth');
 const { requireRole } = adminAuth;
+const { getDailySummary } = require('../lib/dailySummary');
+const { sendDailySummaryEmail } = require('../lib/mailer');
 
 const router = express.Router();
 
@@ -202,60 +204,27 @@ router.get('/summary', async (req, res) => {
 // Front-desk daily view: who's arriving/leaving today, cash taken today, who still owes money
 router.get('/daily-summary', async (req, res) => {
   try {
-    const date = req.query.date || new Date().toISOString().slice(0, 10);
-
-    const checkinsResult = await db.execute({
-      sql: `
-        SELECT bookings.*, rooms.name AS room_name
-        FROM bookings JOIN rooms ON rooms.id = bookings.room_id
-        WHERE checkin = ? AND status != 'cancelled'
-        ORDER BY bookings.id
-      `,
-      args: [date]
-    });
-    const checkoutsResult = await db.execute({
-      sql: `
-        SELECT bookings.*, rooms.name AS room_name
-        FROM bookings JOIN rooms ON rooms.id = bookings.room_id
-        WHERE checkout = ? AND status != 'cancelled'
-        ORDER BY bookings.id
-      `,
-      args: [date]
-    });
-    const cashTodayResult = await db.execute({
-      sql: `SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE date(recorded_at) = ?`,
-      args: [date]
-    });
-    const outstandingResult = await db.execute(`
-      SELECT bookings.*, rooms.name AS room_name,
-             bookings.total_amount - COALESCE(p.paid, 0) AS balance
-      FROM bookings
-      JOIN rooms ON rooms.id = bookings.room_id
-      LEFT JOIN (SELECT booking_id, SUM(amount) AS paid FROM payments GROUP BY booking_id) p ON p.booking_id = bookings.id
-      WHERE bookings.status NOT IN ('cancelled', 'checked_out') AND bookings.total_amount - COALESCE(p.paid, 0) > 0.01
-      ORDER BY balance DESC
-    `);
-
-    const paidByBooking = {};
-    for (const row of [...checkinsResult.rows, ...checkoutsResult.rows]) {
-      if (paidByBooking[row.id] !== undefined) continue;
-      const paidResult = await db.execute({ sql: 'SELECT COALESCE(SUM(amount),0) AS paid FROM payments WHERE booking_id = ?', args: [row.id] });
-      paidByBooking[row.id] = Number(paidResult.rows[0].paid);
-    }
-
-    const withBalance = (row) => ({ ...row, balance: Math.max(0, Number(row.total_amount) - (paidByBooking[row.id] || 0)) });
-
-    res.json({
-      date,
-      checkins: checkinsResult.rows.map(withBalance),
-      checkouts: checkoutsResult.rows.map(withBalance),
-      cashReceivedToday: Number(cashTodayResult.rows[0].total),
-      outstandingTotal: outstandingResult.rows.reduce((sum, r) => sum + Number(r.balance), 0),
-      outstandingBookings: outstandingResult.rows
-    });
+    const summary = await getDailySummary(req.query.date);
+    res.json(summary);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to load daily summary' });
+  }
+});
+
+// Lets an admin/staff member fire the automated daily summary email on
+// demand — useful to confirm the mail credentials work right after
+// deploying, without waiting for the next scheduled run.
+router.post('/daily-summary/send-now', requireRole('admin', 'staff'), async (req, res) => {
+  try {
+    const result = await sendDailySummaryEmail();
+    if (!result.sent) {
+      return res.status(400).json({ error: result.reason });
+    }
+    res.json({ sent: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to send the summary email' });
   }
 });
 
