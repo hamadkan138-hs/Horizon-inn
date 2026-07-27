@@ -59,8 +59,8 @@ function escapeHtml(str) {
 const STATUS_META = {
     available: { label: 'Vacant', dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', chip: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400', border: 'border-emerald-400/40' },
     occupied: { label: 'Occupied', dot: 'bg-rose-500', text: 'text-rose-600 dark:text-rose-400', chip: 'bg-rose-500/15 text-rose-600 dark:text-rose-400', border: 'border-rose-400/40' },
-    reserved: { label: 'Reserved', dot: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-400', chip: 'bg-amber-500/15 text-amber-600 dark:text-amber-400', border: 'border-amber-400/40' },
-    cleaning: { label: 'Cleaning', dot: 'bg-sky-500', text: 'text-sky-600 dark:text-sky-400', chip: 'bg-sky-500/15 text-sky-600 dark:text-sky-400', border: 'border-sky-400/40' },
+    reserved: { label: 'Reserved', dot: 'bg-blue-500', text: 'text-blue-600 dark:text-blue-400', chip: 'bg-blue-500/15 text-blue-600 dark:text-blue-400', border: 'border-blue-400/40' },
+    cleaning: { label: 'Cleaning', dot: 'bg-yellow-500', text: 'text-yellow-600 dark:text-yellow-400', chip: 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-400', border: 'border-yellow-400/40' },
     maintenance: { label: 'Maintenance', dot: 'bg-orange-500', text: 'text-orange-600 dark:text-orange-400', chip: 'bg-orange-500/15 text-orange-600 dark:text-orange-400', border: 'border-orange-400/40' },
     inactive: { label: 'Inactive', dot: 'bg-slate-400', text: 'text-slate-500 dark:text-slate-400', chip: 'bg-slate-500/15 text-slate-500 dark:text-slate-400', border: 'border-slate-400/40' }
 };
@@ -186,6 +186,34 @@ function filteredSlots() {
     });
 }
 
+// Sections are grouped from the current filtered result (so a status/search
+// filter naturally hides an empty category), but each section's own count
+// breakdown always reflects the category's real, unfiltered room list — the
+// header is a category-wide snapshot, not a filtered subtotal.
+function groupedFilteredSlots() {
+    const order = [];
+    const byRoomId = new Map();
+    filteredSlots().forEach((slot) => {
+        if (!byRoomId.has(slot.roomId)) {
+            byRoomId.set(slot.roomId, []);
+            order.push(slot.roomId);
+        }
+        byRoomId.get(slot.roomId).push(slot);
+    });
+    return order.map((roomId) => ({ roomId, slots: byRoomId.get(roomId) }));
+}
+
+function categoryStats(roomId) {
+    const room = boardData.find((r) => r.id === roomId);
+    if (!room) return { name: '', total: 0, available: 0, occupied: 0 };
+    return {
+        name: room.name,
+        total: room.slots.length,
+        available: room.slots.filter((s) => s.status === 'available').length,
+        occupied: room.slots.filter((s) => s.status === 'occupied').length
+    };
+}
+
 /* ---------------- Rendering ---------------- */
 function renderAll() {
     renderSummary();
@@ -206,7 +234,19 @@ function renderSummary() {
         { key: 'maintenance', icon: 'fa-screwdriver-wrench', label: 'Maintenance' }
     ];
 
-    document.getElementById('summaryStrip').innerHTML = cards.map((c) => `
+    const totalTile = `
+        <div class="glass rounded-2xl p-4 flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center bg-ink/10 dark:bg-gold/15 text-ink dark:text-gold">
+                <i class="fa-solid fa-hotel"></i>
+            </div>
+            <div>
+                <p class="text-2xl font-bold leading-none">${all.length}</p>
+                <p class="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 mt-1">Total Rooms</p>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('summaryStrip').innerHTML = totalTile + cards.map((c) => `
         <div class="glass rounded-2xl p-4 flex items-center gap-3">
             <div class="w-11 h-11 rounded-xl flex items-center justify-center ${STATUS_META[c.key].chip}">
                 <i class="fa-solid ${c.icon}"></i>
@@ -281,19 +321,25 @@ function slotCardHtml(slot, index) {
         actions.push(`<button data-action="manage" class="flex-1 text-xs font-semibold py-2 rounded-lg bg-ink dark:bg-gold text-white dark:text-ink hover:opacity-90">Manage</button>`);
     }
 
+    // Room number is the headline when a real physical room is registered
+    // (that's the identity staff scan for first); the category name drops
+    // to a subtitle. Categories with no physical rooms yet keep the old
+    // "category name + synthetic Unit N" layout since there's no real
+    // number to headline.
+    const heading = isPhysical ? `Room ${escapeHtml(slot.roomNumber)}` : escapeHtml(slot.roomName);
     const subtitle = isPhysical
-        ? `Room ${escapeHtml(slot.roomNumber)}${slot.floor ? ` &middot; Floor ${escapeHtml(slot.floor)}` : ''}`
+        ? `${escapeHtml(slot.roomName)}${slot.floor ? ` &middot; Floor ${escapeHtml(slot.floor)}` : ''}`
         : `Unit ${slot.unit} of ${slot.totalUnits}`;
 
     return `
-        <div class="card-enter glass rounded-2xl p-5 border-l-4 ${meta.border} flex flex-col justify-between"
+        <div class="card-enter glass rounded-2xl p-5 border-t-4 ${meta.border} flex flex-col justify-between cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-glass dark:hover:shadow-glass-dark"
              style="animation-delay:${Math.min(index * 25, 300)}ms"
              data-room-id="${slot.roomId}" data-unit="${slot.unit}" data-status="${slot.status}"
              data-booking-id="${b ? b.id : ''}" data-physical-room-id="${slot.physicalRoomId || ''}">
             <div>
                 <div class="flex items-start justify-between mb-2">
                     <div>
-                        <p class="text-sm font-semibold">${escapeHtml(slot.roomName)}</p>
+                        <p class="text-base font-bold leading-tight">${heading}</p>
                         <p class="text-xs text-slate-500 dark:text-slate-400">${subtitle}</p>
                     </div>
                     <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${meta.chip}">
@@ -307,33 +353,58 @@ function slotCardHtml(slot, index) {
     `;
 }
 
+function sectionHeaderHtml(stats) {
+    return `
+        <div class="col-span-full flex items-center justify-between flex-wrap gap-2 pt-2 pb-1 ${stats.isFirst ? '' : 'mt-2 border-t border-black/10 dark:border-white/10'}">
+            <h3 class="font-display text-lg font-bold">${escapeHtml(stats.name)}</h3>
+            <div class="flex items-center gap-3 text-xs">
+                <span class="text-slate-500 dark:text-slate-400 font-medium">${stats.total} room${stats.total === 1 ? '' : 's'}</span>
+                <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>${stats.available} available</span>
+                <span class="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 font-semibold"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>${stats.occupied} occupied</span>
+            </div>
+        </div>
+    `;
+}
+
 function renderGrid() {
-    const slots = filteredSlots();
+    const groups = groupedFilteredSlots();
     const grid = document.getElementById('roomGrid');
     const empty = document.getElementById('emptyState');
 
-    if (!slots.length) {
+    if (!groups.length) {
         grid.innerHTML = '';
         empty.classList.remove('hidden');
         return;
     }
     empty.classList.add('hidden');
-    grid.innerHTML = slots.map((slot, i) => slotCardHtml(slot, i)).join('');
 
-    grid.querySelectorAll('[data-action]').forEach((btn) => {
-        const card = btn.closest('[data-room-id]');
+    let cardIndex = 0;
+    grid.innerHTML = groups.map((group, groupIndex) => {
+        const stats = { ...categoryStats(group.roomId), isFirst: groupIndex === 0 };
+        const cardsHtml = group.slots.map((slot) => slotCardHtml(slot, cardIndex++)).join('');
+        return sectionHeaderHtml(stats) + cardsHtml;
+    }).join('');
+
+    grid.querySelectorAll('[data-room-id]').forEach((card) => {
         const roomId = card.dataset.roomId;
         const unit = Number(card.dataset.unit);
         const slot = boardData.find((r) => String(r.id) === roomId)?.slots.find((s) => s.unit === unit);
         const room = boardData.find((r) => String(r.id) === roomId);
+        if (!slot || !room) return;
 
-        btn.addEventListener('click', () => {
-            const action = btn.dataset.action;
-            if (action === 'details') openDetailsModal(room, slot);
-            if (action === 'manage') openManageDrawer(room, slot);
-            if (action === 'assign') openAssignModal(room, slot);
-            if (action === 'editRoom') openRoomFormForPhysicalId(slot.physicalRoomId);
+        card.querySelectorAll('[data-action]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const action = btn.dataset.action;
+                if (action === 'details') openDetailsModal(room, slot);
+                if (action === 'manage') openManageDrawer(room, slot);
+                if (action === 'assign') openAssignModal(room, slot);
+                if (action === 'editRoom') openRoomFormForPhysicalId(slot.physicalRoomId);
+            });
         });
+
+        // Clicking anywhere else on the card is a shortcut to View Details.
+        card.addEventListener('click', () => openDetailsModal(room, slot));
     });
 }
 
