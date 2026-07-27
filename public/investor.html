@@ -20,17 +20,17 @@
            management are completely unaffected.
         --------------------------------------------------------------- */
         body {
-            --ink: #0d0e12;
+            --ink: #0b0c10;
             --ink-2: #15171d;
             --glass: rgba(28, 31, 40, 0.55);
             --glass-strong: rgba(34, 37, 47, 0.72);
             --bronze: #8c6239;
             --gold: #d4af37;
             --gold-light: #f0d78c;
-            --text-1: #f4efe2;
+            --text-1: #ffffff;
             --text-2: #9b968c;
             --hair: rgba(212, 175, 55, 0.16);
-            --emerald: #22c55e;
+            --emerald: #10b981;
             --danger: #e0685a;
             background:
                 radial-gradient(1200px 600px at 15% -10%, rgba(140, 98, 57, 0.14), transparent 60%),
@@ -155,6 +155,22 @@
         /* ROI calculator */
         .roi-calc-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 30px; }
         @media (max-width: 800px) { .roi-calc-grid { grid-template-columns: 1fr; } }
+
+        /* My Investment: scannable 3-row grid */
+        .dash-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .dash-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        @media (max-width: 900px) { .dash-grid-2, .dash-grid-3 { grid-template-columns: 1fr; } }
+
+        .mini-toggle { display: flex; gap: 4px; background: rgba(255,255,255,0.03); border: 1px solid var(--hair); border-radius: 999px; padding: 3px; }
+        .mini-toggle-btn { background: transparent; border: none; color: var(--text-2); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; padding: 5px 12px; border-radius: 999px; cursor: pointer; transition: all 0.2s ease; }
+        .mini-toggle-btn.active { background: linear-gradient(135deg, var(--gold-light), var(--bronze)); color: #17130a; }
+        .mini-toggle-btn:hover:not(.active) { color: var(--gold-light); }
+
+        .project-preview-row { display: flex; gap: 14px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--hair); }
+        .project-preview-row:last-child { border-bottom: none; }
+        .project-preview-thumb { width: 46px; height: 46px; border-radius: 8px; background: linear-gradient(135deg, var(--ink-2), var(--bronze) 180%); display: flex; align-items: center; justify-content: center; color: var(--gold-light); flex-shrink: 0; }
+        .project-preview-row h5 { font-family: 'Playfair Display', serif; color: var(--text-1); font-size: 0.92rem; margin-bottom: 2px; }
+        .project-preview-row p { color: var(--text-2); font-size: 0.75rem; margin: 0; }
         .roi-input-row { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
         .roi-input-row input[type="range"] { flex: 1; accent-color: var(--gold); }
         .roi-input-row input[type="number"] {
@@ -285,7 +301,112 @@
 
             <!-- ================= MY INVESTMENT ================= -->
             <section class="admin-panel" id="panel-myinvestment" style="display: none;">
-                <div id="myInvestmentContent"><p style="color: var(--text-2);">Loading your investment profile&hellip;</p></div>
+                <div id="investorAdminNotice"></div>
+                <div id="myInvestmentBody" style="display: none;">
+
+                    <!-- Row 1: Real-Time Earnings + My Equity -->
+                    <div class="dash-grid-2">
+                        <div class="glass-card">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3><i class="fas fa-bolt-lightning" style="color: var(--emerald);"></i> Real-Time Earnings (My Share)</h3>
+                                <span style="color: var(--emerald); font-size: 0.78rem;"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> Live</span>
+                            </div>
+                            <p style="color: var(--text-2); margin: 14px 0 4px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Accrued Dividend (All-Time)</p>
+                            <p style="font-family: 'Playfair Display', serif; font-size: 2.4rem; color: var(--emerald); margin-bottom: 6px;" id="miAccruedDividend">Rs. 0</p>
+                            <p style="color: var(--text-2); font-size: 0.85rem;" id="miAvailableLine">Available to withdraw: <strong style="color: var(--text-1);">Rs. 0</strong></p>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 18px;">
+                                <span class="turnaround-badge"><i class="fas fa-bolt"></i> 24-Hr Express</span>
+                                <button class="action-btn confirm withdraw-btn" id="openDividendWithdrawBtn">Withdraw Earnings</button>
+                            </div>
+                        </div>
+
+                        <div class="glass-card">
+                            <h3><i class="fas fa-chart-pie"></i> My Equity</h3>
+                            <div style="display: flex; gap: 30px; margin: 16px 0;">
+                                <div>
+                                    <p style="color: var(--text-2); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Ownership</p>
+                                    <p style="font-family: 'Playfair Display', serif; font-size: 2.2rem; color: var(--gold-light);" id="miOwnership">0%</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-2); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Share Valuation</p>
+                                    <p style="font-family: 'Playfair Display', serif; font-size: 2.2rem; color: var(--text-1);" id="miEquityValue">Rs. 0</p>
+                                </div>
+                            </div>
+                            <div style="border-top: 1px solid var(--hair); padding-top: 14px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 0.85rem;"><i class="fas fa-lock"></i> Capital Lockup</span>
+                                    <span style="font-size: 0.8rem; color: var(--text-2);" id="miLockupDates"></span>
+                                </div>
+                                <div class="lockup-bar"><div class="lockup-bar-fill" id="miLockupFill" style="width: 0%;"></div></div>
+                                <p style="color: var(--text-2); font-size: 0.82rem;" id="miLockupNote"></p>
+                                <button class="action-btn withdraw-btn" id="openCapitalWithdrawBtn" style="margin-top: 10px;">Capital Release</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Revenue vs Expense + Income Streams -->
+                    <div class="dash-grid-2">
+                        <div class="chart-card">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                <h3>Revenue vs Expense Trend</h3>
+                                <div class="mini-toggle" id="trendRangeToggle">
+                                    <button type="button" class="mini-toggle-btn" data-range="24h">24H</button>
+                                    <button type="button" class="mini-toggle-btn active" data-range="7d">7D</button>
+                                    <button type="button" class="mini-toggle-btn" data-range="30d">30D</button>
+                                    <button type="button" class="mini-toggle-btn" data-range="ytd">YTD</button>
+                                </div>
+                            </div>
+                            <canvas id="revExpTrendChart" height="140"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Income Streams</h3>
+                            <canvas id="incomeStreamsChart" height="140"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Valuation gauge + Projects preview + Simulator -->
+                    <div class="dash-grid-3">
+                        <div class="glass-card">
+                            <h3 style="margin-bottom: 6px;"><i class="fas fa-building-columns"></i> Hotel Valuation</h3>
+                            <canvas id="valuationGaugeChart" height="140"></canvas>
+                            <p style="text-align: center; font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--gold-light); margin-top: -30px;" id="miValuationBig">Rs. 0</p>
+                            <p style="text-align: center; color: var(--text-2); font-size: 0.78rem;" id="miValuationSub">Total Property Value</p>
+                        </div>
+
+                        <div class="glass-card">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3><i class="fas fa-rocket"></i> Upcoming Projects</h3>
+                            </div>
+                            <div id="projectsPreviewList" style="margin: 14px 0;"></div>
+                            <button class="action-btn" id="viewAllProjectsBtn" style="width: 100%;">View All Projects &rarr;</button>
+                        </div>
+
+                        <div class="glass-card">
+                            <h3 style="margin-bottom: 10px;"><i class="fas fa-calculator"></i> Investment Simulator</h3>
+                            <label style="font-size: 0.75rem; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em;">Hypothetical Amount (Rs.)</label>
+                            <input type="number" id="simAmount" min="0" step="1000" value="100000" style="width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--hair); color: var(--text-1); border-radius: 6px; padding: 8px 12px; margin: 6px 0 14px; font-family: 'Playfair Display', serif;">
+                            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
+                                <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-2);">Share %</span><strong id="simOwnership" style="color: var(--gold-light);">0%</strong></div>
+                                <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-2);">Est. Monthly Income</span><strong id="simMonthly" class="emerald">Rs. 0</strong></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card">
+                        <h3 style="margin-bottom: 14px;">Compliance &amp; Account Status</h3>
+                        <div style="display: flex; gap: 24px; flex-wrap: wrap;" id="miComplianceBadges"></div>
+                    </div>
+
+                    <div class="glass-card">
+                        <h3 style="margin-bottom: 14px;">My Withdrawal Requests</h3>
+                        <div style="overflow-x: auto;">
+                            <table class="admin-table">
+                                <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
+                                <tbody id="miWithdrawalRequestsBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- ================= HOTEL VALUATION & METRICS ================= -->

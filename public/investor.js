@@ -104,6 +104,12 @@ async function showDashboard() {
     loadAll();
     if (refreshTimer) clearInterval(refreshTimer);
     refreshTimer = setInterval(() => loadAll(), 60000);
+
+    // Investors land on their personalized dashboard first; admins (who have
+    // no linked investor profile) keep landing on the business-wide Overview.
+    if (currentUser.role === 'investor') {
+        document.querySelector('.admin-tab[data-tab="myinvestment"]').click();
+    }
 }
 
 async function loadAll() {
@@ -342,18 +348,37 @@ document.getElementById('investorTabs').addEventListener('click', (e) => {
 const COMPLIANCE_LABELS = { pending: 'Pending', verified: 'Verified', signed: 'Signed', rejected: 'Rejected' };
 let myInvestorProfile = null;
 
+let trendRange = '7d';
+let revExpTrendChartInstance = null;
+let incomeStreamsChartInstance = null;
+let valuationGaugeChartInstance = null;
+
+function rangeForTrendToggle(key) {
+    const to = todayStr();
+    if (key === '24h') return { from: to, to, range: 'daily' };
+    if (key === '7d') { const d = new Date(); d.setDate(d.getDate() - 6); return { from: d.toISOString().slice(0, 10), to, range: 'daily' }; }
+    if (key === '30d') { const d = new Date(); d.setDate(d.getDate() - 29); return { from: d.toISOString().slice(0, 10), to, range: 'daily' }; }
+    // ytd
+    const jan1 = `${new Date().getFullYear()}-01-01`;
+    return { from: jan1, to, range: 'monthly' };
+}
+
 async function loadMyInvestmentTab() {
-    const container = document.getElementById('myInvestmentContent');
+    const notice = document.getElementById('investorAdminNotice');
+    const body = document.getElementById('myInvestmentBody');
+
     if (currentUser.role !== 'investor') {
-        container.innerHTML = `
+        notice.innerHTML = `
             <div class="glass-card">
                 <p style="color: var(--text-2);">This admin account isn't linked to an investor profile — "My Investment" is personalized per investor. Use the Investor Accounts panel in Admin to create and manage investor profiles.</p>
             </div>
         `;
+        body.style.display = 'none';
         return;
     }
+    notice.innerHTML = '';
+    body.style.display = 'block';
 
-    container.innerHTML = `<p style="color: var(--text-2);">Loading your investment profile&hellip;</p>`;
     try {
         const [me, requests] = await Promise.all([
             apiGet('/api/investor-accounts/me'),
@@ -361,14 +386,31 @@ async function loadMyInvestmentTab() {
         ]);
         myInvestorProfile = me;
 
+        document.getElementById('miAccruedDividend').textContent = money(me.accruedDividend);
+        document.getElementById('miAvailableLine').innerHTML = `Available to withdraw: <strong style="color: var(--text-1);">${money(me.availableToWithdraw)}</strong>`;
+        document.getElementById('openDividendWithdrawBtn').disabled = me.availableToWithdraw <= 0;
+
+        document.getElementById('miOwnership').textContent = `${me.ownershipPercent}%`;
+        document.getElementById('miEquityValue').textContent = money(me.equityValue);
+        document.getElementById('miLockupDates').textContent = `${me.lockup.lockupStart} → ${me.lockup.lockupEnd}`;
+        document.getElementById('miLockupFill').style.width = `${me.lockup.progressPercent}%`;
+        document.getElementById('miLockupNote').innerHTML = me.lockup.unlocked
+            ? '<span class="emerald"><i class="fas fa-lock-open"></i> Capital unlocked — release is available.</span>'
+            : `<i class="fas fa-hourglass-half"></i> ${me.lockup.daysRemaining} day(s) remaining until capital can be released.`;
+        document.getElementById('openCapitalWithdrawBtn').disabled = !me.lockup.unlocked;
+
         const complianceBadge = (label, status) => `
             <div>
                 <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); display: block; margin-bottom: 6px;">${label}</span>
                 <span class="compliance-badge ${status}">${COMPLIANCE_LABELS[status] || status}</span>
             </div>
         `;
+        document.getElementById('miComplianceBadges').innerHTML =
+            complianceBadge('SPA Status', me.spaStatus) +
+            complianceBadge('Accredited Investor', me.accreditedStatus) +
+            complianceBadge('AML / KYC', me.amlKycStatus);
 
-        const requestRows = requests.map((r) => `
+        document.getElementById('miWithdrawalRequestsBody').innerHTML = requests.map((r) => `
             <tr>
                 <td>${r.requestedAt.slice(0, 10)}</td>
                 <td>${r.type === 'dividend' ? 'Dividend' : 'Capital'}</td>
@@ -377,73 +419,152 @@ async function loadMyInvestmentTab() {
             </tr>
         `).join('') || '<tr><td colspan="4">No withdrawal requests yet.</td></tr>';
 
-        container.innerHTML = `
-            <div class="glass-card">
-                <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 20px; align-items: flex-start;">
-                    <div>
-                        <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-2);">Investor Code</span>
-                        <h2 style="text-align: left; margin: 4px 0 0; font-size: 1.5rem;">${me.investorCode}</h2>
-                    </div>
-                    <div style="display: flex; gap: 24px; flex-wrap: wrap;">
-                        ${complianceBadge('SPA Status', me.spaStatus)}
-                        ${complianceBadge('Accredited Investor', me.accreditedStatus)}
-                        ${complianceBadge('AML / KYC', me.amlKycStatus)}
-                    </div>
-                </div>
-            </div>
-
-            <div class="summary-cards">
-                <div class="summary-card"><div class="kpi-icon"><i class="fas fa-coins"></i></div><span>Capital Invested</span><strong>${money(me.capitalInvested)}</strong></div>
-                <div class="summary-card"><div class="kpi-icon"><i class="fas fa-chart-pie"></i></div><span>Ownership Share</span><strong>${me.ownershipPercent}%</strong></div>
-                <div class="summary-card"><div class="kpi-icon"><i class="fas fa-building-columns"></i></div><span>Current Equity Value</span><strong>${money(me.equityValue)}</strong></div>
-                <div class="summary-card"><div class="kpi-icon"><i class="fas fa-sack-dollar"></i></div><span>Accrued Dividend (All-Time)</span><strong class="emerald">${money(me.accruedDividend)}</strong></div>
-            </div>
-
-            <div class="glass-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <h3><i class="fas fa-hand-holding-dollar"></i> Dividend Earnings</h3>
-                    <span class="turnaround-badge"><i class="fas fa-bolt"></i> ${me.dividendTurnaroundHours}-Hour Processing Time</span>
-                </div>
-                <p style="color: var(--text-2); margin: 10px 0;">Available to withdraw right now (after already-withdrawn and pending requests):</p>
-                <p style="font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--emerald); margin-bottom: 16px;">${money(me.availableToWithdraw)}</p>
-                <button class="action-btn confirm withdraw-btn" id="openDividendWithdrawBtn" ${me.availableToWithdraw <= 0 ? 'disabled' : ''}>
-                    <i class="fas fa-hand-holding-dollar"></i> Withdraw Earnings
-                </button>
-            </div>
-
-            <div class="glass-card">
-                <h3><i class="fas fa-lock"></i> Principal Capital</h3>
-                <p style="color: var(--text-2); margin: 10px 0 4px;">Lockup period: ${me.lockup.lockupStart} &rarr; ${me.lockup.lockupEnd}</p>
-                <div class="lockup-bar"><div class="lockup-bar-fill" style="width: ${me.lockup.progressPercent}%;"></div></div>
-                <p style="color: var(--text-2); font-size: 0.85rem; margin-bottom: 16px;">
-                    ${me.lockup.unlocked
-                        ? '<span class="emerald"><i class="fas fa-lock-open"></i> Capital unlocked — release is available.</span>'
-                        : `<i class="fas fa-hourglass-half"></i> ${me.lockup.daysRemaining} day(s) remaining until capital can be released.`}
-                </p>
-                <button class="action-btn withdraw-btn" id="openCapitalWithdrawBtn" ${me.lockup.unlocked ? '' : 'disabled'}>
-                    <i class="fas fa-unlock"></i> Capital Release
-                </button>
-            </div>
-
-            <div class="glass-card">
-                <h3 style="margin-bottom: 14px;">My Withdrawal Requests</h3>
-                <div style="overflow-x: auto;">
-                    <table class="admin-table">
-                        <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
-                        <tbody>${requestRows}</tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-
-        const dividendBtn = document.getElementById('openDividendWithdrawBtn');
-        if (dividendBtn) dividendBtn.addEventListener('click', () => openWithdrawModal('dividend', me));
-        const capitalBtn = document.getElementById('openCapitalWithdrawBtn');
-        if (capitalBtn) capitalBtn.addEventListener('click', () => openWithdrawModal('capital', me));
+        // allSettled, not all: the figures above (ownership, dividend, lockup,
+        // compliance, withdrawal history) have already rendered successfully
+        // by this point. One chart failing to draw — e.g. Chart.js blocked or
+        // slow to load — must not blank out data that's already correct.
+        const results = await Promise.allSettled([
+            renderRevExpTrendChart(),
+            renderIncomeStreamsChart(),
+            renderValuationGaugeAndSimulator(),
+            renderProjectsPreview()
+        ]);
+        results.forEach((r) => { if (r.status === 'rejected') console.warn('My Investment panel section failed:', r.reason); });
     } catch (err) {
-        container.innerHTML = `<div class="glass-card"><p class="danger-text">${err.message}</p></div>`;
+        notice.innerHTML = `<div class="glass-card"><p class="danger-text">${err.message}</p></div>`;
+        body.style.display = 'none';
     }
 }
+
+document.getElementById('openDividendWithdrawBtn').addEventListener('click', () => { if (myInvestorProfile) openWithdrawModal('dividend', myInvestorProfile); });
+document.getElementById('openCapitalWithdrawBtn').addEventListener('click', () => { if (myInvestorProfile) openWithdrawModal('capital', myInvestorProfile); });
+
+document.getElementById('trendRangeToggle').addEventListener('click', (e) => {
+    const btn = e.target.closest('.mini-toggle-btn');
+    if (!btn) return;
+    document.querySelectorAll('#trendRangeToggle .mini-toggle-btn').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    trendRange = btn.dataset.range;
+    renderRevExpTrendChart();
+});
+
+async function renderRevExpTrendChart() {
+    const { from, to, range } = rangeForTrendToggle(trendRange);
+    const [revenue, expenses] = await Promise.all([
+        apiGet(`/api/investor/revenue-trend?from=${from}&to=${to}&range=${range}`),
+        apiGet(`/api/investor/expense-trend?from=${from}&to=${to}&range=${range}`)
+    ]);
+    const periods = Array.from(new Set([...revenue.map((r) => r.period), ...expenses.map((e) => e.period)])).sort();
+    const revenueMap = Object.fromEntries(revenue.map((r) => [r.period, Number(r.revenue)]));
+    const expenseMap = Object.fromEntries(expenses.map((e) => [e.period, Number(e.total)]));
+
+    if (typeof Chart === 'undefined') return;
+    if (revExpTrendChartInstance) revExpTrendChartInstance.destroy();
+    revExpTrendChartInstance = new Chart(document.getElementById('revExpTrendChart'), {
+        type: 'line',
+        data: {
+            labels: periods,
+            datasets: [
+                {
+                    label: 'Revenue',
+                    data: periods.map((p) => revenueMap[p] || 0),
+                    borderColor: '#10b981',
+                    backgroundColor: (c) => { if (!c.chart.chartArea) return 'rgba(16,185,129,0.15)'; const g = c.chart.ctx.createLinearGradient(0, c.chart.chartArea.top, 0, c.chart.chartArea.bottom); g.addColorStop(0, 'rgba(16,185,129,0.38)'); g.addColorStop(1, 'rgba(16,185,129,0)'); return g; },
+                    borderWidth: 2.5, pointRadius: 2, fill: true, tension: 0.4
+                },
+                {
+                    label: 'Expense',
+                    data: periods.map((p) => expenseMap[p] || 0),
+                    borderColor: '#e0685a',
+                    backgroundColor: (c) => { if (!c.chart.chartArea) return 'rgba(224,104,90,0.12)'; const g = c.chart.ctx.createLinearGradient(0, c.chart.chartArea.top, 0, c.chart.chartArea.bottom); g.addColorStop(0, 'rgba(224,104,90,0.3)'); g.addColorStop(1, 'rgba(224,104,90,0)'); return g; },
+                    borderWidth: 2, pointRadius: 2, fill: true, tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 10, font: { size: 11 } } } },
+            scales: { x: { grid: { display: false } }, y: { grid: { color: 'rgba(233,207,154,0.08)' }, ticks: { maxTicksLimit: 5 } } }
+        }
+    });
+}
+
+async function renderIncomeStreamsChart() {
+    const data = await apiGet('/api/investor/income-breakdown');
+    if (typeof Chart === 'undefined') return;
+    if (incomeStreamsChartInstance) incomeStreamsChartInstance.destroy();
+    incomeStreamsChartInstance = new Chart(document.getElementById('incomeStreamsChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Room Bookings', 'Amenities (BBQ, Bonfire, etc.)', 'Event Rentals', 'Other'],
+            datasets: [{ data: [data.roomBookings, data.amenities, data.eventRentals, data.otherIncome], backgroundColor: BRONZE_GOLD_PALETTE, borderColor: '#15171d', borderWidth: 2 }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } }
+    });
+}
+
+async function renderValuationGaugeAndSimulator() {
+    const [valuation, summary90] = await Promise.all([
+        apiGet('/api/investor-accounts/valuation'),
+        apiGet(`/api/investor/summary?from=${ninetyDaysAgo()}&to=${todayStr()}`)
+    ]);
+    const amount = valuation.current ? valuation.current.amount : 0;
+    roiBaseline.valuation = amount;
+    roiBaseline.monthlyNetIncome = summary90.netProfit / 3;
+
+    document.getElementById('miValuationBig').textContent = money(amount);
+    const raisedPct = amount > 0 ? Math.min(100, (valuation.totalCapitalRaised / amount) * 100) : 0;
+
+    if (typeof Chart !== 'undefined') {
+        if (valuationGaugeChartInstance) valuationGaugeChartInstance.destroy();
+        valuationGaugeChartInstance = new Chart(document.getElementById('valuationGaugeChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Capital Raised', 'Remaining Pool'],
+                datasets: [{
+                    data: [raisedPct, 100 - raisedPct],
+                    backgroundColor: ['#d4af37', 'rgba(255,255,255,0.06)'],
+                    borderColor: '#15171d', borderWidth: 2, circumference: 180, rotation: 270
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '75%',
+                plugins: { legend: { display: false }, tooltip: { enabled: false } }
+            }
+        });
+    }
+
+    // Not gated behind Chart.js — the simulator's numbers are plain DOM
+    // text, not a chart, so they must update even if charting itself failed.
+    updateSimulator();
+}
+
+function updateSimulator() {
+    const amount = Number(document.getElementById('simAmount').value || 0);
+    const ownership = roiBaseline.valuation > 0 ? (amount / roiBaseline.valuation) * 100 : 0;
+    const monthly = Math.max(0, roiBaseline.monthlyNetIncome * (ownership / 100));
+    document.getElementById('simOwnership').textContent = `${ownership.toFixed(2)}%`;
+    document.getElementById('simMonthly').textContent = money(monthly);
+}
+document.getElementById('simAmount').addEventListener('input', updateSimulator);
+
+async function renderProjectsPreview() {
+    const projects = await apiGet('/api/investor-accounts/projects');
+    const preview = projects.slice(0, 2);
+    document.getElementById('projectsPreviewList').innerHTML = preview.map((p) => `
+        <div class="project-preview-row">
+            <div class="project-preview-thumb"><i class="fas fa-hotel"></i></div>
+            <div>
+                <h5>${escapeHtml(p.name)}</h5>
+                <p>${money(p.targetCapital)} needed &middot; ${escapeHtml(p.timeline || 'TBD')}</p>
+            </div>
+        </div>
+    `).join('') || '<p style="color: var(--text-2); font-size: 0.85rem;">No upcoming projects listed yet.</p>';
+}
+document.getElementById('viewAllProjectsBtn').addEventListener('click', () => {
+    document.querySelector('.admin-tab[data-tab="projects"]').click();
+});
 
 /* ---------------- Withdraw modal ---------------- */
 const withdrawOverlay = document.getElementById('withdrawModalOverlay');
