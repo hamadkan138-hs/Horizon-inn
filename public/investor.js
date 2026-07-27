@@ -11,34 +11,59 @@ let profitChartInstance = null;
 let lastLedger = [];
 let refreshTimer = null;
 
-/* ---------------- Chart theme (dark charcoal + bronze/gold) ---------------- */
+/* ---------------- Chart theme (obsidian glass + gold/emerald) ---------------- */
 // Guarded: if Chart.js hasn't loaded (slow CDN, ad-blocker, offline), the
 // dashboard's login and every other feature must keep working — only the
 // charts themselves should be affected.
 if (typeof Chart !== 'undefined') {
-    Chart.defaults.color = '#9b968c';
-    Chart.defaults.borderColor = 'rgba(233, 207, 154, 0.1)';
-    Chart.defaults.font.family = "'Lora', Georgia, serif";
+    Chart.defaults.color = '#9ca3af';
+    Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.03)';
+    Chart.defaults.font.family = "'Inter', 'SF Pro Display', sans-serif";
+    Chart.defaults.animation = { duration: 900, easing: 'easeOutQuart' };
 }
 
-const BRONZE_GOLD_PALETTE = ['#cda05a', '#8c6239', '#e9cf9a', '#6f5636', '#a9793f', '#4a3a26', '#b98d4d'];
+const BRONZE_GOLD_PALETTE = ['#d4af37', '#059669', '#e8c874', '#0d9488', '#a67c3d', '#065f46', '#b8933f'];
 
 function bronzeGoldGradient(ctx, chartArea, vertical) {
-    if (!chartArea) return 'rgba(205,160,90,0.4)';
+    if (!chartArea) return 'rgba(212,175,55,0.4)';
     const gradient = vertical
         ? ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top)
         : ctx.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
     gradient.addColorStop(0, '#8c6239');
-    gradient.addColorStop(1, '#e9cf9a');
+    gradient.addColorStop(1, '#e8c874');
     return gradient;
 }
 
 function gloryFade(ctx, chartArea) {
-    if (!chartArea) return 'rgba(205,160,90,0.2)';
+    if (!chartArea) return 'rgba(212,175,55,0.2)';
     const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-    gradient.addColorStop(0, 'rgba(205,160,90,0.38)');
-    gradient.addColorStop(1, 'rgba(205,160,90,0)');
+    gradient.addColorStop(0, 'rgba(212,175,55,0.35)');
+    gradient.addColorStop(1, 'rgba(212,175,55,0)');
     return gradient;
+}
+
+/* ---------------- Number count-up ---------------- */
+// Animates an element's displayed number from its current value to a new
+// one (e.g. on load or when a date filter changes) instead of snapping —
+// purely a visual polish layer, so it never blocks or delays the actual
+// DOM update if something goes wrong mid-animation.
+function countUpTo(el, newValue, formatFn, duration = 700) {
+    if (!el) return;
+    const startValue = Number(el.dataset.rawValue || 0);
+    const endValue = Number(newValue) || 0;
+    el.dataset.rawValue = endValue;
+    if (!Number.isFinite(startValue) || !Number.isFinite(endValue) || startValue === endValue) {
+        el.textContent = formatFn(endValue);
+        return;
+    }
+    const startTime = performance.now();
+    function tick(now) {
+        const progress = Math.min(1, (now - startTime) / duration);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = formatFn(startValue + (endValue - startValue) * eased);
+        if (progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
 }
 
 function getAuthHeader() {
@@ -384,12 +409,12 @@ async function loadMyInvestmentTab() {
         ]);
         myInvestorProfile = me;
 
-        document.getElementById('miAccruedDividend').textContent = money(me.accruedDividend);
+        countUpTo(document.getElementById('miAccruedDividend'), me.accruedDividend, money);
         document.getElementById('miAvailableLine').innerHTML = `Available to withdraw: <strong style="color: var(--text-1);">${money(me.availableToWithdraw)}</strong>`;
         document.getElementById('openDividendWithdrawBtn').disabled = me.availableToWithdraw <= 0;
 
-        document.getElementById('miOwnership').textContent = `${me.ownershipPercent}%`;
-        document.getElementById('miEquityValue').textContent = money(me.equityValue);
+        countUpTo(document.getElementById('miOwnership'), me.ownershipPercent, (v) => `${v.toFixed(2)}%`);
+        countUpTo(document.getElementById('miEquityValue'), me.equityValue, money);
         document.getElementById('miLockupDates').textContent = `${me.lockup.lockupStart} → ${me.lockup.lockupEnd}`;
         document.getElementById('miLockupFill').style.width = `${me.lockup.progressPercent}%`;
         document.getElementById('miLockupNote').innerHTML = me.lockup.unlocked
@@ -460,8 +485,8 @@ async function renderEarningsMomentum(me) {
     const share = Number(me.ownershipPercent) / 100;
     const todayEarnings = Math.max(0, todaySummary.netProfit * share);
     const weekEarnings = Math.max(0, weekSummary.netProfit * share);
-    document.getElementById('miTodayEarnings').textContent = money(todayEarnings);
-    document.getElementById('miWeekEarnings').textContent = money(weekEarnings);
+    countUpTo(document.getElementById('miTodayEarnings'), todayEarnings, money);
+    countUpTo(document.getElementById('miWeekEarnings'), weekEarnings, money);
 
     const equityValue = Number(me.equityValue) || 0;
     const annualizedYield = equityValue > 0 ? (weekEarnings * 52 / equityValue) * 100 : 0;
@@ -543,7 +568,7 @@ async function renderValuationGaugeAndSimulator() {
     roiBaseline.valuation = amount;
     roiBaseline.monthlyNetIncome = summary90.netProfit / 3;
 
-    document.getElementById('miValuationBig').textContent = money(amount);
+    countUpTo(document.getElementById('miValuationBig'), amount, money);
     const raisedPct = amount > 0 ? Math.min(100, (valuation.totalCapitalRaised / amount) * 100) : 0;
     document.getElementById('valuationRing').style.background =
         `conic-gradient(var(--gold) ${raisedPct * 3.6}deg, rgba(255,255,255,0.08) 0deg)`;
@@ -555,8 +580,8 @@ function updateSimulator() {
     const amount = Number(document.getElementById('simAmount').value || 0);
     const ownership = roiBaseline.valuation > 0 ? (amount / roiBaseline.valuation) * 100 : 0;
     const monthly = Math.max(0, roiBaseline.monthlyNetIncome * (ownership / 100));
-    document.getElementById('simOwnership').textContent = `${ownership.toFixed(2)}%`;
-    document.getElementById('simMonthly').textContent = money(monthly);
+    countUpTo(document.getElementById('simOwnership'), ownership, (v) => `${v.toFixed(2)}%`, 350);
+    countUpTo(document.getElementById('simMonthly'), monthly, money, 350);
 }
 document.getElementById('simAmount').addEventListener('input', updateSimulator);
 
@@ -734,9 +759,9 @@ function updateRoiCalculator() {
     const monthlyDividend = Math.max(0, roiBaseline.monthlyNetIncome * (ownership / 100));
     const annualRoi = amount > 0 ? ((monthlyDividend * 12) / amount) * 100 : 0;
 
-    document.getElementById('roiOwnership').textContent = `${ownership.toFixed(2)}%`;
-    document.getElementById('roiMonthly').textContent = money(monthlyDividend);
-    document.getElementById('roiAnnual').textContent = `${annualRoi.toFixed(1)}%`;
+    countUpTo(document.getElementById('roiOwnership'), ownership, (v) => `${v.toFixed(2)}%`, 350);
+    countUpTo(document.getElementById('roiMonthly'), monthlyDividend, money, 350);
+    countUpTo(document.getElementById('roiAnnual'), annualRoi, (v) => `${v.toFixed(1)}%`, 350);
 }
 
 document.getElementById('roiSlider').addEventListener('input', (e) => {
