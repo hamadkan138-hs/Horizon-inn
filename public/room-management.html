@@ -125,6 +125,12 @@
       </select>
 
       <div class="flex items-center gap-2 ml-auto">
+        <button id="addRoomBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gold text-ink font-semibold text-sm hover:opacity-90 transition whitespace-nowrap">
+          <i class="fa-solid fa-plus"></i> Add New Room
+        </button>
+        <button id="manageRoomsBtn" title="Room Inventory" class="w-10 h-10 rounded-xl glass flex items-center justify-center hover:scale-105 transition">
+          <i class="fa-solid fa-warehouse"></i>
+        </button>
         <span id="lastUpdated" class="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline"></span>
         <button id="themeToggle" title="Toggle theme" class="w-10 h-10 rounded-xl glass flex items-center justify-center hover:scale-105 transition">
           <i class="fa-solid fa-moon dark:hidden"></i>
@@ -146,7 +152,7 @@
 
   <!-- Summary strip -->
   <div class="max-w-[1600px] mx-auto px-5 pt-6">
-    <div id="summaryStrip" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6"></div>
+    <div id="summaryStrip" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6"></div>
   </div>
 
   <!-- Room grid -->
@@ -220,6 +226,91 @@
         Assign Room
       </button>
       <p id="assignMessage" class="text-sm min-h-[1.2em]"></p>
+    </form>
+  </div>
+</div>
+
+<!-- Room Inventory Modal -->
+<div id="inventoryOverlay" class="hidden fixed inset-0 z-40 bg-black/50 modal-fade items-center justify-center p-4">
+  <div class="glass shadow-glass dark:shadow-glass-dark rounded-2xl w-full max-w-4xl p-6 max-h-[88vh] flex flex-col">
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h3 class="font-display text-xl font-bold">Room Inventory</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400">All registered physical rooms across every category</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="inventoryAddBtn" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold text-ink font-semibold text-sm hover:opacity-90 transition">
+          <i class="fa-solid fa-plus"></i> Add New Room
+        </button>
+        <button id="closeInventoryBtn" class="w-9 h-9 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </div>
+    <div class="overflow-y-auto flex-1 -mx-2 px-2">
+      <table class="w-full text-sm">
+        <thead class="sticky top-0 bg-inherit">
+          <tr class="text-left text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 border-b border-black/10 dark:border-white/10">
+            <th class="py-2 pr-3">Room #</th>
+            <th class="py-2 pr-3">Category</th>
+            <th class="py-2 pr-3">Floor</th>
+            <th class="py-2 pr-3">Rate</th>
+            <th class="py-2 pr-3">Amenities</th>
+            <th class="py-2 pr-3">Status</th>
+            <th class="py-2 pr-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="inventoryBody"></tbody>
+      </table>
+      <p id="inventoryEmpty" class="hidden text-center text-slate-500 dark:text-slate-400 py-16">No rooms registered yet. Click "Add New Room" to register your first one.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit Room Modal -->
+<div id="roomFormOverlay" class="hidden fixed inset-0 z-50 bg-black/50 modal-fade items-center justify-center p-4">
+  <div class="glass shadow-glass dark:shadow-glass-dark rounded-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="font-display text-xl font-bold" id="roomFormTitle">Add New Room</h3>
+      <button id="closeRoomFormBtn" class="w-8 h-8 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="roomForm" class="space-y-4" novalidate>
+      <input type="hidden" id="roomFormId">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Room Number *</label>
+          <input id="roomFormNumber" required class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold" placeholder="e.g. 101">
+          <p class="text-xs text-red-500 mt-1 min-h-[1em]" id="roomFormNumberError"></p>
+        </div>
+        <div>
+          <label class="block text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Floor</label>
+          <input id="roomFormFloor" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold" placeholder="e.g. Ground, 1st">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Category / Room Type *</label>
+        <select id="roomFormType" required class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold"></select>
+        <p class="text-xs text-red-500 mt-1 min-h-[1em]" id="roomFormTypeError"></p>
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Nightly Rate Override (Rs.)</label>
+        <input id="roomFormPrice" type="number" min="0" step="1" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold" placeholder="Leave blank to use category rate">
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Reference only — bookings are still priced from the category's rate card.</p>
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Amenities</label>
+        <input id="roomFormAmenities" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold" placeholder="Comma-separated, e.g. Balcony, Sea view">
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Initial Status</label>
+        <select id="roomFormStatus" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold">
+          <option value="available">Available</option>
+          <option value="maintenance">Maintenance</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+      <button type="submit" id="roomFormSubmitBtn" class="w-full py-3 rounded-lg bg-ink dark:bg-gold text-white dark:text-ink font-semibold tracking-wide hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed">
+        Add Room
+      </button>
+      <p id="roomFormMessage" class="text-sm min-h-[1.2em]"></p>
     </form>
   </div>
 </div>

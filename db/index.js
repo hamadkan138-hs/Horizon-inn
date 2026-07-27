@@ -292,6 +292,33 @@ function init() {
       // writable even after the booking itself is locked by checkout.
       await addColumnsIfMissing('bookings', ["cleaning_status TEXT NOT NULL DEFAULT ''"]);
 
+      // Individual numbered physical rooms, layered on top of the existing
+      // room-type (category) model rather than replacing it. A category's
+      // price/features/total_units still drive pricing and availability
+      // exactly as before — physical_rooms exist so duty staff can manage a
+      // real inventory (room number, floor, status) and so the dashboard can
+      // show a stable, persistently-numbered grid instead of synthesizing
+      // "Unit 1 / Unit 2" placeholders each request.
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS physical_rooms (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          room_number TEXT UNIQUE NOT NULL,
+          room_type_id INTEGER NOT NULL REFERENCES rooms(id),
+          floor TEXT NOT NULL DEFAULT '',
+          price_override REAL,
+          amenities TEXT NOT NULL DEFAULT '[]',
+          status TEXT NOT NULL DEFAULT 'available',
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+
+      // Which specific physical room a booking occupies, when one was
+      // assigned (front-desk / quick-assign flows assign one automatically
+      // if the category has physical rooms registered; nullable so bookings
+      // made before this feature, or for categories with no physical rooms
+      // yet, keep working exactly as before).
+      await addColumnsIfMissing('bookings', ['physical_room_id INTEGER']);
+
       const DEFAULT_SETTINGS = {
         hero_eyebrow: 'Est. 2026 · Boutique Hospitality',
         hero_heading: 'Welcome to Horizon Inn',

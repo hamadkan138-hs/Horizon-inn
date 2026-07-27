@@ -60,7 +60,9 @@ const STATUS_META = {
     available: { label: 'Vacant', dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', chip: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400', border: 'border-emerald-400/40' },
     occupied: { label: 'Occupied', dot: 'bg-rose-500', text: 'text-rose-600 dark:text-rose-400', chip: 'bg-rose-500/15 text-rose-600 dark:text-rose-400', border: 'border-rose-400/40' },
     reserved: { label: 'Reserved', dot: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-400', chip: 'bg-amber-500/15 text-amber-600 dark:text-amber-400', border: 'border-amber-400/40' },
-    cleaning: { label: 'Cleaning', dot: 'bg-sky-500', text: 'text-sky-600 dark:text-sky-400', chip: 'bg-sky-500/15 text-sky-600 dark:text-sky-400', border: 'border-sky-400/40' }
+    cleaning: { label: 'Cleaning', dot: 'bg-sky-500', text: 'text-sky-600 dark:text-sky-400', chip: 'bg-sky-500/15 text-sky-600 dark:text-sky-400', border: 'border-sky-400/40' },
+    maintenance: { label: 'Maintenance', dot: 'bg-orange-500', text: 'text-orange-600 dark:text-orange-400', chip: 'bg-orange-500/15 text-orange-600 dark:text-orange-400', border: 'border-orange-400/40' },
+    inactive: { label: 'Inactive', dot: 'bg-slate-400', text: 'text-slate-500 dark:text-slate-400', chip: 'bg-slate-500/15 text-slate-500 dark:text-slate-400', border: 'border-slate-400/40' }
 };
 
 /* ---------------- Theme ---------------- */
@@ -159,7 +161,8 @@ function flattenSlots() {
         room.slots.forEach((slot) => {
             slots.push({
                 roomId: room.id, roomName: room.name, price: room.price, totalUnits: room.totalUnits,
-                unit: slot.unit, status: slot.status, booking: slot.booking
+                unit: slot.unit, status: slot.status, booking: slot.booking,
+                physicalRoomId: slot.physicalRoomId, roomNumber: slot.roomNumber, floor: slot.floor
             });
         });
     });
@@ -169,7 +172,7 @@ function flattenSlots() {
 function matchesSearch(slot, term) {
     if (!term) return true;
     const b = slot.booking;
-    const haystack = [slot.roomName, b?.guestName, b?.phone, b?.cnic, b?.invoiceNumber].filter(Boolean).join(' ').toLowerCase();
+    const haystack = [slot.roomName, slot.roomNumber, b?.guestName, b?.phone, b?.cnic, b?.invoiceNumber].filter(Boolean).join(' ').toLowerCase();
     return haystack.includes(term);
 }
 
@@ -192,14 +195,15 @@ function renderAll() {
 
 function renderSummary() {
     const all = flattenSlots();
-    const counts = { available: 0, occupied: 0, reserved: 0, cleaning: 0 };
+    const counts = { available: 0, occupied: 0, reserved: 0, cleaning: 0, maintenance: 0, inactive: 0 };
     all.forEach((s) => { counts[s.status] = (counts[s.status] || 0) + 1; });
 
     const cards = [
         { key: 'available', icon: 'fa-door-open', label: 'Vacant' },
         { key: 'occupied', icon: 'fa-bed', label: 'Occupied' },
         { key: 'reserved', icon: 'fa-calendar-check', label: 'Reserved' },
-        { key: 'cleaning', icon: 'fa-broom', label: 'Cleaning' }
+        { key: 'cleaning', icon: 'fa-broom', label: 'Cleaning' },
+        { key: 'maintenance', icon: 'fa-screwdriver-wrench', label: 'Maintenance' }
     ];
 
     document.getElementById('summaryStrip').innerHTML = cards.map((c) => `
@@ -222,7 +226,8 @@ function renderStatusChips() {
         { key: 'available', label: 'Vacant' },
         { key: 'occupied', label: 'Occupied' },
         { key: 'reserved', label: 'Reserved' },
-        { key: 'cleaning', label: 'Cleaning' }
+        { key: 'cleaning', label: 'Cleaning' },
+        { key: 'maintenance', label: 'Maintenance' }
     ];
     container.innerHTML = options.map((o) => {
         const active = filters.status === o.key;
@@ -243,6 +248,8 @@ function renderStatusChips() {
 function slotCardHtml(slot, index) {
     const meta = STATUS_META[slot.status];
     const b = slot.booking;
+    const isPhysical = !!slot.physicalRoomId;
+    const isOutOfService = slot.status === 'maintenance' || slot.status === 'inactive';
 
     let body = '';
     if (b) {
@@ -255,6 +262,8 @@ function slotCardHtml(slot, index) {
                 ${slot.status === 'occupied' ? `<div class="flex justify-between"><span>Balance</span><span class="font-medium text-slate-700 dark:text-slate-200">${money(Math.max(0, b.totalAmount - b.paidTotal))}</span></div>` : ''}
             </div>
         `;
+    } else if (isOutOfService) {
+        body = `<p class="font-semibold text-slate-400 dark:text-slate-500">${slot.status === 'maintenance' ? 'Under maintenance' : 'Marked inactive'}</p>`;
     } else {
         body = `
             <p class="font-semibold text-slate-400 dark:text-slate-500">No active booking</p>
@@ -264,21 +273,28 @@ function slotCardHtml(slot, index) {
 
     const actions = [];
     actions.push(`<button data-action="details" class="flex-1 text-xs font-semibold py-2 rounded-lg glass hover:bg-black/5 dark:hover:bg-white/10">View Details</button>`);
-    if (slot.status === 'available') {
+    if (isOutOfService) {
+        actions.push(`<button data-action="editRoom" class="flex-1 text-xs font-semibold py-2 rounded-lg bg-ink dark:bg-gold text-white dark:text-ink hover:opacity-90">Edit Room</button>`);
+    } else if (slot.status === 'available') {
         actions.push(`<button data-action="assign" class="flex-1 text-xs font-semibold py-2 rounded-lg bg-ink dark:bg-gold text-white dark:text-ink hover:opacity-90">Quick Assign</button>`);
     } else {
         actions.push(`<button data-action="manage" class="flex-1 text-xs font-semibold py-2 rounded-lg bg-ink dark:bg-gold text-white dark:text-ink hover:opacity-90">Manage</button>`);
     }
 
+    const subtitle = isPhysical
+        ? `Room ${escapeHtml(slot.roomNumber)}${slot.floor ? ` &middot; Floor ${escapeHtml(slot.floor)}` : ''}`
+        : `Unit ${slot.unit} of ${slot.totalUnits}`;
+
     return `
         <div class="card-enter glass rounded-2xl p-5 border-l-4 ${meta.border} flex flex-col justify-between"
              style="animation-delay:${Math.min(index * 25, 300)}ms"
-             data-room-id="${slot.roomId}" data-unit="${slot.unit}" data-status="${slot.status}" data-booking-id="${b ? b.id : ''}">
+             data-room-id="${slot.roomId}" data-unit="${slot.unit}" data-status="${slot.status}"
+             data-booking-id="${b ? b.id : ''}" data-physical-room-id="${slot.physicalRoomId || ''}">
             <div>
                 <div class="flex items-start justify-between mb-2">
                     <div>
                         <p class="text-sm font-semibold">${escapeHtml(slot.roomName)}</p>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">Unit ${slot.unit} of ${slot.totalUnits}</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">${subtitle}</p>
                     </div>
                     <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${meta.chip}">
                         <span class="w-1.5 h-1.5 rounded-full ${meta.dot}"></span>${meta.label}
@@ -316,6 +332,7 @@ function renderGrid() {
             if (action === 'details') openDetailsModal(room, slot);
             if (action === 'manage') openManageDrawer(room, slot);
             if (action === 'assign') openAssignModal(room, slot);
+            if (action === 'editRoom') openRoomFormForPhysicalId(slot.physicalRoomId);
         });
     });
 }
@@ -336,11 +353,15 @@ function openDetailsModal(room, slot) {
     const meta = STATUS_META[slot.status];
     const box = document.getElementById('detailsModalBox');
 
+    const subtitle = slot.physicalRoomId
+        ? `Room ${escapeHtml(slot.roomNumber)}${slot.floor ? ` · Floor ${escapeHtml(slot.floor)}` : ''}`
+        : `Unit ${slot.unit} of ${room.totalUnits}`;
+
     box.innerHTML = `
         <div class="flex items-start justify-between mb-4">
             <div>
                 <h3 class="font-display text-xl font-bold">${escapeHtml(room.name)}</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Unit ${slot.unit} of ${room.totalUnits}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">${subtitle}</p>
             </div>
             <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${meta.chip}">
                 <span class="w-1.5 h-1.5 rounded-full ${meta.dot}"></span>${meta.label}
@@ -360,6 +381,10 @@ function openDetailsModal(room, slot) {
                 <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Paid</span><span class="font-semibold">${money(b.paidTotal)}</span></div>
                 <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Balance</span><span class="font-semibold">${money(Math.max(0, b.totalAmount - b.paidTotal))}</span></div>
             </div>
+        ` : slot.status === 'maintenance' ? `
+            <p class="text-sm text-slate-500 dark:text-slate-400">This room is currently under maintenance and won't be offered for booking.</p>
+        ` : slot.status === 'inactive' ? `
+            <p class="text-sm text-slate-500 dark:text-slate-400">This room is marked inactive.</p>
         ` : `
             <p class="text-sm text-slate-500 dark:text-slate-400">This unit is vacant and ready for a new guest.</p>
             <p class="text-sm mt-3"><span class="text-slate-500 dark:text-slate-400">Rate</span> <span class="font-semibold">${money(room.price)} / night</span></p>
@@ -635,6 +660,203 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
         const when = formatPKT(result.booking.checked_out_at);
         msg.textContent = '';
         setTimeout(() => alert(`Payment recorded successfully at ${when}`), 100);
+    } catch (err) {
+        msg.textContent = err.message;
+        msg.className = 'text-sm min-h-[1.2em] text-red-500';
+    } finally {
+        submitBtn.disabled = false;
+    }
+});
+
+/* ---------------- Room Inventory (CRUD) ---------------- */
+let inventoryRooms = [];
+let roomTypeOptionsCache = [];
+
+async function fetchRoomTypeOptions() {
+    roomTypeOptionsCache = await apiGet('/api/rooms?includeInactive=1');
+    return roomTypeOptionsCache;
+}
+
+function populateRoomFormTypeSelect(selectedId) {
+    const select = document.getElementById('roomFormType');
+    select.innerHTML = roomTypeOptionsCache.map((r) =>
+        `<option value="${r.id}">${escapeHtml(r.name)} (${money(r.price)}/night)</option>`
+    ).join('');
+    if (selectedId) select.value = selectedId;
+}
+
+const inventoryOverlay = document.getElementById('inventoryOverlay');
+
+async function openInventory() {
+    inventoryOverlay.classList.remove('hidden');
+    inventoryOverlay.classList.add('flex');
+    await loadInventory();
+}
+function closeInventory() {
+    inventoryOverlay.classList.add('hidden');
+}
+document.getElementById('manageRoomsBtn').addEventListener('click', openInventory);
+document.getElementById('closeInventoryBtn').addEventListener('click', closeInventory);
+inventoryOverlay.addEventListener('click', (e) => { if (e.target === inventoryOverlay) closeInventory(); });
+
+async function loadInventory() {
+    try {
+        inventoryRooms = await apiGet('/api/physical-rooms');
+        renderInventoryTable();
+    } catch (err) { /* handled by apiGet */ }
+}
+
+function inventoryRowHtml(r) {
+    const meta = STATUS_META[r.status] || STATUS_META.available;
+    const rate = r.priceOverride !== null ? money(r.priceOverride) : `${money(r.categoryPrice)} <span class="text-slate-400">(default)</span>`;
+    const amenities = r.amenities.length ? r.amenities.join(', ') : '—';
+    return `
+        <tr class="border-b border-black/5 dark:border-white/5" data-id="${r.id}">
+            <td class="py-2.5 pr-3 font-semibold">${escapeHtml(r.roomNumber)}</td>
+            <td class="py-2.5 pr-3">${escapeHtml(r.roomTypeName)}</td>
+            <td class="py-2.5 pr-3">${escapeHtml(r.floor || '—')}</td>
+            <td class="py-2.5 pr-3">${rate}</td>
+            <td class="py-2.5 pr-3 max-w-[180px] truncate" title="${escapeHtml(amenities)}">${escapeHtml(amenities)}</td>
+            <td class="py-2.5 pr-3">
+                <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${meta.chip}">
+                    <span class="w-1.5 h-1.5 rounded-full ${meta.dot}"></span>${meta.label}
+                </span>
+            </td>
+            <td class="py-2.5 pr-3 text-right whitespace-nowrap">
+                <button data-edit="${r.id}" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg glass hover:bg-black/5 dark:hover:bg-white/10 mr-1.5">Edit</button>
+                <button data-delete="${r.id}" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-red-400 text-red-500 hover:bg-red-500/10">Delete</button>
+            </td>
+        </tr>
+    `;
+}
+
+function renderInventoryTable() {
+    const body = document.getElementById('inventoryBody');
+    const empty = document.getElementById('inventoryEmpty');
+    if (!inventoryRooms.length) {
+        body.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+    }
+    empty.classList.add('hidden');
+    body.innerHTML = inventoryRooms.map(inventoryRowHtml).join('');
+
+    body.querySelectorAll('[data-edit]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const room = inventoryRooms.find((r) => String(r.id) === btn.dataset.edit);
+            if (room) openRoomForm('edit', room);
+        });
+    });
+    body.querySelectorAll('[data-delete]').forEach((btn) => {
+        btn.addEventListener('click', () => handleDeleteRoom(btn.dataset.delete));
+    });
+}
+
+async function handleDeleteRoom(id) {
+    const room = inventoryRooms.find((r) => String(r.id) === String(id));
+    const label = room ? `Room ${room.roomNumber}` : 'this room';
+    if (!confirm(`Delete ${label}? This cannot be undone.`)) return;
+    try {
+        await apiSend('DELETE', `/api/physical-rooms/${id}`, {});
+        await loadInventory();
+        loadDashboard(false);
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+/* ---------------- Add / Edit Room modal ---------------- */
+const roomFormOverlay = document.getElementById('roomFormOverlay');
+
+function validateRoomForm() {
+    const number = document.getElementById('roomFormNumber').value.trim();
+    const typeId = document.getElementById('roomFormType').value;
+    const numberError = document.getElementById('roomFormNumberError');
+    const typeError = document.getElementById('roomFormTypeError');
+
+    let valid = true;
+    if (!number) { numberError.textContent = 'Room number is required.'; valid = false; } else { numberError.textContent = ''; }
+    if (!typeId) { typeError.textContent = 'Select a category.'; valid = false; } else { typeError.textContent = ''; }
+
+    document.getElementById('roomFormSubmitBtn').disabled = !valid;
+    return valid;
+}
+
+document.getElementById('roomFormNumber').addEventListener('input', validateRoomForm);
+document.getElementById('roomFormType').addEventListener('change', validateRoomForm);
+
+async function openRoomForm(mode, room) {
+    document.getElementById('roomForm').reset();
+    document.getElementById('roomFormMessage').textContent = '';
+    document.getElementById('roomFormNumberError').textContent = '';
+    document.getElementById('roomFormTypeError').textContent = '';
+    document.getElementById('roomFormId').value = room ? room.id : '';
+    document.getElementById('roomFormTitle').textContent = mode === 'edit' ? `Edit Room ${room.roomNumber}` : 'Add New Room';
+    document.getElementById('roomFormSubmitBtn').textContent = mode === 'edit' ? 'Save Changes' : 'Add Room';
+
+    await fetchRoomTypeOptions();
+    populateRoomFormTypeSelect(room ? room.roomTypeId : (roomTypeOptionsCache[0] && roomTypeOptionsCache[0].id));
+
+    if (room) {
+        document.getElementById('roomFormNumber').value = room.roomNumber;
+        document.getElementById('roomFormFloor').value = room.floor || '';
+        document.getElementById('roomFormPrice').value = room.priceOverride !== null ? room.priceOverride : '';
+        document.getElementById('roomFormAmenities').value = room.amenities.join(', ');
+        document.getElementById('roomFormStatus').value = room.status;
+    }
+
+    validateRoomForm();
+    roomFormOverlay.classList.remove('hidden');
+    roomFormOverlay.classList.add('flex');
+}
+
+async function openRoomFormForPhysicalId(id) {
+    if (!id) return;
+    let room = inventoryRooms.find((r) => String(r.id) === String(id));
+    if (!room) {
+        await loadInventory();
+        room = inventoryRooms.find((r) => String(r.id) === String(id));
+    }
+    if (room) openRoomForm('edit', room);
+}
+
+document.getElementById('addRoomBtn').addEventListener('click', () => openRoomForm('add', null));
+document.getElementById('inventoryAddBtn').addEventListener('click', () => openRoomForm('add', null));
+document.getElementById('closeRoomFormBtn').addEventListener('click', () => roomFormOverlay.classList.add('hidden'));
+roomFormOverlay.addEventListener('click', (e) => { if (e.target === roomFormOverlay) roomFormOverlay.classList.add('hidden'); });
+
+document.getElementById('roomForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!validateRoomForm()) return;
+
+    const id = document.getElementById('roomFormId').value;
+    const msg = document.getElementById('roomFormMessage');
+    const submitBtn = document.getElementById('roomFormSubmitBtn');
+    const amenities = document.getElementById('roomFormAmenities').value
+        .split(',').map((a) => a.trim()).filter(Boolean);
+    const priceValue = document.getElementById('roomFormPrice').value;
+
+    const payload = {
+        roomNumber: document.getElementById('roomFormNumber').value.trim(),
+        roomTypeId: Number(document.getElementById('roomFormType').value),
+        floor: document.getElementById('roomFormFloor').value.trim(),
+        priceOverride: priceValue === '' ? '' : Number(priceValue),
+        amenities,
+        status: document.getElementById('roomFormStatus').value
+    };
+
+    submitBtn.disabled = true;
+    msg.textContent = '';
+    msg.className = 'text-sm min-h-[1.2em]';
+    try {
+        if (id) {
+            await apiSend('PATCH', `/api/physical-rooms/${id}`, payload);
+        } else {
+            await apiSend('POST', '/api/physical-rooms', payload);
+        }
+        roomFormOverlay.classList.add('hidden');
+        await loadInventory();
+        loadDashboard(true);
     } catch (err) {
         msg.textContent = err.message;
         msg.className = 'text-sm min-h-[1.2em] text-red-500';

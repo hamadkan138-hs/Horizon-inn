@@ -97,17 +97,17 @@ router.get('/status-board', adminAuth, requireRole('admin', 'staff'), async (req
   }
 });
 
-// Duty-staff room management dashboard: expands each active room type into
-// its individual unit slots (one card per physical unit) so front desk sees
-// a real room grid instead of a type-level summary. There's no separate
-// "physical room" table in this schema — a room type just has a total_units
-// count — so slot identity here is assigned deterministically each request
-// (occupied first, then needs-cleaning, then reserved, remaining vacant)
-// rather than tracking a persistent unit number per booking.
+// Duty-staff room management dashboard: one card per room. Categories with
+// physical rooms registered (see routes/physicalRooms.js) get a stable,
+// persistently-numbered grid built straight from that table; categories
+// with none yet fall back to synthesizing "Unit 1 / Unit 2" placeholder
+// slots from total_units, exactly as before this feature existed, so
+// nothing breaks for data that hasn't adopted physical-room management.
 router.get('/dashboard', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
   try {
     const today = new Date().toISOString().slice(0, 10);
     const roomsResult = await db.execute('SELECT * FROM rooms WHERE active = 1 ORDER BY price ASC');
+    const physicalRoomsResult = await db.execute('SELECT * FROM physical_rooms ORDER BY room_number ASC');
 
     const bookingsResult = await db.execute({
       sql: `
@@ -138,25 +138,55 @@ router.get('/dashboard', adminAuth, requireRole('admin', 'staff'), async (req, r
       paymentStatus: b.payment_status
     });
 
+    const bookingStatus = (b) => (b.status === 'checked_in' ? 'occupied' : b.status === 'confirmed' ? 'reserved' : 'cleaning');
+
     const board = roomsResult.rows.map((room) => {
       const roomBookings = bookingsResult.rows.filter((b) => b.room_id === room.id);
-      const occupied = roomBookings.filter((b) => b.status === 'checked_in');
-      const cleaning = roomBookings.filter((b) => b.status === 'checked_out');
-      const reserved = roomBookings.filter((b) => b.status === 'confirmed');
+      const physicalRooms = physicalRoomsResult.rows.filter((pr) => pr.room_type_id === room.id);
 
-      const totalUnits = Number(room.total_units) || 1;
-      const slots = [];
-      occupied.forEach((b) => { if (slots.length < totalUnits) slots.push({ status: 'occupied', booking: toSlotBooking(b) }); });
-      cleaning.forEach((b) => { if (slots.length < totalUnits) slots.push({ status: 'cleaning', booking: toSlotBooking(b) }); });
-      reserved.forEach((b) => { if (slots.length < totalUnits) slots.push({ status: 'reserved', booking: toSlotBooking(b) }); });
-      while (slots.length < totalUnits) slots.push({ status: 'available', booking: null });
+      let slots;
+      if (physicalRooms.length) {
+        slots = physicalRooms.map((pr) => {
+          if (pr.status === 'maintenance' || pr.status === 'inactive') {
+            return { status: pr.status, physicalRoomId: pr.id, roomNumber: pr.room_number, floor: pr.floor, booking: null };
+          }
+          const match = roomBookings.find((b) => b.physical_room_id === pr.id);
+          return {
+            status: match ? bookingStatus(match) : 'available',
+            physicalRoomId: pr.id,
+            roomNumber: pr.room_number,
+            floor: pr.floor,
+            booking: match ? toSlotBooking(match) : null
+          };
+        });
+
+        // Bookings for this category that predate physical-room assignment
+        // (or whose assigned room was since deleted/reassigned) still need a
+        // card so an active stay never silently disappears from the board.
+        const assignedIds = new Set(physicalRooms.map((pr) => pr.id));
+        const orphaned = roomBookings.filter((b) => !b.physical_room_id || !assignedIds.has(b.physical_room_id));
+        orphaned.forEach((b) => {
+          slots.push({ status: bookingStatus(b), physicalRoomId: null, roomNumber: null, floor: null, booking: toSlotBooking(b) });
+        });
+      } else {
+        const occupied = roomBookings.filter((b) => b.status === 'checked_in');
+        const cleaning = roomBookings.filter((b) => b.status === 'checked_out');
+        const reserved = roomBookings.filter((b) => b.status === 'confirmed');
+
+        const totalUnits = Number(room.total_units) || 1;
+        slots = [];
+        occupied.forEach((b) => { if (slots.length < totalUnits) slots.push({ status: 'occupied', physicalRoomId: null, roomNumber: null, floor: null, booking: toSlotBooking(b) }); });
+        cleaning.forEach((b) => { if (slots.length < totalUnits) slots.push({ status: 'cleaning', physicalRoomId: null, roomNumber: null, floor: null, booking: toSlotBooking(b) }); });
+        reserved.forEach((b) => { if (slots.length < totalUnits) slots.push({ status: 'reserved', physicalRoomId: null, roomNumber: null, floor: null, booking: toSlotBooking(b) }); });
+        while (slots.length < totalUnits) slots.push({ status: 'available', physicalRoomId: null, roomNumber: null, floor: null, booking: null });
+      }
 
       return {
         id: room.id,
         slug: room.slug,
         name: room.name,
         price: room.price,
-        totalUnits,
+        totalUnits: Number(room.total_units) || 1,
         slots: slots.map((slot, index) => ({ unit: index + 1, ...slot }))
       };
     });

@@ -16,6 +16,7 @@ const settingsRouter = require('./routes/settings');
 const mediaRouter = require('./routes/media');
 const investorRouter = require('./routes/investor');
 const handoversRouter = require('./routes/handovers');
+const physicalRoomsRouter = require('./routes/physicalRooms');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,6 +38,7 @@ app.use('/api/settings', settingsRouter);
 app.use('/api/media', mediaRouter);
 app.use('/api/investor', investorRouter);
 app.use('/api/handovers', handoversRouter);
+app.use('/api/physical-rooms', physicalRoomsRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

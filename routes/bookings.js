@@ -134,16 +134,40 @@ router.post('/quick', adminAuth, requireRole('admin', 'staff'), async (req, res)
 
     const roomAmount = await computeTotalAmount(room, checkin, checkout, 1);
 
+    // Best-effort: if this category has real physical rooms registered, pin
+    // this booking to the lowest-numbered free one so the room dashboard can
+    // show a stable, persistently-numbered card instead of a synthesized
+    // slot. Categories with no physical rooms registered yet (or no free
+    // one, which shouldn't happen given the availability check above unless
+    // registered-room count doesn't match total_units) simply get null here
+    // and fall back to the dashboard's synthetic-slot display.
+    const physicalRoomResult = await db.execute({
+      sql: `
+        SELECT pr.id FROM physical_rooms pr
+        WHERE pr.room_type_id = ? AND pr.status = 'available'
+          AND pr.id NOT IN (
+            SELECT physical_room_id FROM bookings
+            WHERE physical_room_id IS NOT NULL
+              AND status != 'cancelled'
+              AND NOT (checkout <= ? OR checkin >= ?)
+          )
+        ORDER BY pr.room_number ASC
+        LIMIT 1
+      `,
+      args: [roomId, checkin, checkout]
+    });
+    const physicalRoomId = physicalRoomResult.rows[0] ? physicalRoomResult.rows[0].id : null;
+
     const insertResult = await db.execute({
       sql: `
         INSERT INTO bookings (
-          room_id, name, email, phone, cnic, address, checkin, checkout, guests,
+          room_id, physical_room_id, name, email, phone, cnic, address, checkin, checkout, guests,
           payment_method, transaction_id, terms_accepted, status, payment_status, total_amount, room_amount,
           invoice_token
         )
-        VALUES (?, ?, '', ?, ?, ?, ?, ?, 1, ?, ?, 1, ?, 'unpaid', ?, ?, lower(hex(randomblob(12))))
+        VALUES (?, ?, ?, '', ?, ?, ?, ?, ?, 1, ?, ?, 1, ?, 'unpaid', ?, ?, lower(hex(randomblob(12))))
       `,
-      args: [roomId, guestName, phone, cnic || '', address || '', checkin, checkout, method, transactionId || '', status, roomAmount, roomAmount]
+      args: [roomId, physicalRoomId, guestName, phone, cnic || '', address || '', checkin, checkout, method, transactionId || '', status, roomAmount, roomAmount]
     });
 
     const bookingId = Number(insertResult.lastInsertRowid);
