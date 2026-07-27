@@ -1,6 +1,6 @@
 function money(n) {
-    const num = Number(n || 0);
-    return num < 0 ? `-$${Math.abs(num).toFixed(2)}` : `$${num.toFixed(2)}`;
+    const num = Math.round(Number(n || 0));
+    return num < 0 ? `-Rs. ${Math.abs(num).toLocaleString('en-US')}` : `Rs. ${num.toLocaleString('en-US')}`;
 }
 
 function nights(checkin, checkout) {

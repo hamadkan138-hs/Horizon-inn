@@ -49,8 +49,8 @@ function escapeHtml(str) {
 }
 
 function money(n) {
-    const num = Number(n || 0);
-    return num < 0 ? `-$${Math.abs(num).toFixed(2)}` : `$${num.toFixed(2)}`;
+    const num = Math.round(Number(n || 0));
+    return num < 0 ? `-Rs. ${Math.abs(num).toLocaleString('en-US')}` : `Rs. ${num.toLocaleString('en-US')}`;
 }
 
 function showLogin() {
@@ -238,7 +238,7 @@ async function renderBookingDetail(id) {
                     </tbody>
                 </table>
                 <form class="inline-form payment-form" data-id="${id}">
-                    <input type="number" name="amount" placeholder="Amount ($)" min="0.01" step="0.01" required>
+                    <input type="number" name="amount" placeholder="Amount (Rs.)" min="0.01" step="0.01" required>
                     <select name="method">
                         <option value="cash">Cash</option>
                         <option value="bank_transfer">Bank Transfer</option>
@@ -645,9 +645,11 @@ async function loadRoomsPanel() {
 
         document.getElementById('roomsSettingsList').innerHTML = allRooms.map((r) => `
             <form class="room-edit-card" data-id="${r.id}">
-                <div class="form-row">
-                    <div class="form-group"><label>Name</label><input type="text" name="name" value="${escapeHtml(r.name)}" ${canEdit ? '' : 'disabled'}></div>
-                    <div class="form-group"><label>Price / Night ($)</label><input type="number" name="price" value="${r.price}" min="0" step="0.01" ${canEdit ? '' : 'disabled'}></div>
+                <div class="form-group"><label>Name</label><input type="text" name="name" value="${escapeHtml(r.name)}" ${canEdit ? '' : 'disabled'}></div>
+                <div class="form-row form-row-3">
+                    <div class="form-group"><label>Price / Night &mdash; 1 Guest (Rs.)</label><input type="number" name="price1p" value="${r.price_1p ?? ''}" min="0" step="1" placeholder="Same as 2-guest rate" ${canEdit ? '' : 'disabled'}></div>
+                    <div class="form-group"><label>Price / Night &mdash; 2 Guests (Rs.)</label><input type="number" name="price" value="${r.price}" min="0" step="1" ${canEdit ? '' : 'disabled'}></div>
+                    <div class="form-group"><label>Price / Night &mdash; 3 Guests (Rs.)</label><input type="number" name="price3p" value="${r.price_3p ?? ''}" min="0" step="1" placeholder="Same as 2-guest rate" ${canEdit ? '' : 'disabled'}></div>
                 </div>
                 <div class="form-group"><label>Description</label><textarea name="description" rows="2" ${canEdit ? '' : 'disabled'}>${escapeHtml(r.description)}</textarea></div>
                 <div class="form-row">
@@ -668,7 +670,10 @@ async function loadRoomsPanel() {
                     try {
                         await apiSend('PATCH', `/api/rooms/${id}`, {
                             name: form.name.value, description: form.description.value,
-                            price: Number(form.price.value), totalUnits: Number(form.totalUnits.value),
+                            price: Number(form.price.value),
+                            price1p: form.price1p.value === '' ? '' : Number(form.price1p.value),
+                            price3p: form.price3p.value === '' ? '' : Number(form.price3p.value),
+                            totalUnits: Number(form.totalUnits.value),
                             featured: form.featured.value === '1'
                         });
                         msg.textContent = 'Saved.'; msg.className = 'form-message success';

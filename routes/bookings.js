@@ -61,7 +61,7 @@ router.post('/', async (req, res) => {
       return res.status(409).json({ error: 'This room type is fully booked for the selected dates' });
     }
 
-    const roomAmount = await computeTotalAmount(room, checkin, checkout);
+    const roomAmount = await computeTotalAmount(room, checkin, checkout, guests);
 
     const insertResult = await db.execute({
       sql: `
@@ -210,14 +210,15 @@ router.patch('/:id/details', adminAuth, requireRole('admin', 'staff'), async (re
     }
 
     let roomAmountChanged = false;
-    if (req.body.checkin || req.body.checkout) {
+    if (req.body.checkin || req.body.checkout || req.body.guests !== undefined) {
       const roomResult = await db.execute({ sql: 'SELECT * FROM rooms WHERE id = ?', args: [booking.room_id] });
       const room = roomResult.rows[0];
       const available = await isRoomAvailable(room, nextCheckin, nextCheckout, booking.id);
       if (!available) {
         return res.status(409).json({ error: 'Room is not available for the new dates' });
       }
-      const roomAmount = await computeTotalAmount(room, nextCheckin, nextCheckout);
+      const nextGuests = req.body.guests !== undefined ? req.body.guests : booking.guests;
+      const roomAmount = await computeTotalAmount(room, nextCheckin, nextCheckout, nextGuests);
       updates.push('room_amount = ?');
       args.push(roomAmount);
       roomAmountChanged = true;

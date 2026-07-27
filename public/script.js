@@ -58,8 +58,85 @@ const checkoutInput = document.getElementById('checkout');
 
 let currentRooms = [];
 
+function money(n) {
+    const num = Math.round(Number(n || 0));
+    return `Rs. ${num.toLocaleString('en-US')}`;
+}
+
+const AMENITY_ICONS = [
+    { match: /breakfast/i, icon: 'fa-mug-hot' },
+    { match: /\bac\b|air.?con/i, icon: 'fa-snowflake' },
+    { match: /wi-?fi|internet/i, icon: 'fa-wifi' },
+    { match: /\btv\b|led/i, icon: 'fa-tv' },
+    { match: /laundry/i, icon: 'fa-shirt' },
+    { match: /mattress/i, icon: 'fa-bed' },
+    { match: /parking/i, icon: 'fa-square-parking' },
+    { match: /view/i, icon: 'fa-mountain-sun' },
+    { match: /bathroom|jacuzzi|sauna/i, icon: 'fa-bath' },
+    { match: /butler|concierge/i, icon: 'fa-concierge-bell' }
+];
+
+function iconFor(feature) {
+    const found = AMENITY_ICONS.find((a) => a.match.test(feature));
+    return found ? found.icon : 'fa-circle-check';
+}
+
+function galleryHtml(room) {
+    const images = room.images && room.images.length ? room.images : null;
+    if (!images) {
+        return `<div class="room-image" style="background: ${room.gradient};"></div>`;
+    }
+    if (images.length === 1) {
+        return `<div class="room-image" style="background: url('/images/${images[0]}') center/cover no-repeat;"></div>`;
+    }
+    const slides = images.map((img, i) => `<div class="gallery-slide ${i === 0 ? 'active' : ''}" style="background-image: url('/images/${img}')"></div>`).join('');
+    const dots = images.map((_, i) => `<button type="button" class="gallery-dot ${i === 0 ? 'active' : ''}" data-index="${i}" aria-label="Photo ${i + 1}"></button>`).join('');
+    return `
+        <div class="room-image room-gallery" data-count="${images.length}">
+            ${slides}
+            <button type="button" class="gallery-arrow prev" aria-label="Previous photo"><i class="fas fa-chevron-left"></i></button>
+            <button type="button" class="gallery-arrow next" aria-label="Next photo"><i class="fas fa-chevron-right"></i></button>
+            <div class="gallery-dots">${dots}</div>
+        </div>
+    `;
+}
+
+function pricingTiersHtml(room, mattressNote) {
+    const tiers = [
+        { label: '1 Guest', price: room.price_1p },
+        { label: '2 Guests', price: room.price },
+        { label: '3 Guests', price: room.price_3p }
+    ].filter((t) => t.price !== null && t.price !== undefined);
+
+    if (tiers.length <= 1) {
+        return `
+            <div class="room-pricing">
+                <span class="price">${money(room.price)}</span>
+                <span class="per-night">per night</span>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="room-pricing">
+            <p class="pricing-label">Nightly rate by occupancy</p>
+            <div class="pricing-tiers">
+                ${tiers.map((t) => `
+                    <div class="pricing-tier${t.label === '2 Guests' ? ' tier-highlight' : ''}">
+                        <span class="tier-label">${t.label}</span>
+                        <span class="tier-price">${money(t.price)}</span>
+                    </div>
+                `).join('')}
+            </div>
+            ${mattressNote ? '<p class="mattress-note"><i class="fas fa-bed"></i> Extra mattress available for additional guests</p>' : ''}
+        </div>
+    `;
+}
+
 function roomCardHtml(room, index) {
-    const featuresHtml = room.features.map((f) => `<li><i class="fas fa-check"></i> ${f}</li>`).join('');
+    const mattressFeature = room.features.find((f) => /extra mattress/i.test(f));
+    const mainFeatures = room.features.filter((f) => f !== mattressFeature);
+    const featuresHtml = mainFeatures.map((f) => `<li><i class="fas ${iconFor(f)}"></i> ${f}</li>`).join('');
     const availabilityHtml = typeof room.available === 'boolean'
         ? `<span class="availability-badge ${room.available ? 'available' : 'unavailable'}">${room.available ? 'Available' : 'Fully booked'}</span>`
         : '';
@@ -67,20 +144,46 @@ function roomCardHtml(room, index) {
     return `
         <div class="room-card fade-in-up ${room.featured ? 'featured' : ''}" style="animation-delay: ${index * 0.12}s">
             ${room.featured ? '<div class="featured-badge">Popular</div>' : ''}
-            <div class="room-image" style="background: ${room.gradient};"></div>
+            ${galleryHtml(room)}
             <div class="room-content">
                 <h3>${room.name}</h3>
                 <p class="room-desc">${room.description}</p>
                 ${availabilityHtml}
                 <ul class="room-features">${featuresHtml}</ul>
-                <div class="room-pricing">
-                    <span class="price">$${room.price}</span>
-                    <span class="per-night">per night</span>
-                </div>
+                ${pricingTiersHtml(room, mattressFeature)}
                 <a href="#booking" class="book-btn ${room.featured ? 'primary' : ''}" data-room-id="${room.id}">Book Now</a>
             </div>
         </div>
     `;
+}
+
+function initGallerySliders() {
+    roomsGrid.querySelectorAll('.room-gallery').forEach((gallery) => {
+        const slides = gallery.querySelectorAll('.gallery-slide');
+        const dots = gallery.querySelectorAll('.gallery-dot');
+        let current = 0;
+
+        const show = (i) => {
+            current = (i + slides.length) % slides.length;
+            slides.forEach((s, idx) => s.classList.toggle('active', idx === current));
+            dots.forEach((d, idx) => d.classList.toggle('active', idx === current));
+        };
+
+        gallery.querySelector('.gallery-arrow.prev').addEventListener('click', (e) => {
+            e.preventDefault();
+            show(current - 1);
+        });
+        gallery.querySelector('.gallery-arrow.next').addEventListener('click', (e) => {
+            e.preventDefault();
+            show(current + 1);
+        });
+        dots.forEach((dot) => {
+            dot.addEventListener('click', (e) => {
+                e.preventDefault();
+                show(Number(dot.dataset.index));
+            });
+        });
+    });
 }
 
 function renderRooms(rooms) {
@@ -90,11 +193,12 @@ function renderRooms(rooms) {
             roomSelect.value = btn.dataset.roomId;
         });
     });
+    initGallerySliders();
 }
 
 function renderRoomOptions(rooms) {
     roomSelect.innerHTML = '<option value="">Select a room</option>' +
-        rooms.map((room) => `<option value="${room.id}">${room.name} - $${room.price}/night</option>`).join('');
+        rooms.map((room) => `<option value="${room.id}">${room.name} - ${money(room.price)}/night</option>`).join('');
 }
 
 async function loadRooms() {

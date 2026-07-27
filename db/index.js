@@ -18,36 +18,29 @@ function imageStyle(filename) {
   return `url('/images/${filename}') center/cover no-repeat`;
 }
 
+const LEGACY_PLACEHOLDER_SLUGS = ['deluxe-room', 'luxury-suite', 'presidential-suite'];
+
 const SEED_ROOMS = [
   {
-    slug: 'deluxe-room',
-    name: 'Deluxe Room',
-    description: 'Spacious room with premium bedding and modern amenities.',
-    price: 199,
-    features: JSON.stringify(['King-size bed', 'Marble bathroom', 'City view balcony', 'Smart TV & streaming']),
-    gradient: imageStyle('deluxe-room.jpg'),
-    total_units: 6,
-    featured: 0
-  },
-  {
-    slug: 'luxury-suite',
-    name: 'Luxury Suite',
-    description: 'Ultimate luxury with separate living area and panoramic views.',
-    price: 349,
-    features: JSON.stringify(['Separate living room', 'Jacuzzi bathtub', 'Panoramic view', 'Personal butler service']),
-    gradient: imageStyle('luxury-suite.jpg'),
-    total_units: 4,
-    featured: 1
-  },
-  {
-    slug: 'presidential-suite',
-    name: 'Presidential Suite',
-    description: 'The pinnacle of luxury with exclusive amenities and services.',
-    price: 599,
-    features: JSON.stringify(['Multi-room layout', 'Private sauna', '360° panoramic view', '24/7 concierge service']),
-    gradient: imageStyle('presidential-suite.jpg'),
+    slug: 'deluxe-twin-room',
+    name: 'Deluxe Twin Room',
+    description: 'A bright, spacious room with two plush beds and a cozy lounge nook, framed by floor-to-ceiling curtained windows. Thoughtfully finished for a relaxed, home-like stay — whether you\'re travelling solo, as a couple, or with family.',
+    price: 9500,
+    price_1p: 9000,
+    price_3p: 10000,
+    features: JSON.stringify([
+      'Complimentary breakfast for 2',
+      'Inverter AC (heat & cool)',
+      'High-speed WiFi',
+      '75" LED TV',
+      '1 complimentary laundry suit',
+      'Extra mattress available on request'
+    ]),
+    images: JSON.stringify(['deluxe-twin-room-1.jpg']),
+    gradient: imageStyle('deluxe-twin-room-1.jpg'),
     total_units: 2,
-    featured: 0
+    featured: 0,
+    active: 1
   }
 ];
 
@@ -76,9 +69,20 @@ function init() {
           features TEXT NOT NULL,
           gradient TEXT NOT NULL,
           total_units INTEGER NOT NULL DEFAULT 3,
-          featured INTEGER NOT NULL DEFAULT 0
+          featured INTEGER NOT NULL DEFAULT 0,
+          price_1p INTEGER,
+          price_3p INTEGER,
+          images TEXT NOT NULL DEFAULT '[]',
+          active INTEGER NOT NULL DEFAULT 1
         )
       `);
+
+      await addColumnsIfMissing('rooms', [
+        'price_1p INTEGER',
+        'price_3p INTEGER',
+        "images TEXT NOT NULL DEFAULT '[]'",
+        'active INTEGER NOT NULL DEFAULT 1'
+      ]);
 
       await db.execute(`
         CREATE TABLE IF NOT EXISTS bookings (
@@ -226,16 +230,34 @@ function init() {
         )
       `);
 
+      // Retire the old generic placeholder rooms now that Horizon Inn has real room
+      // content. Delete them if nothing ever booked them; otherwise just hide them from
+      // the public listing (active = 0) so any historical booking still resolves fine.
+      for (const slug of LEGACY_PLACEHOLDER_SLUGS) {
+        const roomResult = await db.execute({ sql: 'SELECT id FROM rooms WHERE slug = ?', args: [slug] });
+        const room = roomResult.rows[0];
+        if (!room) continue;
+        const bookingCount = await db.execute({ sql: 'SELECT COUNT(*) AS n FROM bookings WHERE room_id = ?', args: [room.id] });
+        if (Number(bookingCount.rows[0].n) === 0) {
+          await db.execute({ sql: 'DELETE FROM rooms WHERE id = ?', args: [room.id] });
+        } else {
+          await db.execute({ sql: 'UPDATE rooms SET active = 0 WHERE id = ?', args: [room.id] });
+        }
+      }
+
       // Seed rooms only if missing (by slug) — admin edits from the dashboard must
       // survive a restart/redeploy, so we no longer overwrite existing rows here.
       for (const room of SEED_ROOMS) {
         await db.execute({
           sql: `
-            INSERT INTO rooms (slug, name, description, price, features, gradient, total_units, featured)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO rooms (slug, name, description, price, price_1p, price_3p, features, images, gradient, total_units, featured, active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(slug) DO NOTHING
           `,
-          args: [room.slug, room.name, room.description, room.price, room.features, room.gradient, room.total_units, room.featured]
+          args: [
+            room.slug, room.name, room.description, room.price, room.price_1p, room.price_3p,
+            room.features, room.images, room.gradient, room.total_units, room.featured, room.active
+          ]
         });
       }
 

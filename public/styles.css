@@ -451,6 +451,7 @@ h2::after {
     position: absolute;
     inset: 0;
     background: linear-gradient(to top, rgba(20, 22, 31, 0.35), transparent 55%);
+    pointer-events: none;
 }
 
 .room-card .room-image {
@@ -563,6 +564,140 @@ h2::after {
 .availability-badge.unavailable {
     background: #f6e9e8;
     color: #a5473c;
+}
+
+/* Room photo gallery / slider */
+.room-gallery {
+    background: var(--charcoal);
+}
+
+.gallery-slide {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+}
+
+.gallery-slide.active {
+    opacity: 1;
+}
+
+.gallery-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(20, 22, 31, 0.55);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+    font-size: 0.8rem;
+    transition: background var(--transition);
+}
+
+.gallery-arrow:hover {
+    background: var(--gold);
+    color: var(--charcoal);
+}
+
+.gallery-arrow.prev {
+    left: 12px;
+}
+
+.gallery-arrow.next {
+    right: 12px;
+}
+
+.gallery-dots {
+    position: absolute;
+    bottom: 12px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    z-index: 2;
+}
+
+.gallery-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 0;
+    transition: background var(--transition), transform var(--transition);
+}
+
+.gallery-dot.active {
+    background: var(--gold);
+    transform: scale(1.25);
+}
+
+/* Occupancy-based pricing tiers */
+.pricing-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-light);
+    margin-bottom: 10px;
+}
+
+.pricing-tiers {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.pricing-tier {
+    text-align: center;
+    padding: 10px 4px;
+    border: 1px solid #eee;
+    background: #faf9f6;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pricing-tier.tier-highlight {
+    border-color: var(--gold);
+    background: #fbf6ea;
+}
+
+.tier-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-light);
+}
+
+.tier-price {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--charcoal);
+}
+
+.mattress-note {
+    font-size: 0.82rem;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mattress-note i {
+    color: var(--gold);
 }
 
 /* Gallery */
@@ -719,6 +854,10 @@ h2::after {
 
 .form-row .form-group {
     margin-bottom: 0;
+}
+
+.form-row-3 {
+    grid-template-columns: 1fr 1fr 1fr;
 }
 
 .form-group label {
@@ -1485,7 +1624,8 @@ table.admin-table th {
         font-size: 2.4rem;
     }
 
-    .form-row {
+    .form-row,
+    .form-row-3 {
         grid-template-columns: 1fr;
     }
 
