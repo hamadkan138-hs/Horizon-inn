@@ -350,8 +350,6 @@ let myInvestorProfile = null;
 
 let trendRange = '7d';
 let revExpTrendChartInstance = null;
-let incomeStreamsChartInstance = null;
-let valuationGaugeChartInstance = null;
 
 function rangeForTrendToggle(key) {
     const to = todayStr();
@@ -424,6 +422,7 @@ async function loadMyInvestmentTab() {
         // by this point. One chart failing to draw — e.g. Chart.js blocked or
         // slow to load — must not blank out data that's already correct.
         const results = await Promise.allSettled([
+            renderEarningsMomentum(me),
             renderRevExpTrendChart(),
             renderIncomeStreamsChart(),
             renderValuationGaugeAndSimulator(),
@@ -447,6 +446,29 @@ document.getElementById('trendRangeToggle').addEventListener('click', (e) => {
     trendRange = btn.dataset.range;
     renderRevExpTrendChart();
 });
+
+async function renderEarningsMomentum(me) {
+    const today = todayStr();
+    const weekAgoDate = new Date();
+    weekAgoDate.setDate(weekAgoDate.getDate() - 6);
+    const weekAgo = weekAgoDate.toISOString().slice(0, 10);
+
+    const [todaySummary, weekSummary] = await Promise.all([
+        apiGet(`/api/investor/summary?from=${today}&to=${today}`),
+        apiGet(`/api/investor/summary?from=${weekAgo}&to=${today}`)
+    ]);
+    const share = Number(me.ownershipPercent) / 100;
+    const todayEarnings = Math.max(0, todaySummary.netProfit * share);
+    const weekEarnings = Math.max(0, weekSummary.netProfit * share);
+    document.getElementById('miTodayEarnings').textContent = money(todayEarnings);
+    document.getElementById('miWeekEarnings').textContent = money(weekEarnings);
+
+    const equityValue = Number(me.equityValue) || 0;
+    const annualizedYield = equityValue > 0 ? (weekEarnings * 52 / equityValue) * 100 : 0;
+    const sign = annualizedYield >= 0 ? '+' : '';
+    document.getElementById('miYieldBadge').innerHTML =
+        `<i class="fas fa-arrow-trend-${annualizedYield >= 0 ? 'up' : 'down'}"></i> ${sign}${annualizedYield.toFixed(1)}% <span style="color: var(--text-2); font-weight: 400;">annualized</span>`;
+}
 
 async function renderRevExpTrendChart() {
     const { from, to, range } = rangeForTrendToggle(trendRange);
@@ -491,16 +513,25 @@ async function renderRevExpTrendChart() {
 
 async function renderIncomeStreamsChart() {
     const data = await apiGet('/api/investor/income-breakdown');
-    if (typeof Chart === 'undefined') return;
-    if (incomeStreamsChartInstance) incomeStreamsChartInstance.destroy();
-    incomeStreamsChartInstance = new Chart(document.getElementById('incomeStreamsChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['Room Bookings', 'Amenities (BBQ, Bonfire, etc.)', 'Event Rentals', 'Other'],
-            datasets: [{ data: [data.roomBookings, data.amenities, data.eventRentals, data.otherIncome], backgroundColor: BRONZE_GOLD_PALETTE, borderColor: '#15171d', borderWidth: 2 }]
-        },
-        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } }
-    });
+    const rooms = Number(data.roomBookings) || 0;
+    const amenities = Number(data.amenities) || 0;
+    const events = Number(data.eventRentals) || 0;
+    const total = rooms + amenities + events;
+    const pct = (v) => (total > 0 ? Math.round((v / total) * 100) : 0);
+    const streams = [
+        { label: 'Room Bookings', icon: 'fa-bed', value: pct(rooms), color: 'var(--gold)' },
+        { label: 'Bonfire/BBQ', icon: 'fa-fire', value: pct(amenities), color: 'var(--bronze)' },
+        { label: 'Events', icon: 'fa-champagne-glasses', value: pct(events), color: 'var(--emerald)' }
+    ];
+    document.getElementById('incomeStreamsRings').innerHTML = streams.map((s) => `
+        <div class="income-ring-item">
+            <i class="fas ${s.icon}"></i>
+            <div class="ring-wrap" style="background: conic-gradient(${s.color} ${s.value * 3.6}deg, rgba(255,255,255,0.08) 0deg);">
+                <div class="ring-center"><strong style="font-size: 0.9rem;">${s.value}%</strong></div>
+            </div>
+            <p>${s.label}</p>
+        </div>
+    `).join('');
 }
 
 async function renderValuationGaugeAndSimulator() {
@@ -514,29 +545,9 @@ async function renderValuationGaugeAndSimulator() {
 
     document.getElementById('miValuationBig').textContent = money(amount);
     const raisedPct = amount > 0 ? Math.min(100, (valuation.totalCapitalRaised / amount) * 100) : 0;
+    document.getElementById('valuationRing').style.background =
+        `conic-gradient(var(--gold) ${raisedPct * 3.6}deg, rgba(255,255,255,0.08) 0deg)`;
 
-    if (typeof Chart !== 'undefined') {
-        if (valuationGaugeChartInstance) valuationGaugeChartInstance.destroy();
-        valuationGaugeChartInstance = new Chart(document.getElementById('valuationGaugeChart'), {
-            type: 'doughnut',
-            data: {
-                labels: ['Capital Raised', 'Remaining Pool'],
-                datasets: [{
-                    data: [raisedPct, 100 - raisedPct],
-                    backgroundColor: ['#d4af37', 'rgba(255,255,255,0.06)'],
-                    borderColor: '#15171d', borderWidth: 2, circumference: 180, rotation: 270
-                }]
-            },
-            options: {
-                responsive: true,
-                cutout: '75%',
-                plugins: { legend: { display: false }, tooltip: { enabled: false } }
-            }
-        });
-    }
-
-    // Not gated behind Chart.js — the simulator's numbers are plain DOM
-    // text, not a chart, so they must update even if charting itself failed.
     updateSimulator();
 }
 
@@ -551,16 +562,26 @@ document.getElementById('simAmount').addEventListener('input', updateSimulator);
 
 async function renderProjectsPreview() {
     const projects = await apiGet('/api/investor-accounts/projects');
-    const preview = projects.slice(0, 2);
-    document.getElementById('projectsPreviewList').innerHTML = preview.map((p) => `
-        <div class="project-preview-row">
-            <div class="project-preview-thumb"><i class="fas fa-hotel"></i></div>
-            <div>
-                <h5>${escapeHtml(p.name)}</h5>
-                <p>${money(p.targetCapital)} needed &middot; ${escapeHtml(p.timeline || 'TBD')}</p>
-            </div>
+    const el = document.getElementById('projectSpotlight');
+    if (!projects.length) {
+        el.innerHTML = '<p style="color: var(--text-2); font-size: 0.85rem;">No upcoming projects listed yet.</p>';
+        return;
+    }
+    const p = projects[0];
+    const img = p.images && p.images[0];
+    const roiMatch = String(p.growthPotential || '').match(/(\d+(\.\d+)?)/);
+    const roiPct = roiMatch ? Math.min(100, Number(roiMatch[1])) : 0;
+    el.innerHTML = `
+        <h4 style="font-size: 0.85rem; color: var(--gold-light); margin-bottom: 10px; font-family: 'Playfair Display', serif;"><i class="fas fa-rocket"></i> ${escapeHtml(p.name)}</h4>
+        <div class="project-spotlight-media"${img ? ` style="background-image: url('${escapeHtml(img)}'); background-size: cover; background-position: center;"` : ''}>
+            ${img ? '' : '<i class="fas fa-hotel"></i>'}
         </div>
-    `).join('') || '<p style="color: var(--text-2); font-size: 0.85rem;">No upcoming projects listed yet.</p>';
+        <p style="color: var(--text-2); font-size: 0.8rem;">${money(p.targetCapital)} needed &middot; ${escapeHtml(p.timeline || 'TBD')}</p>
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-top: 10px;">
+            <span style="color: var(--text-2);">Target ROI</span><strong class="emerald">${escapeHtml(p.growthPotential || 'N/A')}</strong>
+        </div>
+        <div class="roi-mini-bar"><div class="roi-mini-bar-fill" style="width: ${roiPct}%;"></div></div>
+    `;
 }
 document.getElementById('viewAllProjectsBtn').addEventListener('click', () => {
     document.querySelector('.admin-tab[data-tab="projects"]').click();
