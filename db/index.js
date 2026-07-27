@@ -368,6 +368,78 @@ function init() {
         });
       }
 
+      // ---------------------------------------------------------------
+      // Investor accounts (fractional ownership tracking) — layered on
+      // top of the existing users/investor role rather than replacing it.
+      // A users row with role='investor' still handles login; this table
+      // holds the business data specific to being an investor (capital,
+      // compliance flags, lockup terms) a login row alone can't carry.
+      // ---------------------------------------------------------------
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS investors (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER UNIQUE NOT NULL REFERENCES users(id),
+          investor_code TEXT UNIQUE NOT NULL,
+          capital_invested REAL NOT NULL DEFAULT 0,
+          spa_status TEXT NOT NULL DEFAULT 'pending',
+          accredited_status TEXT NOT NULL DEFAULT 'pending',
+          aml_kyc_status TEXT NOT NULL DEFAULT 'pending',
+          lockup_months INTEGER NOT NULL DEFAULT 6,
+          lockup_start_date TEXT NOT NULL DEFAULT (date('now')),
+          dividend_turnaround_hours INTEGER NOT NULL DEFAULT 24,
+          notes TEXT NOT NULL DEFAULT '',
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+
+      // A history of valuation figures, not just one current number — the
+      // "asset growth trend" chart needs multiple points over time, and
+      // every change stays auditable rather than overwriting the only
+      // record of what the property was valued at last quarter.
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS valuation_snapshots (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          amount REAL NOT NULL,
+          note TEXT NOT NULL DEFAULT '',
+          set_by TEXT NOT NULL DEFAULT '',
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+
+      // Dividend/capital withdrawals are requests, not automated transfers
+      // — this app has no payment-disbursement integration. An admin marks
+      // a request completed only after actually paying the investor
+      // outside this system, the same way every other payment here is a
+      // manual record of money that already moved.
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS withdrawal_requests (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          investor_id INTEGER NOT NULL REFERENCES investors(id),
+          type TEXT NOT NULL,
+          amount REAL NOT NULL,
+          status TEXT NOT NULL DEFAULT 'pending',
+          requested_at TEXT NOT NULL DEFAULT (datetime('now')),
+          processed_at TEXT,
+          processed_by TEXT NOT NULL DEFAULT '',
+          note TEXT NOT NULL DEFAULT ''
+        )
+      `);
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS investment_projects (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          description TEXT NOT NULL DEFAULT '',
+          location TEXT NOT NULL DEFAULT '',
+          target_capital REAL NOT NULL DEFAULT 0,
+          timeline TEXT NOT NULL DEFAULT '',
+          growth_potential TEXT NOT NULL DEFAULT '',
+          images TEXT NOT NULL DEFAULT '[]',
+          status TEXT NOT NULL DEFAULT 'planned',
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+
       // Retire the old generic placeholder rooms now that Horizon Inn has real room
       // content. Delete them if nothing ever booked them; otherwise just hide them from
       // the public listing (active = 0) so any historical booking still resolves fine.

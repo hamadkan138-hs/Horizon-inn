@@ -13,146 +13,168 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <style>
         /* ---------------------------------------------------------------
-           Investor Dashboard theme — dark charcoal + brushed bronze/gold.
-           Scoped entirely to this page: these rules live only in this
-           <style> block, never touch styles.css, so the public site,
-           admin ops dashboard, front desk, and room management are
-           completely unaffected.
+           Investor Dashboard theme — obsidian + brushed bronze/gold +
+           glassmorphism. Scoped entirely to this page: these rules live
+           only in this <style> block, never touch styles.css, so the
+           public site, admin ops dashboard, front desk, and room
+           management are completely unaffected.
         --------------------------------------------------------------- */
         body {
-            --ink: #0c0d11;
-            --panel: #1a1c24;
-            --panel-2: #23262f;
+            --ink: #0d0e12;
+            --ink-2: #15171d;
+            --glass: rgba(28, 31, 40, 0.55);
+            --glass-strong: rgba(34, 37, 47, 0.72);
             --bronze: #8c6239;
-            --gold: #cda05a;
-            --gold-light: #e9cf9a;
-            --text-1: #f2ede2;
+            --gold: #d4af37;
+            --gold-light: #f0d78c;
+            --text-1: #f4efe2;
             --text-2: #9b968c;
-            --hair: rgba(233, 207, 154, 0.14);
-            --danger: #d17a6a;
-            background: var(--ink) !important;
+            --hair: rgba(212, 175, 55, 0.16);
+            --emerald: #22c55e;
+            --danger: #e0685a;
+            background:
+                radial-gradient(1200px 600px at 15% -10%, rgba(140, 98, 57, 0.14), transparent 60%),
+                radial-gradient(900px 500px at 100% 0%, rgba(212, 175, 55, 0.08), transparent 55%),
+                var(--ink) !important;
             color: var(--text-1);
+            min-height: 100vh;
         }
 
-        .navbar.scrolled { background: linear-gradient(180deg, #101218, #0c0d11) !important; box-shadow: 0 1px 0 var(--hair) !important; }
+        .navbar.scrolled { background: rgba(13, 14, 18, 0.85) !important; backdrop-filter: blur(14px); box-shadow: 0 1px 0 var(--hair) !important; }
         .nav-brand span { font-family: 'Playfair Display', serif; color: var(--gold-light); letter-spacing: 0.01em; }
         .nav-menu a { font-family: 'Playfair Display', serif; font-size: 0.8rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-2) !important; transition: color 0.25s ease; }
         .nav-menu a:hover { color: var(--gold) !important; }
 
-        #dashboard h1, #dashboard h2 { color: var(--text-1); }
+        #dashboard h1, #dashboard h2, #dashboard h3 { color: var(--text-1); }
         #dashboard > .dash-header p, #dashboard label { color: var(--text-2) !important; }
+        .emerald { color: var(--emerald) !important; }
+        .danger-text { color: var(--danger) !important; }
 
+        /* Login */
         .booking-form-wrapper {
-            background: linear-gradient(160deg, var(--panel-2), var(--panel)) !important;
+            background: var(--glass-strong) !important;
+            backdrop-filter: blur(18px);
             border: 1px solid var(--hair) !important;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.55) !important;
+            box-shadow: 0 24px 70px rgba(0,0,0,0.6) !important;
         }
         .booking-form-wrapper h1 { color: var(--gold-light) !important; font-family: 'Playfair Display', serif; }
         .form-group label { color: var(--text-2) !important; }
-        .form-group input {
-            background: var(--ink) !important;
+        .form-group input, .form-group select, .form-group textarea {
+            background: rgba(255,255,255,0.03) !important;
             border-bottom: 1px solid var(--hair) !important;
             color: var(--text-1) !important;
         }
         .form-group input:focus { border-color: var(--gold) !important; }
-        .submit-btn {
-            background: linear-gradient(135deg, var(--gold-light), var(--bronze)) !important;
-            color: #17130a !important;
-            border: none !important;
-        }
+        .submit-btn { background: linear-gradient(135deg, var(--gold-light), var(--bronze)) !important; color: #17130a !important; border: none !important; }
         .submit-btn:hover { filter: brightness(1.08); }
 
         .investor-note {
-            background: var(--panel) !important;
+            background: var(--glass) !important;
+            backdrop-filter: blur(10px);
             border-left: 3px solid var(--gold) !important;
-            padding: 10px 16px;
-            font-size: 0.85rem;
-            color: var(--text-2) !important;
-            margin-bottom: 22px;
+            padding: 10px 16px; font-size: 0.85rem; color: var(--text-2) !important; margin-bottom: 22px; border-radius: 0 6px 6px 0;
         }
 
         .date-presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
         #rangeFrom, #rangeTo {
-            background: var(--panel) !important;
-            border: 1px solid var(--hair) !important;
-            color: var(--text-1) !important;
-            border-radius: 4px;
-            padding: 6px 10px;
-            color-scheme: dark;
+            background: var(--glass) !important; border: 1px solid var(--hair) !important; color: var(--text-1) !important;
+            border-radius: 4px; padding: 6px 10px; color-scheme: dark;
         }
 
-        /* Buttons: thin gold-outline pills instead of flat colored boxes */
         .action-btn {
-            background: transparent !important;
-            border: 1px solid var(--gold) !important;
-            color: var(--gold-light) !important;
-            border-radius: 999px !important;
-            padding: 8px 18px !important;
+            background: transparent !important; border: 1px solid var(--gold) !important; color: var(--gold-light) !important;
+            border-radius: 999px !important; padding: 8px 18px !important;
             transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
         }
-        .action-btn:hover {
-            background: linear-gradient(135deg, var(--gold-light), var(--bronze)) !important;
-            color: #17130a !important;
-            box-shadow: 0 4px 16px rgba(205, 160, 90, 0.35);
-        }
+        .action-btn:hover { background: linear-gradient(135deg, var(--gold-light), var(--bronze)) !important; color: #17130a !important; box-shadow: 0 4px 16px rgba(212,175,55,0.35); }
         .action-btn.cancel { border-color: var(--danger) !important; color: var(--danger) !important; }
-        .action-btn.cancel:hover { background: var(--danger) !important; color: #1a0f0d !important; box-shadow: 0 4px 16px rgba(209, 122, 106, 0.3); }
-        .date-presets button.active {
-            background: linear-gradient(135deg, var(--gold-light), var(--bronze)) !important;
-            color: #17130a !important;
-            border-color: transparent !important;
-        }
+        .action-btn.cancel:hover { background: var(--danger) !important; color: #1a0f0d !important; }
+        .action-btn:disabled { opacity: 0.35 !important; cursor: not-allowed; box-shadow: none !important; background: transparent !important; color: var(--text-2) !important; }
+        .date-presets button.active { background: linear-gradient(135deg, var(--gold-light), var(--bronze)) !important; color: #17130a !important; border-color: transparent !important; }
 
-        /* KPI cards: raised metallic-bordered panels */
-        .summary-card {
-            background: linear-gradient(160deg, var(--panel-2), var(--panel)) !important;
-            border-radius: 10px;
-            position: relative;
-            box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 12px 28px rgba(0,0,0,0.45) !important;
-            padding: 22px 20px !important;
+        /* Tabs */
+        .admin-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 24px 0 26px; padding: 5px; background: var(--glass); backdrop-filter: blur(12px); border: 1px solid var(--hair); border-radius: 999px; width: fit-content; }
+        .admin-tab {
+            background: transparent; border: none; color: var(--text-2); font-family: 'Playfair Display', serif;
+            font-size: 0.82rem; letter-spacing: 0.03em; padding: 9px 20px; border-radius: 999px; cursor: pointer; transition: all 0.25s ease;
         }
+        .admin-tab:hover { color: var(--gold-light); }
+        .admin-tab.active { background: linear-gradient(135deg, var(--gold-light), var(--bronze)); color: #17130a; font-weight: 700; }
+
+        /* Glass panels */
+        .glass-card, .chart-card, .summary-card, table.admin-table {
+            background: var(--glass) !important;
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--hair) !important;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.45) !important;
+            border-radius: 14px;
+        }
+        .glass-card { padding: 26px; margin-bottom: 22px; }
+        .chart-card { padding: 22px !important; }
+        .chart-card h3 { color: var(--gold-light) !important; font-family: 'Playfair Display', serif; font-weight: 600; }
+
+        .summary-card { position: relative; padding: 22px 20px !important; }
         .summary-card::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 10px;
-            padding: 1px;
+            content: ''; position: absolute; inset: 0; border-radius: 14px; padding: 1px;
             background: linear-gradient(135deg, var(--gold-light), var(--bronze) 50%, var(--gold-light));
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            opacity: 0.5;
-            pointer-events: none;
+            -webkit-mask-composite: xor; mask-composite: exclude; opacity: 0.45; pointer-events: none;
         }
         .kpi-icon {
-            width: 32px; height: 32px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            background: linear-gradient(135deg, var(--gold-light), var(--bronze));
-            color: #17130a;
-            font-size: 0.8rem;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, var(--gold-light), var(--bronze)); color: #17130a; font-size: 0.8rem;
+            margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
         }
         .summary-card span { color: var(--text-2) !important; }
         .summary-card strong { color: var(--text-1) !important; font-family: 'Playfair Display', serif; }
 
-        /* Chart panels */
-        .chart-card {
-            background: linear-gradient(160deg, var(--panel-2), var(--panel)) !important;
-            border: 1px solid var(--hair) !important;
-            box-shadow: 0 12px 28px rgba(0,0,0,0.4) !important;
-            border-radius: 10px;
-            padding: 22px !important;
-        }
-        .chart-card h3 { color: var(--gold-light) !important; font-family: 'Playfair Display', serif; font-weight: 600; letter-spacing: 0.01em; }
-
-        /* Ledger table */
-        table.admin-table { background: var(--panel) !important; box-shadow: 0 12px 28px rgba(0,0,0,0.4) !important; }
-        table.admin-table th { background: var(--ink) !important; color: var(--gold-light) !important; }
+        table.admin-table th { background: rgba(0,0,0,0.3) !important; color: var(--gold-light) !important; }
         table.admin-table th, table.admin-table td { border-bottom: 1px solid var(--hair) !important; color: var(--text-1); }
 
+        /* Compliance badges */
+        .compliance-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+        .compliance-badge.verified, .compliance-badge.signed { background: rgba(34,197,94,0.15); color: var(--emerald); }
+        .compliance-badge.pending { background: rgba(212,175,55,0.15); color: var(--gold-light); }
+        .compliance-badge.rejected { background: rgba(224,104,90,0.15); color: var(--danger); }
+
+        /* Lockup progress bar */
+        .lockup-bar { width: 100%; height: 10px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden; margin: 10px 0; }
+        .lockup-bar-fill { height: 100%; background: linear-gradient(90deg, var(--bronze), var(--gold-light)); border-radius: 999px; transition: width 0.6s ease; }
+
+        .turnaround-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(212,175,55,0.12); color: var(--gold-light); padding: 5px 14px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }
+
+        /* Project cards */
+        .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .project-card { overflow: hidden; padding: 0 !important; display: flex; flex-direction: column; }
+        .project-card .project-media { height: 150px; background: linear-gradient(135deg, var(--ink-2), var(--bronze) 180%); display: flex; align-items: center; justify-content: center; color: var(--gold-light); font-size: 2rem; }
+        .project-card .project-body { padding: 20px; }
+        .project-card h4 { font-family: 'Playfair Display', serif; color: var(--gold-light); margin-bottom: 4px; }
+        .project-card .meta-row { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-2); margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--hair); }
+        .status-chip { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; background: rgba(212,175,55,0.15); color: var(--gold-light); }
+
+        /* ROI calculator */
+        .roi-calc-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 30px; }
+        @media (max-width: 800px) { .roi-calc-grid { grid-template-columns: 1fr; } }
+        .roi-input-row { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+        .roi-input-row input[type="range"] { flex: 1; accent-color: var(--gold); }
+        .roi-input-row input[type="number"] {
+            width: 150px; background: rgba(255,255,255,0.04); border: 1px solid var(--hair); color: var(--text-1);
+            border-radius: 6px; padding: 8px 12px; font-family: 'Playfair Display', serif; font-size: 1.05rem;
+        }
+        .roi-output { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .roi-output .stat { background: rgba(255,255,255,0.03); border: 1px solid var(--hair); border-radius: 10px; padding: 16px; text-align: center; }
+        .roi-output .stat span { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-2); margin-bottom: 8px; }
+        .roi-output .stat strong { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--gold-light); }
+
+        /* Legal disclaimer, always visible regardless of active tab */
+        .legal-disclaimer {
+            margin-top: 40px; padding: 16px 20px; border-radius: 10px;
+            background: rgba(0,0,0,0.35); border: 1px solid var(--hair);
+            font-size: 0.76rem; line-height: 1.6; color: var(--text-2);
+        }
+
         @media print {
-            .navbar, .date-presets, .inline-form, #investorExportBtn, #investorPrintBtn { display: none !important; }
+            .navbar, .date-presets, .inline-form, .admin-tabs, #investorExportBtn, #investorPrintBtn, .withdraw-btn { display: none !important; }
         }
     </style>
 </head>
@@ -193,7 +215,7 @@
                     <h1>Horizon Inn — Investor Dashboard</h1>
                     <p style="color: var(--text-light);">
                         Signed in as <strong id="whoami"></strong>
-                        &middot; <span style="color: #3d7a4f;"><i class="fas fa-circle" style="font-size: 0.55rem;"></i> Live</span>
+                        &middot; <span style="color: var(--emerald);"><i class="fas fa-circle" style="font-size: 0.55rem;"></i> Live</span>
                         &middot; <span id="lastUpdated"></span>
                     </p>
                 </div>
@@ -209,55 +231,129 @@
                 This view shows financial totals only. Guest names, contact details, and booking records are not accessible from this account.
             </div>
 
-            <div class="date-presets" id="datePresets">
-                <button type="button" class="action-btn" data-preset="7">Last 7 Days</button>
-                <button type="button" class="action-btn" data-preset="30">This Month</button>
-                <button type="button" class="action-btn" data-preset="90">This Quarter</button>
-                <button type="button" class="action-btn" data-preset="365">This Year</button>
+            <div class="admin-tabs" id="investorTabs">
+                <button class="admin-tab active" data-tab="overview">Overview</button>
+                <button class="admin-tab" data-tab="myinvestment">My Investment</button>
+                <button class="admin-tab" data-tab="valuation">Hotel Valuation &amp; Metrics</button>
+                <button class="admin-tab" data-tab="projects">Upcoming Projects &amp; ROI Calculator</button>
             </div>
-            <form id="rangeForm" class="inline-form">
-                <label style="font-size: 0.85rem; color: var(--text-light);">From</label>
-                <input type="date" id="rangeFrom">
-                <label style="font-size: 0.85rem; color: var(--text-light);">To</label>
-                <input type="date" id="rangeTo">
-                <button type="submit" class="action-btn confirm">Apply</button>
+
+            <!-- ================= OVERVIEW ================= -->
+            <section class="admin-panel" id="panel-overview">
+                <div class="date-presets" id="datePresets">
+                    <button type="button" class="action-btn" data-preset="7">Last 7 Days</button>
+                    <button type="button" class="action-btn" data-preset="30">This Month</button>
+                    <button type="button" class="action-btn" data-preset="90">This Quarter</button>
+                    <button type="button" class="action-btn" data-preset="365">This Year</button>
+                </div>
+                <form id="rangeForm" class="inline-form">
+                    <label style="font-size: 0.85rem;">From</label>
+                    <input type="date" id="rangeFrom">
+                    <label style="font-size: 0.85rem;">To</label>
+                    <input type="date" id="rangeTo">
+                    <button type="submit" class="action-btn confirm">Apply</button>
+                </form>
+
+                <div class="summary-cards" id="summaryCards"></div>
+
+                <div class="chart-card">
+                    <h3>Revenue Trend</h3>
+                    <canvas id="revenueTrendChart" height="90"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Income by Category</h3>
+                    <canvas id="incomeBreakdownChart" height="90"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Expense Breakdown</h3>
+                    <canvas id="expenseBreakdownChart" height="90"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Profit Analysis</h3>
+                    <canvas id="profitChart" height="90"></canvas>
+                </div>
+
+                <h2 style="text-align: left; font-size: 1.3rem; margin-top: 40px;">Transaction Ledger</h2>
+                <p class="investor-note" style="margin-top: 10px;">Every income and expense entry in the selected range, categorized and anonymized. References are invoice numbers or business notes only.</p>
+                <div style="overflow-x: auto; margin-top: 16px;">
+                    <table class="admin-table" id="ledgerTable">
+                        <thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Reference</th><th>Amount</th></tr></thead>
+                        <tbody id="ledgerBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ================= MY INVESTMENT ================= -->
+            <section class="admin-panel" id="panel-myinvestment" style="display: none;">
+                <div id="myInvestmentContent"><p style="color: var(--text-2);">Loading your investment profile&hellip;</p></div>
+            </section>
+
+            <!-- ================= HOTEL VALUATION & METRICS ================= -->
+            <section class="admin-panel" id="panel-valuation" style="display: none;">
+                <div id="valuationSummaryCards" class="summary-cards"></div>
+                <div class="chart-card">
+                    <h3>Equity Breakdown</h3>
+                    <canvas id="equityBreakdownChart" height="90"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Asset Growth Trend</h3>
+                    <canvas id="assetGrowthChart" height="90"></canvas>
+                </div>
+                <div class="glass-card">
+                    <h3 style="margin-bottom: 14px;">Key Performance Metrics</h3>
+                    <div class="summary-cards" id="kpiMetricsCards"></div>
+                </div>
+            </section>
+
+            <!-- ================= PROJECTS & ROI CALCULATOR ================= -->
+            <section class="admin-panel" id="panel-projects" style="display: none;">
+                <h2 style="text-align: left; font-size: 1.3rem;">Upcoming Projects</h2>
+                <div class="project-grid" id="projectGrid" style="margin: 18px 0 40px;"></div>
+
+                <div class="glass-card">
+                    <h2 style="text-align: left; font-size: 1.3rem; margin-bottom: 4px;"><i class="fas fa-calculator"></i> Share &amp; ROI Calculator</h2>
+                    <p style="color: var(--text-2); font-size: 0.88rem; margin-bottom: 20px;">Estimate what a hypothetical investment would mean today, based on the current valuation and trailing 90-day performance.</p>
+                    <div class="roi-calc-grid">
+                        <div>
+                            <label style="font-size: 0.8rem; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em;">Hypothetical Investment (Rs.)</label>
+                            <div class="roi-input-row">
+                                <input type="range" id="roiSlider" min="10000" max="2000000" step="10000" value="100000">
+                                <input type="number" id="roiAmount" min="0" step="1000" value="100000">
+                            </div>
+                            <p style="font-size: 0.78rem; color: var(--text-2);">Based on current valuation of <strong id="roiValuationRef" style="color: var(--gold-light);">&mdash;</strong> and trailing 90-day net income.</p>
+                        </div>
+                        <div class="roi-output">
+                            <div class="stat"><span>Ownership Share</span><strong id="roiOwnership">0%</strong></div>
+                            <div class="stat"><span>Est. Monthly Dividend</span><strong id="roiMonthly">Rs. 0</strong></div>
+                            <div class="stat"><span>Est. Annual ROI</span><strong id="roiAnnual">0%</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="legal-disclaimer">
+                <i class="fas fa-scale-balanced"></i>
+                Financial projections, ROI estimates, and valuation metrics are for informational purposes only and do not constitute a guaranteed financial yield or binding investment offer.
+            </div>
+        </div>
+    </div>
+
+    <!-- Withdraw / Capital Release modal -->
+    <div class="modal-overlay" id="withdrawModalOverlay" style="display: none;">
+        <div class="modal-box" style="background: var(--glass-strong); backdrop-filter: blur(20px); border: 1px solid var(--hair);">
+            <h3 id="withdrawModalTitle" style="color: var(--gold-light); font-family: 'Playfair Display', serif;">Withdraw Earnings</h3>
+            <p id="withdrawModalSubtitle" style="color: var(--text-2); font-size: 0.85rem; margin-bottom: 16px;"></p>
+            <form id="withdrawForm">
+                <div class="form-group">
+                    <label>Amount (Rs.)</label>
+                    <input type="number" id="withdrawAmount" min="1" step="1" required>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 14px;">
+                    <button type="submit" class="action-btn confirm">Submit Request</button>
+                    <button type="button" class="action-btn cancel" id="closeWithdrawModalBtn">Cancel</button>
+                </div>
+                <p class="form-message" id="withdrawMessage"></p>
             </form>
-
-            <div class="summary-cards" id="summaryCards"></div>
-
-            <div class="chart-card">
-                <h3>Revenue Trend</h3>
-                <canvas id="revenueTrendChart" height="90"></canvas>
-            </div>
-            <div class="chart-card">
-                <h3>Income by Category</h3>
-                <canvas id="incomeBreakdownChart" height="90"></canvas>
-            </div>
-            <div class="chart-card">
-                <h3>Expense Breakdown</h3>
-                <canvas id="expenseBreakdownChart" height="90"></canvas>
-            </div>
-            <div class="chart-card">
-                <h3>Profit Analysis (ROI Trend)</h3>
-                <canvas id="profitChart" height="90"></canvas>
-            </div>
-
-            <h2 style="text-align: left; font-size: 1.3rem; margin-top: 40px;">Transaction Ledger</h2>
-            <p class="investor-note" style="margin-top: 10px;">Every income and expense entry in the selected range, categorized and anonymized. References are invoice numbers or business notes only.</p>
-            <div style="overflow-x: auto; margin-top: 16px;">
-                <table class="admin-table" id="ledgerTable">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Type</th>
-                            <th>Category</th>
-                            <th>Reference</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ledgerBody"></tbody>
-                </table>
-            </div>
         </div>
     </div>
 
