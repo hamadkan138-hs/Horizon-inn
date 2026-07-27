@@ -617,9 +617,18 @@
                 <p class="form-message" id="valuationMessage"></p>
                 <p style="margin-top: 10px;">Current: <strong id="currentValuationDisplay">&mdash;</strong></p>
 
+                <form id="ownerEquityForm" class="inline-form" style="margin-top: 18px;">
+                    <input type="number" id="ownerEquityPercent" placeholder="Owner retained equity %" min="0" max="100" step="0.1" style="max-width: 200px;">
+                    <button type="submit" class="action-btn confirm">Save Owner Equity %</button>
+                </form>
+                <p class="form-message" id="ownerEquityMessage"></p>
+                <p style="margin-top: 10px; font-size: 0.82rem; color: var(--text-light);">Current: <strong id="currentOwnerEquityDisplay">Not set — investor ownership is calculated directly against valuation.</strong> When set, investors split only the remaining equity pool, proportional to their share of total capital raised, so the owner's stake stays fixed.</p>
+
                 <h3 style="text-align: left; margin-top: 34px; margin-bottom: 10px;">Investor Accounts</h3>
                 <form id="investorAccountForm" class="inline-form">
                     <input type="text" id="newInvestorUsername" placeholder="Username" required>
+                    <input type="text" id="newInvestorPassword" placeholder="Password (blank = auto-generate)" style="max-width: 220px;" autocomplete="new-password">
+                    <button type="button" class="action-btn" id="genInvestorPasswordBtn">Generate</button>
                     <input type="number" id="newInvestorCapital" placeholder="Capital invested (Rs.)" min="1" required>
                     <input type="number" id="newInvestorLockup" placeholder="Lockup months" min="0" value="6" style="max-width: 130px;">
                     <button type="submit" class="action-btn confirm">Create Investor Account</button>

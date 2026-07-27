@@ -1486,6 +1486,10 @@ async function loadValuationAdmin() {
         document.getElementById('currentValuationDisplay').textContent = data.current
             ? `${money(data.current.amount)} (set ${data.current.createdAt.slice(0, 10)}${data.current.note ? ' — ' + escapeHtml(data.current.note) : ''})`
             : 'Not set yet';
+        document.getElementById('ownerEquityPercent').value = data.ownerEquityPercent || '';
+        document.getElementById('currentOwnerEquityDisplay').textContent = data.ownerEquityPercent > 0
+            ? `${data.ownerEquityPercent}% fixed — investors split the remaining ${(100 - data.ownerEquityPercent).toFixed(1)}% pool.`
+            : 'Not set — investor ownership is calculated directly against valuation.';
     } catch (err) { /* handled */ }
 }
 
@@ -1500,6 +1504,23 @@ document.getElementById('valuationForm').addEventListener('submit', async (e) =>
         msg.textContent = 'Valuation recorded.';
         msg.className = 'form-message success';
         e.target.reset();
+        loadValuationAdmin();
+        loadInvestorAccounts();
+    } catch (err) {
+        msg.textContent = err.message;
+        msg.className = 'form-message error';
+    }
+});
+
+document.getElementById('ownerEquityForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('ownerEquityMessage');
+    try {
+        await apiSend('PATCH', '/api/investor-accounts/owner-equity', {
+            percent: Number(document.getElementById('ownerEquityPercent').value)
+        });
+        msg.textContent = 'Owner equity % saved.';
+        msg.className = 'form-message success';
         loadValuationAdmin();
         loadInvestorAccounts();
     } catch (err) {
@@ -1563,12 +1584,22 @@ async function loadInvestorAccounts() {
     } catch (err) { /* handled */ }
 }
 
+document.getElementById('genInvestorPasswordBtn').addEventListener('click', () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+    let pass = '';
+    for (let i = 0; i < 12; i++) pass += chars[Math.floor(Math.random() * chars.length)];
+    document.getElementById('newInvestorPassword').value = pass;
+    document.getElementById('newInvestorPassword').type = 'text';
+});
+
 document.getElementById('investorAccountForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const msg = document.getElementById('investorAccountMessage');
     try {
+        const chosenPassword = document.getElementById('newInvestorPassword').value;
         const result = await apiSend('POST', '/api/investor-accounts', {
             username: document.getElementById('newInvestorUsername').value,
+            password: chosenPassword || undefined,
             capitalInvested: Number(document.getElementById('newInvestorCapital').value),
             lockupMonths: Number(document.getElementById('newInvestorLockup').value) || 6
         });
