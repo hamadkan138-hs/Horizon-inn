@@ -293,11 +293,13 @@ function init() {
           'Damage Policy: Guests are responsible for any damage to the room or property beyond normal wear and tear, and will be charged for repair or replacement.',
           'House Rules: No smoking indoors. Quiet hours are from 11:00 PM to 7:00 AM. Only registered guests are permitted in guest rooms. Pets are not allowed unless pre-approved.'
         ].join('\n\n'),
-        contact_address: '123 Sunset Boulevard, Mountain View, CA 94043',
-        contact_phone: '+1 (555) 123-4567',
-        contact_email: 'info@horizoninn.com',
-        contact_hours: '24/7 Service Available',
-        contact_map_embed: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3169.0620556597346!2d-122.08393432345069!3d37.42242897127838!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x808fba02425a9ddf%3A0x60a3057bc10d138f!2s123%20Sesame%20St%2C%20Mountain%20View%2C%20CA%2094043!5e0!3m2!1sen!2sus!4v1696892741234'
+        contact_address: 'Abdara Road, University Town, Peshawar, Pakistan (Near Doctor Habib Aesthetics Hospital)',
+        contact_phone: '0333 3564462',
+        contact_email: 'horizoninn55@gmail.com',
+        contact_hours: '24/7 — Front Desk & Guest Support Available',
+        contact_map_embed: 'https://www.google.com/maps?q=Horizon+inn,+center,+Abdara+Rd,+Town,+Peshawar,+44000&output=embed',
+        contact_map_link: 'https://maps.app.goo.gl/TRSYxnbcatfw5N9W6',
+        contact_facebook: 'https://www.facebook.com/share/1LurheLi14/?mibextid=wwXIfr'
       };
       for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
         await db.execute({

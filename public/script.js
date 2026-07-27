@@ -19,6 +19,15 @@ async function loadSiteSettings() {
         if (settings.contact_email) document.getElementById('contactEmailDisplay').textContent = settings.contact_email;
         if (settings.contact_hours) document.getElementById('contactHours').textContent = settings.contact_hours;
         if (settings.contact_map_embed) document.getElementById('contactMapEmbed').src = settings.contact_map_embed;
+        if (settings.contact_map_link) {
+            const mapLink = document.getElementById('contactMapLink');
+            mapLink.href = settings.contact_map_link;
+            mapLink.style.display = 'inline-flex';
+        }
+        if (settings.contact_facebook) {
+            document.getElementById('contactFacebookLink').href = settings.contact_facebook;
+            document.getElementById('contactFacebookItem').style.display = 'flex';
+        }
 
         if (settings.policies_text) {
             const termsBox = document.getElementById('termsBox');

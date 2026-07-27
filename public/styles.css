@@ -1071,7 +1071,32 @@ body.has-offer .navbar {
 .map-container {
     overflow: hidden;
     box-shadow: var(--shadow);
+}
+
+.map-container iframe {
     filter: grayscale(0.3) contrast(1.05);
+    display: block;
+}
+
+.map-directions-link {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    background: var(--charcoal);
+    color: var(--white);
+    text-align: center;
+    justify-content: center;
+    padding: 14px;
+    font-size: 0.82rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background var(--transition), color var(--transition);
+}
+
+.map-directions-link:hover {
+    background: var(--gold);
+    color: var(--charcoal);
 }
 
 /* Footer */
