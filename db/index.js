@@ -299,7 +299,16 @@ function init() {
         contact_hours: '24/7 — Front Desk & Guest Support Available',
         contact_map_embed: 'https://www.google.com/maps?q=Horizon+inn,+center,+Abdara+Rd,+Town,+Peshawar,+44000&output=embed',
         contact_map_link: 'https://maps.app.goo.gl/TRSYxnbcatfw5N9W6',
-        contact_facebook: 'https://www.facebook.com/share/1LurheLi14/?mibextid=wwXIfr'
+        contact_facebook: 'https://www.facebook.com/share/1LurheLi14/?mibextid=wwXIfr',
+        payment_bank_title: 'Horizon Inn',
+        payment_bank_name: 'Habib Metropolitan Bank',
+        payment_bank_account: '6042420311714123136',
+        payment_bank_iban: 'PK37MPBL0424027140123136',
+        payment_bank_branch: 'Abdara Road',
+        payment_easypaisa_title: 'Hamad Ullah',
+        payment_easypaisa_number: '0333 3564462',
+        payment_jazzcash_title: '',
+        payment_jazzcash_number: ''
       };
       for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
         await db.execute({

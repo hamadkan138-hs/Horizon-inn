@@ -29,6 +29,9 @@ async function loadSiteSettings() {
             document.getElementById('contactFacebookItem').style.display = 'flex';
         }
 
+        PAYMENT_INSTRUCTIONS = buildPaymentInstructions(settings);
+        updatePaymentMethodUI();
+
         if (settings.policies_text) {
             const termsBox = document.getElementById('termsBox');
             termsBox.innerHTML = settings.policies_text.split(/\n\s*\n/).map((para) => {
@@ -274,10 +277,40 @@ const transactionIdGroup = document.getElementById('transactionIdGroup');
 const transactionIdInput = document.getElementById('transactionId');
 const paymentInstructions = document.getElementById('paymentInstructions');
 
-const PAYMENT_INSTRUCTIONS = {
-    bank_transfer: 'Bank: [Add your bank name] &middot; Account Title: Horizon Inn &middot; Account Number: [Add your account number] &middot; Please transfer the total amount and enter the transaction/reference ID below.',
-    easypaisa: 'EasyPaisa Account: [Add your EasyPaisa number] &middot; Please send the total amount and enter the transaction ID below.',
-    jazzcash: 'JazzCash Account: [Add your JazzCash number] &middot; Please send the total amount and enter the transaction ID below.'
+const PAYMENT_FOLLOWUP = 'After transferring, please send us a screenshot on WhatsApp along with your booking name and dates, then enter the transaction/reference ID below. An advance payment is required to confirm your booking, and your room is locked once that payment is confirmed.';
+
+function buildPaymentInstructions(settings) {
+    const bankLine = [
+        settings.payment_bank_name ? `Bank: ${settings.payment_bank_name}` : '',
+        settings.payment_bank_title ? `Account Title: ${settings.payment_bank_title}` : '',
+        settings.payment_bank_account ? `Account Number: ${settings.payment_bank_account}` : '',
+        settings.payment_bank_iban ? `IBAN: ${settings.payment_bank_iban}` : '',
+        settings.payment_bank_branch ? `Branch: ${settings.payment_bank_branch}` : ''
+    ].filter(Boolean).join(' &middot; ');
+
+    const easypaisaLine = [
+        settings.payment_easypaisa_title ? `Account Title: ${settings.payment_easypaisa_title}` : '',
+        settings.payment_easypaisa_number ? `Mobile Number: ${settings.payment_easypaisa_number}` : ''
+    ].filter(Boolean).join(' &middot; ');
+
+    const jazzcashLine = [
+        settings.payment_jazzcash_title ? `Account Title: ${settings.payment_jazzcash_title}` : '',
+        settings.payment_jazzcash_number ? `Mobile Number: ${settings.payment_jazzcash_number}` : ''
+    ].filter(Boolean).join(' &middot; ');
+
+    const contactFallback = 'Please contact us via WhatsApp or phone to arrange this payment method.';
+
+    return {
+        bank_transfer: bankLine ? `${bankLine}<br>${PAYMENT_FOLLOWUP}` : contactFallback,
+        easypaisa: easypaisaLine ? `${easypaisaLine}<br>${PAYMENT_FOLLOWUP}` : contactFallback,
+        jazzcash: jazzcashLine ? `${jazzcashLine}<br>${PAYMENT_FOLLOWUP}` : contactFallback
+    };
+}
+
+let PAYMENT_INSTRUCTIONS = {
+    bank_transfer: 'Loading payment details&hellip;',
+    easypaisa: 'Loading payment details&hellip;',
+    jazzcash: 'Loading payment details&hellip;'
 };
 
 function updatePaymentMethodUI() {
@@ -294,6 +327,7 @@ function updatePaymentMethodUI() {
     } else {
         paymentInstructions.style.display = 'none';
     }
+    document.getElementById('paymentSecurityNote').style.display = needsTransaction ? 'flex' : 'none';
 }
 
 paymentMethodSelect.addEventListener('change', updatePaymentMethodUI);

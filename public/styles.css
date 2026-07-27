@@ -944,6 +944,23 @@ body.has-offer .navbar {
     margin-top: 4px;
 }
 
+.payment-security-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f6e9e8;
+    color: #a5473c;
+    padding: 12px 16px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    margin-top: 10px;
+}
+
+.payment-security-note i {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
 .terms-box {
     max-height: 200px;
     overflow-y: auto;

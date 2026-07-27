@@ -498,6 +498,31 @@
                         <div class="form-group"><label>Facebook Page URL</label><input type="text" name="contact_facebook" placeholder="https://www.facebook.com/..."></div>
                     </div>
 
+                    <h4 style="margin-top: 22px;">Payment Methods &mdash; Bank Transfer</h4>
+                    <p style="font-size: 0.82rem; color: var(--text-light); margin-bottom: 10px;">Shown to guests on the booking form when they choose Bank Transfer. Leave blank to hide this method's details.</p>
+                    <div class="form-row">
+                        <div class="form-group"><label>Account Title</label><input type="text" name="payment_bank_title"></div>
+                        <div class="form-group"><label>Bank Name</label><input type="text" name="payment_bank_name"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Account Number</label><input type="text" name="payment_bank_account"></div>
+                        <div class="form-group"><label>IBAN</label><input type="text" name="payment_bank_iban"></div>
+                    </div>
+                    <div class="form-group"><label>Branch (optional)</label><input type="text" name="payment_bank_branch"></div>
+
+                    <h4 style="margin-top: 22px;">Payment Methods &mdash; EasyPaisa</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Account Title</label><input type="text" name="payment_easypaisa_title"></div>
+                        <div class="form-group"><label>Mobile Number</label><input type="text" name="payment_easypaisa_number"></div>
+                    </div>
+
+                    <h4 style="margin-top: 22px;">Payment Methods &mdash; JazzCash</h4>
+                    <p style="font-size: 0.82rem; color: var(--text-light); margin-bottom: 10px;">Leave both blank and guests will see a message to contact you directly instead of a broken account number.</p>
+                    <div class="form-row">
+                        <div class="form-group"><label>Account Title</label><input type="text" name="payment_jazzcash_title"></div>
+                        <div class="form-group"><label>Mobile Number</label><input type="text" name="payment_jazzcash_number"></div>
+                    </div>
+
                     <h4 style="margin-top: 22px;">Policies &amp; Terms</h4>
                     <div class="form-group"><label>Shown on the booking form (one policy per blank line)</label><textarea name="policies_text" rows="8"></textarea></div>
 
