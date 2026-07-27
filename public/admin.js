@@ -1343,7 +1343,7 @@ async function loadStaff() {
                 <td>${escapeHtml(u.username)}</td>
                 <td>${escapeHtml(u.role)}</td>
                 <td>${u.created_at}</td>
-                <td>${u.id === currentUser.id ? '' : `<button class="action-btn cancel" data-id="${u.id}">Remove</button>`}</td>
+                <td>${u.id === currentUser.id ? '' : u.role === 'investor' ? '<span style="color: var(--text-light); font-size: 0.78rem;">Manage in Investor Accounts</span>' : `<button class="action-btn cancel" data-id="${u.id}">Remove</button>`}</td>
             </tr>
         `).join('');
 
@@ -1357,17 +1357,41 @@ async function loadStaff() {
     } catch (err) { /* handled */ }
 }
 
+document.getElementById('staffRole').addEventListener('change', (e) => {
+    const isInvestor = e.target.value === 'investor';
+    document.getElementById('staffInvestorCapital').style.display = isInvestor ? 'inline-block' : 'none';
+    document.getElementById('staffInvestorLockup').style.display = isInvestor ? 'inline-block' : 'none';
+    document.getElementById('staffInvestorCapital').required = isInvestor;
+});
+
 document.getElementById('staffForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const msg = document.getElementById('staffMessage');
+    const role = document.getElementById('staffRole').value;
     try {
-        await apiSend('POST', '/api/users', {
-            username: document.getElementById('staffUsername').value,
-            password: document.getElementById('staffPassword').value,
-            role: document.getElementById('staffRole').value
-        });
-        msg.textContent = 'Staff account created.'; msg.className = 'form-message success';
-        e.target.reset();
+        if (role === 'investor') {
+            const result = await apiSend('POST', '/api/investor-accounts', {
+                username: document.getElementById('staffUsername').value,
+                password: document.getElementById('staffPassword').value,
+                capitalInvested: Number(document.getElementById('staffInvestorCapital').value),
+                lockupMonths: Number(document.getElementById('staffInvestorLockup').value) || 6
+            });
+            msg.textContent = `Created investor ${result.investorCode} — username "${result.username}". Manage capital, compliance, and lockup from the Investor Accounts tab.`;
+            msg.className = 'form-message success';
+            e.target.reset();
+            document.getElementById('staffInvestorCapital').style.display = 'none';
+            document.getElementById('staffInvestorLockup').style.display = 'none';
+            document.getElementById('staffInvestorLockup').value = 6;
+            loadInvestorAccounts();
+        } else {
+            await apiSend('POST', '/api/users', {
+                username: document.getElementById('staffUsername').value,
+                password: document.getElementById('staffPassword').value,
+                role
+            });
+            msg.textContent = 'Staff account created.'; msg.className = 'form-message success';
+            e.target.reset();
+        }
         loadStaff();
     } catch (err) { msg.textContent = err.message; msg.className = 'form-message error'; }
 });
