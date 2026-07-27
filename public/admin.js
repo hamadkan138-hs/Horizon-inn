@@ -19,13 +19,13 @@ let allRooms = [];
 let calendarDate = new Date();
 
 function getAuthHeader() {
-    const token = sessionStorage.getItem('horizonAdminAuth');
+    const token = localStorage.getItem('horizonAdminAuth');
     return token ? { Authorization: `Basic ${token}` } : {};
 }
 
 async function apiGet(path) {
     const res = await fetch(path, { headers: getAuthHeader() });
-    if (res.status === 401) { sessionStorage.removeItem('horizonAdminAuth'); showLogin(); throw new Error('Unauthorized'); }
+    if (res.status === 401) { localStorage.removeItem('horizonAdminAuth'); showLogin(); throw new Error('Unauthorized'); }
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Request failed');
     return res.json();
 }
@@ -36,7 +36,7 @@ async function apiSend(method, path, body) {
         headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
         body: JSON.stringify(body)
     });
-    if (res.status === 401) { sessionStorage.removeItem('horizonAdminAuth'); showLogin(); throw new Error('Unauthorized'); }
+    if (res.status === 401) { localStorage.removeItem('horizonAdminAuth'); showLogin(); throw new Error('Unauthorized'); }
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'Request failed');
     return data;
@@ -148,7 +148,7 @@ function bookingRowHtml(b) {
                 <button class="action-btn details-toggle" data-target="details-${b.id}" data-id="${b.id}">View</button><br><br>
                 <a class="action-btn confirm" href="${whatsappLink(b)}" target="_blank" rel="noopener">WhatsApp</a>
                 <a class="action-btn confirm" href="${emailLink(b)}">Email</a>
-                <a class="action-btn details-toggle" href="invoice.html?id=${b.id}" target="_blank" rel="noopener">Invoice</a>
+                <a class="action-btn details-toggle" href="invoice.html?id=${b.id}" target="_blank" rel="opener">Invoice</a>
             </td>
         </tr>
         <tr class="detail-row" id="details-${b.id}" style="display: none;">
@@ -202,7 +202,7 @@ async function renderBookingDetail(id) {
                     <input type="text" name="roomNumber" value="${escapeHtml(b.room_number)}" placeholder="Room number (e.g. 12)">
                     <input type="text" name="invoiceNotes" value="${escapeHtml(b.invoice_notes)}" placeholder="Notes to print on invoice">
                     <button type="submit" class="action-btn confirm">Save</button>
-                    <a class="action-btn details-toggle" href="invoice.html?id=${id}" target="_blank" rel="noopener">Open Invoice</a>
+                    <a class="action-btn details-toggle" href="invoice.html?id=${id}" target="_blank" rel="opener">Open Invoice</a>
                     <button type="button" class="action-btn details-toggle copy-link-btn" data-id="${id}" data-token="${b.invoice_token}">Copy Guest Link</button>
                 </form>
                 <p class="form-message" id="invoiceFieldsMessage-${id}"></p>
@@ -514,7 +514,7 @@ function applyTransactionFilters() {
             </td>
             <td>${b.checkin}</td>
             <td>
-                <a class="action-btn details-toggle" href="invoice.html?id=${b.id}" target="_blank" rel="noopener">Invoice</a>
+                <a class="action-btn details-toggle" href="invoice.html?id=${b.id}" target="_blank" rel="opener">Invoice</a>
                 <button class="action-btn confirm jump-to-booking-btn" data-id="${b.id}">Manage</button>
             </td>
         </tr>
@@ -965,7 +965,7 @@ loginForm.addEventListener('submit', async (e) => {
     try {
         const res = await fetch('/api/auth/me', { headers: { Authorization: `Basic ${token}` } });
         if (!res.ok) { loginMessage.textContent = 'Invalid username or password.'; return; }
-        sessionStorage.setItem('horizonAdminAuth', token);
+        localStorage.setItem('horizonAdminAuth', token);
         loginMessage.textContent = '';
         showDashboard();
     } catch (err) {
@@ -973,7 +973,7 @@ loginForm.addEventListener('submit', async (e) => {
     }
 });
 
-if (sessionStorage.getItem('horizonAdminAuth')) {
+if (localStorage.getItem('horizonAdminAuth')) {
     showDashboard();
 } else {
     showLogin();

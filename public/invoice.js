@@ -27,7 +27,7 @@ async function loadInvoice() {
             if (!res.ok) throw new Error('not-found');
             b = await res.json();
         } else {
-            const token = sessionStorage.getItem('horizonAdminAuth');
+            const token = localStorage.getItem('horizonAdminAuth');
             if (!token) { status.textContent = 'Please log in to the admin dashboard first, then open this invoice link again.'; return; }
             const res = await fetch(`/api/bookings/${id}`, { headers: { Authorization: `Basic ${token}` } });
             if (!res.ok) throw new Error('not-found');
