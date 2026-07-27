@@ -54,6 +54,19 @@ function money(n) {
     return num < 0 ? `-Rs. ${Math.abs(num).toLocaleString('en-US')}` : `Rs. ${num.toLocaleString('en-US')}`;
 }
 
+// Every timestamp in this app is stored in UTC (SQLite's datetime('now')).
+// Horizon Inn operates on Pakistan Standard Time, so always display in that
+// zone explicitly rather than whatever timezone the browser happens to be in.
+function formatPKT(sqlTimestamp) {
+    if (!sqlTimestamp) return '';
+    const d = new Date(sqlTimestamp.replace(' ', 'T') + 'Z');
+    return d.toLocaleString('en-US', {
+        timeZone: 'Asia/Karachi',
+        year: 'numeric', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+    }) + ' PKT';
+}
+
 function showLogin() {
     loginPanel.style.display = 'block';
     dashboard.style.display = 'none';
@@ -240,7 +253,7 @@ async function renderBookingDetail(id) {
                 <table class="admin-table mini-table">
                     <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Txn ID</th><th>Note</th><th>By</th></tr></thead>
                     <tbody>
-                        ${b.payments.map((p) => `<tr><td>${p.recorded_at}</td><td>${money(p.amount)}</td><td>${escapeHtml(p.method)}</td><td>${escapeHtml(p.transaction_id)}</td><td>${escapeHtml(p.note)}</td><td>${escapeHtml(p.recorded_by)}</td></tr>`).join('') || '<tr><td colspan="6">No payments recorded yet.</td></tr>'}
+                        ${b.payments.map((p) => `<tr><td>${formatPKT(p.recorded_at)}</td><td>${money(p.amount)}</td><td>${escapeHtml(p.method)}</td><td>${escapeHtml(p.transaction_id)}</td><td>${escapeHtml(p.note)}</td><td>${escapeHtml(p.recorded_by)}</td></tr>`).join('') || '<tr><td colspan="6">No payments recorded yet.</td></tr>'}
                     </tbody>
                 </table>
                 <form class="inline-form payment-form" data-id="${id}">
@@ -418,7 +431,14 @@ function applyBookingFilters() {
     body.innerHTML = filtered.map(bookingRowHtml).join('') || '<tr><td colspan="9">No bookings match.</td></tr>';
 
     body.querySelectorAll('.status-select').forEach((select) => {
+        const previousValue = select.value;
         select.addEventListener('change', async () => {
+            if (select.value === 'checked_out' && previousValue !== 'checked_out') {
+                const booking = allBookings.find((b) => String(b.id) === String(select.dataset.id));
+                select.value = previousValue; // don't visually commit until checkout actually succeeds
+                openCheckoutModal(booking);
+                return;
+            }
             select.disabled = true;
             try { await apiSend('PATCH', `/api/bookings/${select.dataset.id}`, { status: select.value }); loadBookings(); }
             catch (err) { alert(err.message); select.disabled = false; }
@@ -439,6 +459,67 @@ function applyBookingFilters() {
 document.getElementById('bookingSearch').addEventListener('input', applyBookingFilters);
 document.getElementById('bookingStatusFilter').addEventListener('change', applyBookingFilters);
 document.getElementById('bookingPaymentFilter').addEventListener('change', applyBookingFilters);
+
+/* ---------------- Checkout ---------------- */
+function openCheckoutModal(booking) {
+    if (!booking) return;
+    const paidTotal = Number(booking.paid_total || 0);
+    const balance = Math.max(0, Number(booking.total_amount) - paidTotal);
+    const knownMethods = ['cash', 'bank_transfer', 'easypaisa', 'jazzcash'];
+
+    document.getElementById('checkoutModalSubtitle').textContent =
+        `${booking.name} — ${booking.room_name} (${booking.checkin} to ${booking.checkout})`;
+    document.getElementById('checkoutModalSummary').innerHTML = `
+        <div><span>Total Charges</span><span>${money(booking.total_amount)}</span></div>
+        <div><span>Already Paid</span><span>${money(paidTotal)}</span></div>
+        <div class="grand"><span>Balance Due</span><span>${money(balance)}</span></div>
+    `;
+    document.getElementById('checkoutAmount').value = balance > 0 ? balance.toFixed(2) : 0;
+    document.getElementById('checkoutMethod').value = knownMethods.includes(booking.payment_method) ? booking.payment_method : 'cash';
+    document.getElementById('checkoutTransactionId').value = '';
+    document.getElementById('checkoutMessage').textContent = '';
+    document.getElementById('checkoutMessage').className = 'form-message';
+    document.getElementById('checkoutForm').dataset.id = booking.id;
+    document.getElementById('checkoutModalOverlay').style.display = 'flex';
+}
+
+document.getElementById('closeCheckoutModalBtn').addEventListener('click', () => {
+    document.getElementById('checkoutModalOverlay').style.display = 'none';
+});
+document.getElementById('checkoutModalOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'checkoutModalOverlay') document.getElementById('checkoutModalOverlay').style.display = 'none';
+});
+
+document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const id = form.dataset.id;
+    const msg = document.getElementById('checkoutMessage');
+    const amount = Number(document.getElementById('checkoutAmount').value || 0);
+    const submitBtn = form.querySelector('button[type="submit"]');
+
+    msg.textContent = '';
+    msg.className = 'form-message';
+    submitBtn.disabled = true;
+    try {
+        const result = await apiSend('POST', `/api/bookings/${id}/checkout`, {
+            amount: amount > 0 ? amount : undefined,
+            method: document.getElementById('checkoutMethod').value,
+            transactionId: document.getElementById('checkoutTransactionId').value
+        });
+        document.getElementById('checkoutModalOverlay').style.display = 'none';
+        const when = formatPKT(result.booking.checked_out_at);
+        alert(amount > 0 ? `Payment recorded successfully at ${when}` : `Checkout completed at ${when}`);
+        loadBookings();
+    } catch (err) {
+        // Nothing was changed server-side on failure — the form stays open
+        // with everything the user entered so they can just retry.
+        msg.textContent = err.message;
+        msg.className = 'form-message error';
+    } finally {
+        submitBtn.disabled = false;
+    }
+});
 
 /* ---------------- Daily Summary ---------------- */
 function dailyRowHtml(b) {
@@ -530,7 +611,7 @@ async function loadHandoverPanel() {
         document.getElementById('handoverHistoryList').innerHTML = history.map((h) => `
             <li>
                 <span class="item-label">
-                    ${new Date(h.created_at.replace(' ', 'T')).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
+                    ${formatPKT(h.created_at)}
                     <span class="item-meta">
                         ${h.booking_count} booking(s) &middot; Cash ${money(h.cash_total)} &middot; Bank ${money(h.bank_total)} &middot; Online ${money(h.online_total)}
                         &middot; Expenses ${money(h.expenses_total)} &middot; By ${escapeHtml(h.staff_name)} &rarr; ${escapeHtml(h.receiver_type)}: ${escapeHtml(h.receiver_name)}
@@ -565,7 +646,9 @@ async function openHandoverModal() {
             <div class="grand"><span>Total Cash in Hand</span><span>${money(preview.netCashHanded)}</span></div>
         `;
         document.getElementById('handoverStaffName').value = currentUser.username;
-        document.getElementById('handoverDateTime').value = new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+        document.getElementById('handoverDateTime').value = new Date().toLocaleString('en-US', {
+            timeZone: 'Asia/Karachi', dateStyle: 'medium', timeStyle: 'short'
+        }) + ' PKT';
         document.getElementById('handoverReceiverType').value = 'owner';
         document.getElementById('handoverReceiverNameLabel').textContent = RECEIVER_LABELS.owner;
         document.getElementById('handoverReceiverName').value = '';

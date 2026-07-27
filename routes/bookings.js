@@ -471,4 +471,51 @@ router.post('/:id/payments', adminAuth, requireRole('admin', 'staff'), async (re
   }
 });
 
+// One-click checkout (admin/staff): optionally records a final payment, then
+// marks the booking checked out with an exact server timestamp. The payment
+// insert happens BEFORE the status update, so if it fails the booking is
+// never marked checked out — the caller can safely retry the whole request.
+router.post('/:id/checkout', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
+  try {
+    const { amount, method, transactionId, note } = req.body;
+
+    const bookingResult = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
+    const booking = bookingResult.rows[0];
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+    assertBookingUnlocked(booking);
+
+    let totals = null;
+    let payment = null;
+    if (amount !== undefined && amount !== null && amount !== '' && Number(amount) > 0) {
+      if (!method) {
+        return res.status(400).json({ error: 'Payment method is required to record a payment' });
+      }
+      const insertResult = await db.execute({
+        sql: `
+          INSERT INTO payments (booking_id, amount, method, transaction_id, note, recorded_by)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `,
+        args: [req.params.id, amount, method, transactionId || '', note || 'Collected at checkout', req.user.username]
+      });
+      totals = await recomputeBookingTotal(req.params.id);
+      const paymentRow = await db.execute({ sql: 'SELECT * FROM payments WHERE id = ?', args: [Number(insertResult.lastInsertRowid)] });
+      payment = paymentRow.rows[0];
+    }
+
+    await db.execute({
+      sql: `UPDATE bookings SET status = 'checked_out', checked_out_at = datetime('now') WHERE id = ?`,
+      args: [req.params.id]
+    });
+
+    const updated = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
+    res.json({ booking: updated.rows[0], payment, totals });
+  } catch (err) {
+    if (err instanceof BookingLockedError) return res.status(err.status).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: 'Failed to complete checkout. Nothing was changed — please try again.' });
+  }
+});
+
 module.exports = router;

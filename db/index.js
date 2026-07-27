@@ -280,6 +280,11 @@ function init() {
       await addColumnsIfMissing('bookings', ['handover_id INTEGER']);
       await addColumnsIfMissing('expenses', ['handover_id INTEGER']);
 
+      // Exact moment checkout completed — the "payment timestamp" shown on
+      // invoices, stored in UTC (like every other timestamp in this app) and
+      // converted to Pakistan Standard Time only at display time.
+      await addColumnsIfMissing('bookings', ['checked_out_at TEXT']);
+
       const DEFAULT_SETTINGS = {
         hero_eyebrow: 'Est. 2026 · Boutique Hospitality',
         hero_heading: 'Welcome to Horizon Inn',

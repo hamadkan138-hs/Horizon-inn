@@ -12,6 +12,17 @@ const router = express.Router();
 // routes/bookings.js so a future change to those never leaks here.
 router.use(adminAuth, requireRole('admin', 'investor'));
 
+// Timestamps are stored in UTC (SQLite's datetime('now')); Horizon Inn
+// operates on Pakistan Standard Time, so invoices are reported in that zone
+// regardless of where the server or the viewer happens to be.
+function toPKTParts(utcTimestamp) {
+  const d = new Date(String(utcTimestamp).replace(' ', 'T') + 'Z');
+  return {
+    date: d.toLocaleDateString('en-CA', { timeZone: 'Asia/Karachi' }),
+    time: d.toLocaleTimeString('en-GB', { timeZone: 'Asia/Karachi', hour12: false })
+  };
+}
+
 const PERIOD_FORMAT = {
   daily: '%Y-%m-%d',
   weekly: '%Y-W%W',
@@ -173,8 +184,8 @@ router.get('/invoices', async (req, res) => {
       args: [from, to]
     });
     const invoices = result.rows.map((row) => {
-      const [date, time] = String(row.created_at).split(' ');
-      return { invoiceNumber: row.invoice_number, date, time: time || '', amount: Number(row.total_amount) };
+      const { date, time } = toPKTParts(row.created_at);
+      return { invoiceNumber: row.invoice_number, date, time, amount: Number(row.total_amount) };
     });
     res.json(invoices);
   } catch (err) {

@@ -109,6 +109,42 @@
                 </div>
             </section>
 
+            <!-- Checkout confirmation modal -->
+            <div class="modal-overlay" id="checkoutModalOverlay" style="display: none;">
+                <div class="modal-box">
+                    <h3 style="margin-bottom: 4px;">Complete Checkout</h3>
+                    <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 18px;" id="checkoutModalSubtitle"></p>
+
+                    <div class="modal-summary" id="checkoutModalSummary"></div>
+
+                    <form id="checkoutForm">
+                        <div class="form-group">
+                            <label>Payment Method</label>
+                            <select id="checkoutMethod">
+                                <option value="cash">Cash</option>
+                                <option value="bank_transfer">Bank Transfer</option>
+                                <option value="easypaisa">EasyPaisa</option>
+                                <option value="jazzcash">JazzCash</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount to Collect Now (Rs.)</label>
+                            <input type="number" id="checkoutAmount" min="0" step="0.01">
+                            <p style="font-size: 0.78rem; color: var(--text-light); margin-top: 4px;">Leave at 0 if this stay is already fully paid or the balance will be collected later.</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Transaction ID (optional)</label>
+                            <input type="text" id="checkoutTransactionId">
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button type="submit" class="action-btn confirm">Confirm Checkout</button>
+                            <button type="button" class="action-btn cancel" id="closeCheckoutModalBtn">Cancel</button>
+                        </div>
+                        <p class="form-message" id="checkoutMessage"></p>
+                    </form>
+                </div>
+            </div>
+
             <!-- Payments / Transactions -->
             <section class="admin-panel" id="panel-payments" style="display: none;">
                 <div class="panel-toolbar">

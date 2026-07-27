@@ -7,6 +7,19 @@ function nights(checkin, checkout) {
     return Math.max(1, Math.round((new Date(checkout) - new Date(checkin)) / (1000 * 60 * 60 * 24)));
 }
 
+// Every timestamp from the API is stored in UTC (SQLite's datetime('now')).
+// Horizon Inn operates on Pakistan Standard Time, so always display in that
+// zone explicitly rather than whatever timezone the visitor's browser is in.
+function formatPKT(sqlTimestamp) {
+    if (!sqlTimestamp) return '';
+    const d = new Date(sqlTimestamp.replace(' ', 'T') + 'Z');
+    return d.toLocaleString('en-US', {
+        timeZone: 'Asia/Karachi',
+        year: 'numeric', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', hour12: true
+    }) + ' PKT';
+}
+
 const STATUS_LABELS = {
     pending: 'Pending', confirmed: 'Confirmed', checked_in: 'Checked In',
     checked_out: 'Checked Out', cancelled: 'Cancelled'
@@ -52,8 +65,7 @@ async function loadInvoice() {
     try {
         document.getElementById('invNumber').textContent = b.invoice_number;
         document.getElementById('invBookingId').textContent = b.id;
-        const issued = new Date(b.created_at.replace(' ', 'T'));
-        document.getElementById('invDate').textContent = `Issued ${issued.toLocaleDateString()} ${issued.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        document.getElementById('invDate').textContent = `Issued ${formatPKT(b.created_at)}`;
 
         const paidTotal = b.payments.reduce((sum, p) => sum + Number(p.amount), 0);
         const balance = Math.max(0, Number(b.total_amount) - paidTotal);
@@ -86,7 +98,7 @@ async function loadInvoice() {
         document.getElementById('chargeRows').innerHTML = rows;
 
         document.getElementById('paymentsBody').innerHTML = b.payments.map((p) => `
-            <tr><td>${p.recorded_at}</td><td>${p.method}</td><td>${p.transaction_id || '—'}</td><td class="num">${money(p.amount)}</td></tr>
+            <tr><td>${formatPKT(p.recorded_at)}</td><td>${p.method}</td><td>${p.transaction_id || '—'}</td><td class="num">${money(p.amount)}</td></tr>
         `).join('') || '<tr><td colspan="4">No payments recorded yet.</td></tr>';
 
         const roomPlusExtras = Number(b.room_amount) + positiveCharges.reduce((s, c) => s + Number(c.amount), 0);
@@ -107,6 +119,16 @@ async function loadInvoice() {
         balanceEl.className = balance > 0.01 ? 'balance-due' : 'balance-clear';
 
         document.getElementById('paymentStatusText').textContent = b.payment_status.toUpperCase();
+
+        // The exact moment payment was completed — the latest payment on
+        // record, falling back to the checkout timestamp if the booking was
+        // checked out without a new payment being taken at that moment.
+        const lastPayment = b.payments.length ? b.payments[b.payments.length - 1] : null;
+        const paymentMoment = lastPayment ? lastPayment.recorded_at : (b.status === 'checked_out' ? b.checked_out_at : null);
+        if (paymentMoment) {
+            document.getElementById('paymentTimeLine').style.display = 'flex';
+            document.getElementById('paymentTimeText').textContent = formatPKT(paymentMoment);
+        }
 
         if (b.invoice_notes) {
             document.getElementById('notesWrapper').style.display = 'block';
