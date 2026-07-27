@@ -12,6 +12,9 @@ const reportsRouter = require('./routes/reports');
 const usersRouter = require('./routes/users');
 const authRouter = require('./routes/auth');
 const publicInvoiceRouter = require('./routes/publicInvoice');
+const settingsRouter = require('./routes/settings');
+const mediaRouter = require('./routes/media');
+const investorRouter = require('./routes/investor');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,6 +32,9 @@ app.use('/api/reports', reportsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/public-invoice', publicInvoiceRouter);
+app.use('/api/settings', settingsRouter);
+app.use('/api/media', mediaRouter);
+app.use('/api/investor', investorRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

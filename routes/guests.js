@@ -1,10 +1,11 @@
 const express = require('express');
 const { db } = require('../db');
 const adminAuth = require('../middleware/adminAuth');
+const { requireRole } = adminAuth;
 
 const router = express.Router();
 
-router.use(adminAuth);
+router.use(adminAuth, requireRole('admin', 'staff'));
 
 // Aggregate the bookings table into a guest directory, grouped by CNIC/passport
 // (falling back to email for the rare booking missing one) so repeat guests

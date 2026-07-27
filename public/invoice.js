@@ -12,6 +12,17 @@ const STATUS_LABELS = {
     checked_out: 'Checked Out', cancelled: 'Cancelled'
 };
 
+async function loadHotelContact() {
+    try {
+        const settings = await fetch('/api/settings').then((r) => r.json());
+        if (settings.contact_address || settings.contact_phone || settings.contact_email) {
+            const parts = [settings.contact_phone, settings.contact_email].filter(Boolean).join(' &middot; ');
+            document.getElementById('hotelContact').innerHTML = `${(settings.contact_address || '').replace(/\n/g, '<br>')}<br>${parts}`;
+        }
+    } catch (err) { /* fall back to the static markup already in the page */ }
+}
+loadHotelContact();
+
 async function loadInvoice() {
     const status = document.getElementById('status');
     const params = new URLSearchParams(window.location.search);

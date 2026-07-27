@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { username, password, role } = req.body;
-    if (!username || !password || !['admin', 'staff'].includes(role)) {
+    if (!username || !password || !['admin', 'staff', 'investor'].includes(role)) {
       return res.status(400).json({ error: 'Username, password, and a valid role are required' });
     }
     if (password.length < 6) {

@@ -1,3 +1,39 @@
+// Site content — hero copy, contact details, policies and the offers banner all
+// come from the admin-editable settings API instead of being hardcoded here.
+async function loadSiteSettings() {
+    try {
+        const settings = await fetch('/api/settings').then((r) => r.json());
+
+        if (settings.hero_eyebrow) document.getElementById('heroEyebrow').textContent = settings.hero_eyebrow;
+        if (settings.hero_heading) document.getElementById('heroHeading').textContent = settings.hero_heading;
+        if (settings.hero_subtext) document.getElementById('heroSubtext').textContent = settings.hero_subtext;
+
+        if (settings.offers_enabled === '1' && settings.offers_text) {
+            document.getElementById('offersBannerText').textContent = settings.offers_text;
+            document.getElementById('offersBanner').style.display = 'flex';
+            document.body.classList.add('has-offer');
+        }
+
+        if (settings.contact_address) document.getElementById('contactAddress').innerHTML = settings.contact_address.replace(/\n/g, '<br>');
+        if (settings.contact_phone) document.getElementById('contactPhone').textContent = settings.contact_phone;
+        if (settings.contact_email) document.getElementById('contactEmailDisplay').textContent = settings.contact_email;
+        if (settings.contact_hours) document.getElementById('contactHours').textContent = settings.contact_hours;
+        if (settings.contact_map_embed) document.getElementById('contactMapEmbed').src = settings.contact_map_embed;
+
+        if (settings.policies_text) {
+            const termsBox = document.getElementById('termsBox');
+            termsBox.innerHTML = settings.policies_text.split(/\n\s*\n/).map((para) => {
+                const colonIndex = para.indexOf(':');
+                if (colonIndex === -1) return `<p>${para}</p>`;
+                const label = para.slice(0, colonIndex + 1);
+                const rest = para.slice(colonIndex + 1);
+                return `<p><strong>${label}</strong>${rest}</p>`;
+            }).join('');
+        }
+    } catch (err) { /* fall back to the static markup already in the page */ }
+}
+loadSiteSettings();
+
 // Mobile nav toggle
 const navToggle = document.getElementById('navToggle');
 const navMenu = document.getElementById('navMenu');

@@ -1,6 +1,7 @@
 const express = require('express');
 const { db } = require('../db');
 const adminAuth = require('../middleware/adminAuth');
+const { requireRole } = adminAuth;
 
 const router = express.Router();
 
@@ -25,7 +26,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.get('/', adminAuth, async (req, res) => {
+router.get('/', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
   try {
     const result = await db.execute('SELECT * FROM messages ORDER BY created_at DESC');
     res.json(result.rows);

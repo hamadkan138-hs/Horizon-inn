@@ -5,7 +5,7 @@ const { requireRole } = adminAuth;
 
 const router = express.Router();
 
-router.use(adminAuth);
+router.use(adminAuth, requireRole('admin', 'staff'));
 
 router.get('/', async (req, res) => {
   try {

@@ -97,7 +97,7 @@ router.post('/', async (req, res) => {
 
 // List all bookings (admin) — includes paid_total/balance so the Bookings and
 // Payments tabs can render financial state without an N+1 query per row.
-router.get('/', adminAuth, async (req, res) => {
+router.get('/', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
   try {
     const result = await db.execute(`
       SELECT bookings.*, rooms.name AS room_name,
@@ -116,7 +116,7 @@ router.get('/', adminAuth, async (req, res) => {
 });
 
 // Admin-only invoice metadata: room number assignment and printed notes
-router.patch('/:id/invoice-fields', adminAuth, async (req, res) => {
+router.patch('/:id/invoice-fields', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
   try {
     const { roomNumber, invoiceNotes } = req.body;
     if (roomNumber === undefined && invoiceNotes === undefined) {
@@ -141,7 +141,7 @@ router.patch('/:id/invoice-fields', adminAuth, async (req, res) => {
 });
 
 // Single booking with room + payment history + extra charges (admin) — used by invoice view
-router.get('/:id', adminAuth, async (req, res) => {
+router.get('/:id', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
   try {
     const result = await db.execute({
       sql: `
@@ -238,7 +238,7 @@ router.patch('/:id/details', adminAuth, requireRole('admin', 'staff'), async (re
 });
 
 // Update booking status and/or payment status (admin)
-router.patch('/:id', adminAuth, async (req, res) => {
+router.patch('/:id', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
   try {
     const { status, paymentStatus } = req.body;
 
@@ -294,7 +294,7 @@ router.patch('/:id/tax', adminAuth, requireRole('admin'), async (req, res) => {
 
 // Add a charge line to a booking (admin) — e.g. breakfast, laundry, airport
 // pickup. A negative amount represents a discount and is subtracted.
-router.post('/:id/charges', adminAuth, async (req, res) => {
+router.post('/:id/charges', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
   try {
     const { description, amount } = req.body;
     if (!description || !amount) {
@@ -321,7 +321,7 @@ router.post('/:id/charges', adminAuth, async (req, res) => {
 });
 
 // Remove an extra service charge (admin)
-router.delete('/:id/charges/:chargeId', adminAuth, async (req, res) => {
+router.delete('/:id/charges/:chargeId', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
   try {
     const existing = await db.execute({ sql: 'SELECT * FROM booking_charges WHERE id = ? AND booking_id = ?', args: [req.params.chargeId, req.params.id] });
     if (!existing.rows[0]) {
@@ -342,7 +342,7 @@ router.delete('/:id/charges/:chargeId', adminAuth, async (req, res) => {
 
 // Record a payment against a booking (admin) — builds transaction history and
 // auto-derives payment_status from total paid vs total_amount.
-router.post('/:id/payments', adminAuth, async (req, res) => {
+router.post('/:id/payments', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
   try {
     const { amount, method, transactionId, note } = req.body;
     if (!amount || amount <= 0 || !method) {

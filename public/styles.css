@@ -198,6 +198,36 @@ h2::after {
     background: var(--white);
 }
 
+/* Offers banner — sits above the fixed navbar, which shifts down to make room */
+.offers-banner {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: var(--gold);
+    color: var(--charcoal);
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 9px 20px;
+    text-align: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1001;
+    min-height: 38px;
+    box-sizing: border-box;
+}
+
+body.has-offer {
+    padding-top: 38px;
+}
+
+body.has-offer .navbar {
+    top: 38px;
+}
+
 /* Hero */
 .hero {
     position: relative;
@@ -1395,6 +1425,107 @@ table.admin-table th {
     font-size: 0.88rem;
     flex: 1;
     min-width: 140px;
+}
+
+.media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+}
+
+.media-item {
+    background: var(--white);
+    border: 1px solid #eee;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.media-item img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    display: block;
+    background: #f4f3ef;
+}
+
+.media-item-body {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    color: var(--text-light);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.media-item-name {
+    font-size: 0.78rem;
+    color: var(--text-dark);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.media-item-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.media-item-actions .action-btn {
+    flex: 1;
+    text-align: center;
+    padding: 5px 6px;
+    font-size: 0.68rem;
+}
+
+.room-photo-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.room-photo-thumb {
+    position: relative;
+    width: 80px;
+    height: 60px;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+}
+
+.room-photo-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.room-photo-thumb button {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(20, 22, 31, 0.75);
+    color: #fff;
+    border: none;
+    font-size: 0.65rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.room-photo-thumb .cover-badge {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    background: var(--gold);
+    color: var(--charcoal);
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    text-transform: uppercase;
 }
 
 .detail-subsection {

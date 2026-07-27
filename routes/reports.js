@@ -1,10 +1,11 @@
 const express = require('express');
 const { db } = require('../db');
 const adminAuth = require('../middleware/adminAuth');
+const { requireRole } = adminAuth;
 
 const router = express.Router();
 
-router.use(adminAuth);
+router.use(adminAuth, requireRole('admin', 'staff'));
 
 const PERIOD_FORMAT = {
   daily: '%Y-%m-%d',

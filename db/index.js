@@ -230,6 +230,57 @@ function init() {
         )
       `);
 
+      // Simple key/value store for admin-editable site content (hero text, offers,
+      // policies, contact details) so those no longer require a code change.
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS settings (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL DEFAULT '',
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+
+      // Uploaded images stored directly in the database (base64) rather than on local
+      // disk, because Render's free-tier filesystem is ephemeral and would lose any
+      // uploaded photo on the next deploy/restart. Fine at guest-house scale.
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS media (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          filename TEXT NOT NULL,
+          mime_type TEXT NOT NULL,
+          data TEXT NOT NULL,
+          size INTEGER NOT NULL,
+          category TEXT NOT NULL DEFAULT 'general',
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+
+      const DEFAULT_SETTINGS = {
+        hero_eyebrow: 'Est. 2026 · Boutique Hospitality',
+        hero_heading: 'Welcome to Horizon Inn',
+        hero_subtext: 'Experience luxury and tranquility like never before',
+        offers_enabled: '0',
+        offers_text: '',
+        policies_text: [
+          'Check-in / Check-out: Check-in from 2:00 PM, check-out by 12:00 PM. Early check-in or late check-out is subject to availability.',
+          'Identification: A valid CNIC or passport matching the booking details is required from every guest at check-in.',
+          'Cancellation Policy: Cancellations made 24 hours or more before check-in are fully refundable. Cancellations within 24 hours, or no-shows, are non-refundable.',
+          'Damage Policy: Guests are responsible for any damage to the room or property beyond normal wear and tear, and will be charged for repair or replacement.',
+          'House Rules: No smoking indoors. Quiet hours are from 11:00 PM to 7:00 AM. Only registered guests are permitted in guest rooms. Pets are not allowed unless pre-approved.'
+        ].join('\n\n'),
+        contact_address: '123 Sunset Boulevard, Mountain View, CA 94043',
+        contact_phone: '+1 (555) 123-4567',
+        contact_email: 'info@horizoninn.com',
+        contact_hours: '24/7 Service Available',
+        contact_map_embed: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3169.0620556597346!2d-122.08393432345069!3d37.42242897127838!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x808fba02425a9ddf%3A0x60a3057bc10d138f!2s123%20Sesame%20St%2C%20Mountain%20View%2C%20CA%2094043!5e0!3m2!1sen!2sus!4v1696892741234'
+      };
+      for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
+        await db.execute({
+          sql: 'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO NOTHING',
+          args: [key, value]
+        });
+      }
+
       // Retire the old generic placeholder rooms now that Horizon Inn has real room
       // content. Delete them if nothing ever booked them; otherwise just hide them from
       // the public listing (active = 0) so any historical booking still resolves fine.

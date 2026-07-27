@@ -16,6 +16,7 @@ const PAYMENT_METHOD_LABELS = {
 let currentUser = null;
 let allBookings = [];
 let allRooms = [];
+let allRoomsForPanel = [];
 let calendarDate = new Date();
 
 function getAuthHeader() {
@@ -65,6 +66,8 @@ async function showDashboard() {
         currentUser = await apiGet('/api/auth/me');
         document.getElementById('whoami').textContent = `${currentUser.username} (${currentUser.role})`;
         document.getElementById('staffTabBtn').style.display = currentUser.role === 'admin' ? 'inline-block' : 'none';
+        document.getElementById('mediaTabBtn').style.display = currentUser.role === 'admin' ? 'inline-block' : 'none';
+        document.getElementById('contentTabBtn').style.display = currentUser.role === 'admin' ? 'inline-block' : 'none';
     } catch (err) { return; }
 
     loadBookings();
@@ -88,6 +91,8 @@ document.querySelectorAll('.admin-tab').forEach((btn) => {
         if (btn.dataset.tab === 'expenses') loadExpenses();
         if (btn.dataset.tab === 'reports') loadReports();
         if (btn.dataset.tab === 'staff') loadStaff();
+        if (btn.dataset.tab === 'media') loadMediaLibrary();
+        if (btn.dataset.tab === 'content') loadSiteContent();
         if (btn.dataset.tab === 'bookings') { localStorage.setItem('horizonLastSeen', new Date().toISOString()); updateNotifyBell(); }
     });
 });
@@ -637,32 +642,69 @@ async function loadGuests() {
     } catch (err) { /* handled */ }
 }
 
+/* ---------------- Uploads ---------------- */
+async function uploadImages(files, category) {
+    const form = new FormData();
+    Array.from(files).forEach((f) => form.append('files', f));
+    form.append('category', category);
+    const res = await fetch('/api/media/upload', { method: 'POST', headers: getAuthHeader(), body: form });
+    if (res.status === 401) { localStorage.removeItem('horizonAdminAuth'); showLogin(); throw new Error('Unauthorized'); }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Upload failed');
+    return data; // array of { id, url, filename, ... }
+}
+
+function roomPhotoStripHtml(room, canEdit) {
+    const images = room.images || [];
+    const thumbs = images.map((img, i) => {
+        const src = img.startsWith('/') || img.startsWith('http') ? img : `/images/${img}`;
+        return `
+            <div class="room-photo-thumb" data-room="${room.id}" data-index="${i}">
+                <img src="${src}" alt="">
+                ${i === 0 ? '<span class="cover-badge">Cover</span>' : ''}
+                ${canEdit ? '<button type="button" class="remove-photo-btn" title="Remove">&times;</button>' : ''}
+            </div>
+        `;
+    }).join('');
+    return `<div class="room-photo-strip" data-room="${room.id}">${thumbs}</div>`;
+}
+
 /* ---------------- Rooms & Pricing ---------------- */
 async function loadRoomsPanel() {
     try {
-        allRooms = await apiGet('/api/rooms');
+        allRoomsForPanel = await apiGet('/api/rooms?includeInactive=1');
         const canEdit = currentUser.role === 'admin';
 
-        document.getElementById('roomsSettingsList').innerHTML = allRooms.map((r) => `
-            <form class="room-edit-card" data-id="${r.id}">
+        document.getElementById('newRoomToggleBtn').style.display = canEdit ? 'inline-block' : 'none';
+
+        document.getElementById('roomsSettingsList').innerHTML = allRoomsForPanel.map((r) => `
+            <form class="room-edit-card" data-id="${r.id}" style="${r.active ? '' : 'opacity: 0.6;'}">
                 <div class="form-group"><label>Name</label><input type="text" name="name" value="${escapeHtml(r.name)}" ${canEdit ? '' : 'disabled'}></div>
+                ${!r.active ? '<p style="color: var(--text-light); font-size: 0.8rem;">Inactive &mdash; hidden from the public site.</p>' : ''}
+
+                <label style="font-size: 0.78rem; color: var(--text-light); display: block; margin-bottom: 6px;">Photos</label>
+                ${roomPhotoStripHtml(r, canEdit)}
+                ${canEdit ? `<input type="file" class="room-photo-input" data-id="${r.id}" accept="image/jpeg,image/png,image/webp" multiple style="margin-bottom: 14px;">` : ''}
+
                 <div class="form-row form-row-3">
                     <div class="form-group"><label>Price / Night &mdash; 1 Guest (Rs.)</label><input type="number" name="price1p" value="${r.price_1p ?? ''}" min="0" step="1" placeholder="Same as 2-guest rate" ${canEdit ? '' : 'disabled'}></div>
                     <div class="form-group"><label>Price / Night &mdash; 2 Guests (Rs.)</label><input type="number" name="price" value="${r.price}" min="0" step="1" ${canEdit ? '' : 'disabled'}></div>
                     <div class="form-group"><label>Price / Night &mdash; 3 Guests (Rs.)</label><input type="number" name="price3p" value="${r.price_3p ?? ''}" min="0" step="1" placeholder="Same as 2-guest rate" ${canEdit ? '' : 'disabled'}></div>
                 </div>
                 <div class="form-group"><label>Description</label><textarea name="description" rows="2" ${canEdit ? '' : 'disabled'}>${escapeHtml(r.description)}</textarea></div>
+                <div class="form-group"><label>Amenities (one per line)</label><textarea name="features" rows="3" ${canEdit ? '' : 'disabled'}>${escapeHtml((r.features || []).join('\n'))}</textarea></div>
                 <div class="form-row">
                     <div class="form-group"><label>Total Units</label><input type="number" name="totalUnits" value="${r.total_units}" min="1" ${canEdit ? '' : 'disabled'}></div>
                     <div class="form-group"><label>Featured</label><select name="featured" ${canEdit ? '' : 'disabled'}><option value="0" ${!r.featured ? 'selected' : ''}>No</option><option value="1" ${r.featured ? 'selected' : ''}>Yes</option></select></div>
                 </div>
-                ${canEdit ? '<button type="submit" class="action-btn confirm">Save Room</button>' : '<p style="color: var(--text-light); font-size: 0.85rem;">Only admins can edit room settings.</p>'}
+                <div class="form-group"><label>Active (visible on site)</label><select name="active" ${canEdit ? '' : 'disabled'}><option value="1" ${r.active ? 'selected' : ''}>Yes</option><option value="0" ${!r.active ? 'selected' : ''}>No</option></select></div>
+                ${canEdit ? `<button type="submit" class="action-btn confirm">Save Room</button> <button type="button" class="action-btn cancel delete-room-btn" data-id="${r.id}">Delete Room</button>` : '<p style="color: var(--text-light); font-size: 0.85rem;">Only admins can edit room settings.</p>'}
                 <p class="form-message" id="roomMsg-${r.id}"></p>
             </form>
         `).join('');
 
         if (canEdit) {
-            document.querySelectorAll('.room-edit-card').forEach((form) => {
+            document.querySelectorAll('.room-edit-card[data-id]').forEach((form) => {
                 form.addEventListener('submit', async (e) => {
                     e.preventDefault();
                     const id = form.dataset.id;
@@ -674,10 +716,53 @@ async function loadRoomsPanel() {
                             price1p: form.price1p.value === '' ? '' : Number(form.price1p.value),
                             price3p: form.price3p.value === '' ? '' : Number(form.price3p.value),
                             totalUnits: Number(form.totalUnits.value),
-                            featured: form.featured.value === '1'
+                            featured: form.featured.value === '1',
+                            active: form.active.value === '1',
+                            features: form.features.value.split('\n').map((s) => s.trim()).filter(Boolean)
                         });
+                        allRooms = [];
                         msg.textContent = 'Saved.'; msg.className = 'form-message success';
                     } catch (err) { msg.textContent = err.message; msg.className = 'form-message error'; }
+                });
+            });
+
+            document.querySelectorAll('.delete-room-btn').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    if (!confirm('Delete this room permanently? This cannot be undone.')) return;
+                    try {
+                        await apiSend('DELETE', `/api/rooms/${btn.dataset.id}`, {});
+                        allRooms = [];
+                        loadRoomsPanel();
+                    } catch (err) { alert(err.message); }
+                });
+            });
+
+            document.querySelectorAll('.room-photo-input').forEach((input) => {
+                input.addEventListener('change', async () => {
+                    if (!input.files.length) return;
+                    const id = input.dataset.id;
+                    const msg = document.getElementById(`roomMsg-${id}`);
+                    try {
+                        const uploaded = await uploadImages(input.files, 'room');
+                        const room = allRoomsForPanel.find((r) => String(r.id) === String(id));
+                        const nextImages = [...(room.images || []), ...uploaded.map((u) => u.url)];
+                        await apiSend('PATCH', `/api/rooms/${id}`, { images: nextImages });
+                        loadRoomsPanel();
+                    } catch (err) { msg.textContent = err.message; msg.className = 'form-message error'; }
+                });
+            });
+
+            document.querySelectorAll('.remove-photo-btn').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const wrap = btn.closest('.room-photo-thumb');
+                    const id = wrap.dataset.room;
+                    const index = Number(wrap.dataset.index);
+                    const room = allRoomsForPanel.find((r) => String(r.id) === String(id));
+                    const nextImages = (room.images || []).filter((_, i) => i !== index);
+                    try {
+                        await apiSend('PATCH', `/api/rooms/${id}`, { images: nextImages });
+                        loadRoomsPanel();
+                    } catch (err) { alert(err.message); }
                 });
             });
         }
@@ -687,11 +772,49 @@ async function loadRoomsPanel() {
         if (!canEdit) return;
 
         const rateRoomSelect = document.getElementById('rateRoomId');
-        rateRoomSelect.innerHTML = allRooms.map((r) => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
+        rateRoomSelect.innerHTML = allRoomsForPanel.filter((r) => r.active).map((r) => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
 
         loadRateRules();
     } catch (err) { /* handled */ }
 }
+
+document.getElementById('newRoomToggleBtn').addEventListener('click', () => {
+    document.getElementById('newRoomForm').style.display = 'block';
+    document.getElementById('newRoomToggleBtn').style.display = 'none';
+});
+document.getElementById('newRoomCancelBtn').addEventListener('click', () => {
+    document.getElementById('newRoomForm').style.display = 'none';
+    document.getElementById('newRoomToggleBtn').style.display = 'inline-block';
+    document.getElementById('newRoomForm').reset();
+});
+document.getElementById('newRoomForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const msg = document.getElementById('newRoomMessage');
+    try {
+        await apiSend('POST', '/api/rooms', {
+            name: form.name.value,
+            description: form.description.value,
+            price: Number(form.price.value),
+            price1p: form.price1p.value === '' ? '' : Number(form.price1p.value),
+            price3p: form.price3p.value === '' ? '' : Number(form.price3p.value),
+            totalUnits: Number(form.totalUnits.value),
+            featured: form.featured.value === '1',
+            features: form.features.value.split('\n').map((s) => s.trim()).filter(Boolean),
+            images: []
+        });
+        allRooms = [];
+        msg.textContent = 'Room created. Add photos below once it appears in the list.';
+        msg.className = 'form-message success';
+        form.reset();
+        form.style.display = 'none';
+        document.getElementById('newRoomToggleBtn').style.display = 'inline-block';
+        loadRoomsPanel();
+    } catch (err) {
+        msg.textContent = err.message;
+        msg.className = 'form-message error';
+    }
+});
 
 async function loadRateRules() {
     try {
@@ -942,6 +1065,87 @@ document.getElementById('staffForm').addEventListener('submit', async (e) => {
         e.target.reset();
         loadStaff();
     } catch (err) { msg.textContent = err.message; msg.className = 'form-message error'; }
+});
+
+/* ---------------- Media Library ---------------- */
+async function loadMediaLibrary() {
+    try {
+        const items = await apiGet('/api/media');
+        document.getElementById('mediaGrid').innerHTML = items.map((m) => `
+            <div class="media-item">
+                <img src="${m.url}" alt="${escapeHtml(m.filename)}">
+                <div class="media-item-body">
+                    <div class="media-item-name" title="${escapeHtml(m.filename)}">${escapeHtml(m.filename)}</div>
+                    <div>${(m.size / 1024).toFixed(0)} KB &middot; ${escapeHtml(m.category)}</div>
+                    <div class="media-item-actions">
+                        <button type="button" class="action-btn confirm copy-media-url-btn" data-url="${m.url}">Copy URL</button>
+                        <button type="button" class="action-btn cancel delete-media-btn" data-id="${m.id}">Delete</button>
+                    </div>
+                </div>
+            </div>
+        `).join('') || '<p style="color: var(--text-light);">No images uploaded yet.</p>';
+
+        document.querySelectorAll('.copy-media-url-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                navigator.clipboard.writeText(window.location.origin + btn.dataset.url);
+                btn.textContent = 'Copied!';
+                setTimeout(() => { btn.textContent = 'Copy URL'; }, 1500);
+            });
+        });
+        document.querySelectorAll('.delete-media-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('Delete this image? Any room or gallery section using it will show a broken image.')) return;
+                try {
+                    await apiSend('DELETE', `/api/media/${btn.dataset.id}`, {});
+                    loadMediaLibrary();
+                } catch (err) { alert(err.message); }
+            });
+        });
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('mediaUploadForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('mediaMessage');
+    const files = document.getElementById('mediaFiles').files;
+    const category = document.getElementById('mediaCategory').value;
+    if (!files.length) return;
+    try {
+        await uploadImages(files, category);
+        msg.textContent = 'Uploaded.'; msg.className = 'form-message success';
+        e.target.reset();
+        loadMediaLibrary();
+    } catch (err) {
+        msg.textContent = err.message; msg.className = 'form-message error';
+    }
+});
+
+/* ---------------- Site Content ---------------- */
+async function loadSiteContent() {
+    try {
+        const settings = await apiGet('/api/settings');
+        const form = document.getElementById('siteContentForm');
+        Object.keys(settings).forEach((key) => {
+            if (form[key] !== undefined) form[key].value = settings[key];
+        });
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('siteContentForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const msg = document.getElementById('contentMessage');
+    const payload = {};
+    Array.from(form.elements).forEach((el) => {
+        if (el.name) payload[el.name] = el.value;
+    });
+    try {
+        await apiSend('PATCH', '/api/settings', payload);
+        msg.textContent = 'Saved. Changes are live on the site immediately.';
+        msg.className = 'form-message success';
+    } catch (err) {
+        msg.textContent = err.message; msg.className = 'form-message error';
+    }
 });
 
 /* ---------------- Messages ---------------- */
