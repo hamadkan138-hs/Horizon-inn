@@ -12,9 +12,145 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <style>
-        .investor-note { background: #f8f7f3; border-left: 3px solid var(--gold); padding: 10px 16px; font-size: 0.85rem; color: var(--text-light); margin-bottom: 22px; }
+        /* ---------------------------------------------------------------
+           Investor Dashboard theme — dark charcoal + brushed bronze/gold.
+           Scoped entirely to this page: these rules live only in this
+           <style> block, never touch styles.css, so the public site,
+           admin ops dashboard, front desk, and room management are
+           completely unaffected.
+        --------------------------------------------------------------- */
+        body {
+            --ink: #0c0d11;
+            --panel: #1a1c24;
+            --panel-2: #23262f;
+            --bronze: #8c6239;
+            --gold: #cda05a;
+            --gold-light: #e9cf9a;
+            --text-1: #f2ede2;
+            --text-2: #9b968c;
+            --hair: rgba(233, 207, 154, 0.14);
+            --danger: #d17a6a;
+            background: var(--ink) !important;
+            color: var(--text-1);
+        }
+
+        .navbar.scrolled { background: linear-gradient(180deg, #101218, #0c0d11) !important; box-shadow: 0 1px 0 var(--hair) !important; }
+        .nav-brand span { font-family: 'Playfair Display', serif; color: var(--gold-light); letter-spacing: 0.01em; }
+        .nav-menu a { font-family: 'Playfair Display', serif; font-size: 0.8rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-2) !important; transition: color 0.25s ease; }
+        .nav-menu a:hover { color: var(--gold) !important; }
+
+        #dashboard h1, #dashboard h2 { color: var(--text-1); }
+        #dashboard > .dash-header p, #dashboard label { color: var(--text-2) !important; }
+
+        .booking-form-wrapper {
+            background: linear-gradient(160deg, var(--panel-2), var(--panel)) !important;
+            border: 1px solid var(--hair) !important;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.55) !important;
+        }
+        .booking-form-wrapper h1 { color: var(--gold-light) !important; font-family: 'Playfair Display', serif; }
+        .form-group label { color: var(--text-2) !important; }
+        .form-group input {
+            background: var(--ink) !important;
+            border-bottom: 1px solid var(--hair) !important;
+            color: var(--text-1) !important;
+        }
+        .form-group input:focus { border-color: var(--gold) !important; }
+        .submit-btn {
+            background: linear-gradient(135deg, var(--gold-light), var(--bronze)) !important;
+            color: #17130a !important;
+            border: none !important;
+        }
+        .submit-btn:hover { filter: brightness(1.08); }
+
+        .investor-note {
+            background: var(--panel) !important;
+            border-left: 3px solid var(--gold) !important;
+            padding: 10px 16px;
+            font-size: 0.85rem;
+            color: var(--text-2) !important;
+            margin-bottom: 22px;
+        }
+
         .date-presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-        .date-presets button.active { background: var(--charcoal); color: #fff; }
+        #rangeFrom, #rangeTo {
+            background: var(--panel) !important;
+            border: 1px solid var(--hair) !important;
+            color: var(--text-1) !important;
+            border-radius: 4px;
+            padding: 6px 10px;
+            color-scheme: dark;
+        }
+
+        /* Buttons: thin gold-outline pills instead of flat colored boxes */
+        .action-btn {
+            background: transparent !important;
+            border: 1px solid var(--gold) !important;
+            color: var(--gold-light) !important;
+            border-radius: 999px !important;
+            padding: 8px 18px !important;
+            transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+        }
+        .action-btn:hover {
+            background: linear-gradient(135deg, var(--gold-light), var(--bronze)) !important;
+            color: #17130a !important;
+            box-shadow: 0 4px 16px rgba(205, 160, 90, 0.35);
+        }
+        .action-btn.cancel { border-color: var(--danger) !important; color: var(--danger) !important; }
+        .action-btn.cancel:hover { background: var(--danger) !important; color: #1a0f0d !important; box-shadow: 0 4px 16px rgba(209, 122, 106, 0.3); }
+        .date-presets button.active {
+            background: linear-gradient(135deg, var(--gold-light), var(--bronze)) !important;
+            color: #17130a !important;
+            border-color: transparent !important;
+        }
+
+        /* KPI cards: raised metallic-bordered panels */
+        .summary-card {
+            background: linear-gradient(160deg, var(--panel-2), var(--panel)) !important;
+            border-radius: 10px;
+            position: relative;
+            box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 12px 28px rgba(0,0,0,0.45) !important;
+            padding: 22px 20px !important;
+        }
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 10px;
+            padding: 1px;
+            background: linear-gradient(135deg, var(--gold-light), var(--bronze) 50%, var(--gold-light));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .kpi-icon {
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, var(--gold-light), var(--bronze));
+            color: #17130a;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+        .summary-card span { color: var(--text-2) !important; }
+        .summary-card strong { color: var(--text-1) !important; font-family: 'Playfair Display', serif; }
+
+        /* Chart panels */
+        .chart-card {
+            background: linear-gradient(160deg, var(--panel-2), var(--panel)) !important;
+            border: 1px solid var(--hair) !important;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.4) !important;
+            border-radius: 10px;
+            padding: 22px !important;
+        }
+        .chart-card h3 { color: var(--gold-light) !important; font-family: 'Playfair Display', serif; font-weight: 600; letter-spacing: 0.01em; }
+
+        /* Ledger table */
+        table.admin-table { background: var(--panel) !important; box-shadow: 0 12px 28px rgba(0,0,0,0.4) !important; }
+        table.admin-table th { background: var(--ink) !important; color: var(--gold-light) !important; }
+        table.admin-table th, table.admin-table td { border-bottom: 1px solid var(--hair) !important; color: var(--text-1); }
+
         @media print {
             .navbar, .date-presets, .inline-form, #investorExportBtn, #investorPrintBtn { display: none !important; }
         }
