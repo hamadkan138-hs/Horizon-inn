@@ -9,7 +9,7 @@ const router = express.Router();
 // public, unauthenticated GET below — unlike contact info or payment
 // details, they have no guest-facing purpose. Read via a dedicated
 // authenticated route instead (see routes/investor.js).
-const PRIVATE_KEYS = new Set(['investor_capital_invested']);
+const PRIVATE_KEYS = new Set(['investor_capital_invested', 'owner_equity_percent']);
 
 // Public — the site (and invoice page) needs these to render without logging in.
 router.get('/', async (req, res) => {

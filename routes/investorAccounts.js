@@ -22,6 +22,44 @@ async function currentValuation() {
   return result.rows[0] || null;
 }
 
+async function getTotalCapitalRaised() {
+  const result = await db.execute('SELECT COALESCE(SUM(capital_invested), 0) AS total FROM investors');
+  return Number(result.rows[0].total);
+}
+
+// Owner's retained equity is stored in the same generic settings key/value
+// table used for site content — it's a single current-state number, not a
+// history log like valuation_snapshots, so it doesn't need its own table.
+async function getOwnerEquityPercent() {
+  const result = await db.execute("SELECT value FROM settings WHERE key = 'owner_equity_percent'");
+  return result.rows[0] ? Number(result.rows[0].value) : 0;
+}
+
+async function setOwnerEquityPercent(percent) {
+  await db.execute({
+    sql: `
+      INSERT INTO settings (key, value, updated_at) VALUES ('owner_equity_percent', ?, datetime('now'))
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+    `,
+    args: [String(percent)]
+  });
+}
+
+// When the owner has fixed a retained equity %, investors split only the
+// remaining pool, proportional to their share of total capital raised —
+// this keeps the owner's stake exactly fixed regardless of valuation
+// swings or new capital coming in, which is the whole point of "fixing" it.
+// Until an owner % is set, ownership keeps working the original way
+// (capital invested as a direct fraction of current valuation) so existing
+// investors' numbers don't shift just because this feature exists.
+function computeOwnershipPercent(capitalInvested, valuationAmount, totalCapitalRaised, ownerEquityPercent) {
+  if (ownerEquityPercent > 0 && totalCapitalRaised > 0) {
+    const investablePoolPercent = Math.max(0, 100 - ownerEquityPercent);
+    return (Number(capitalInvested) / totalCapitalRaised) * investablePoolPercent;
+  }
+  return valuationAmount > 0 ? (Number(capitalInvested) / valuationAmount) * 100 : 0;
+}
+
 function lockupInfo(investor) {
   const start = new Date(`${investor.lockup_start_date}T00:00:00Z`);
   const end = new Date(start);
@@ -47,8 +85,8 @@ async function allTimeNetIncome() {
   return Number(revenue.rows[0].total) - Number(expenses.rows[0].total);
 }
 
-async function investorEarnings(investor, valuationAmount) {
-  const ownershipPercent = valuationAmount > 0 ? (Number(investor.capital_invested) / valuationAmount) * 100 : 0;
+async function investorEarnings(investor, valuationAmount, totalCapitalRaised, ownerEquityPercent) {
+  const ownershipPercent = computeOwnershipPercent(investor.capital_invested, valuationAmount, totalCapitalRaised, ownerEquityPercent);
   const netIncome = await allTimeNetIncome();
   const accruedDividend = Math.max(0, netIncome * (ownershipPercent / 100));
 
@@ -91,12 +129,14 @@ router.get('/', requireRole('admin'), async (req, res) => {
     `);
     const valuation = await currentValuation();
     const valuationAmount = valuation ? Number(valuation.amount) : 0;
+    const totalCapitalRaised = await getTotalCapitalRaised();
+    const ownerEquityPercent = await getOwnerEquityPercent();
     const rows = await Promise.all(result.rows.map(async (inv) => ({
       id: inv.id,
       username: inv.username,
       investorCode: inv.investor_code,
       capitalInvested: Number(inv.capital_invested),
-      ownershipPercent: valuationAmount > 0 ? Math.round((Number(inv.capital_invested) / valuationAmount) * 10000) / 100 : 0,
+      ownershipPercent: Math.round(computeOwnershipPercent(inv.capital_invested, valuationAmount, totalCapitalRaised, ownerEquityPercent) * 100) / 100,
       spaStatus: inv.spa_status,
       accreditedStatus: inv.accredited_status,
       amlKycStatus: inv.aml_kyc_status,
@@ -115,16 +155,19 @@ router.get('/', requireRole('admin'), async (req, res) => {
 
 router.post('/', requireRole('admin'), async (req, res) => {
   try {
-    const { username, capitalInvested, lockupMonths, dividendTurnaroundHours } = req.body;
+    const { username, capitalInvested, lockupMonths, dividendTurnaroundHours, password: requestedPassword } = req.body;
     if (!username || capitalInvested === undefined || capitalInvested === '') {
       return res.status(400).json({ error: 'Username and capital invested are required' });
+    }
+    if (requestedPassword && String(requestedPassword).length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
     const existing = await db.execute({ sql: 'SELECT id FROM users WHERE username = ?', args: [username] });
     if (existing.rows[0]) {
       return res.status(409).json({ error: 'That username is already taken' });
     }
 
-    const password = generatePassword();
+    const password = requestedPassword ? String(requestedPassword) : generatePassword();
     const hash = bcrypt.hashSync(password, 10);
     const userResult = await db.execute({
       sql: 'INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)',
@@ -153,6 +196,32 @@ router.post('/', requireRole('admin'), async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to create investor account' });
+  }
+});
+
+// Registered before /:id so the literal path "owner-equity" is never
+// swallowed by the :id wildcard (Express matches routes in registration
+// order, and /:id matches any single path segment).
+router.get('/owner-equity', async (req, res) => {
+  try {
+    res.json({ percent: await getOwnerEquityPercent() });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load owner equity setting' });
+  }
+});
+
+router.patch('/owner-equity', requireRole('admin'), async (req, res) => {
+  try {
+    const { percent } = req.body;
+    if (percent === undefined || percent === '' || Number(percent) < 0 || Number(percent) > 100) {
+      return res.status(400).json({ error: 'Owner equity percent must be between 0 and 100' });
+    }
+    await setOwnerEquityPercent(Number(percent));
+    res.json({ percent: Number(percent) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to save owner equity setting' });
   }
 });
 
@@ -215,17 +284,44 @@ router.delete('/:id', requireRole('admin'), async (req, res) => {
 
 router.get('/me', async (req, res) => {
   try {
-    const result = await db.execute({ sql: 'SELECT * FROM investors WHERE user_id = ?', args: [req.user.id] });
-    const investor = result.rows[0];
+    // Admins have no investor profile of their own, but can preview any
+    // investor's dashboard read-only (for testing/demoing) by passing
+    // ?investorId=. Investors can never use this to view each other's data
+    // — it only takes effect for the admin role.
+    let investor;
+    if (req.user.role === 'admin' && req.query.investorId) {
+      const result = await db.execute({
+        sql: `
+          SELECT investors.*, users.username FROM investors
+          JOIN users ON users.id = investors.user_id
+          WHERE investors.id = ?
+        `,
+        args: [req.query.investorId]
+      });
+      investor = result.rows[0];
+    } else {
+      const result = await db.execute({
+        sql: `
+          SELECT investors.*, users.username FROM investors
+          JOIN users ON users.id = investors.user_id
+          WHERE investors.user_id = ?
+        `,
+        args: [req.user.id]
+      });
+      investor = result.rows[0];
+    }
     if (!investor) {
       return res.status(404).json({ error: 'No investor profile is linked to this account' });
     }
     const valuation = await currentValuation();
     const valuationAmount = valuation ? Number(valuation.amount) : 0;
-    const earnings = await investorEarnings(investor, valuationAmount);
+    const totalCapitalRaised = await getTotalCapitalRaised();
+    const ownerEquityPercent = await getOwnerEquityPercent();
+    const earnings = await investorEarnings(investor, valuationAmount, totalCapitalRaised, ownerEquityPercent);
 
     res.json({
       id: investor.id,
+      username: investor.username,
       investorCode: investor.investor_code,
       capitalInvested: Number(investor.capital_invested),
       spaStatus: investor.spa_status,
@@ -233,6 +329,9 @@ router.get('/me', async (req, res) => {
       amlKycStatus: investor.aml_kyc_status,
       dividendTurnaroundHours: investor.dividend_turnaround_hours,
       valuation: valuationAmount,
+      totalCapitalRaised,
+      ownerEquityPercent,
+      isPreview: req.user.role === 'admin',
       lockup: lockupInfo(investor),
       ...earnings
     });
@@ -247,16 +346,17 @@ router.get('/me', async (req, res) => {
 router.get('/valuation', async (req, res) => {
   try {
     const history = await db.execute('SELECT * FROM valuation_snapshots ORDER BY created_at ASC, id ASC');
-    const capitalResult = await db.execute('SELECT COALESCE(SUM(capital_invested), 0) AS total FROM investors');
+    const totalCapitalRaised = await getTotalCapitalRaised();
+    const ownerEquityPercent = await getOwnerEquityPercent();
     const latest = history.rows[history.rows.length - 1] || null;
     const amount = latest ? Number(latest.amount) : 0;
-    const totalCapitalRaised = Number(capitalResult.rows[0].total);
 
     res.json({
       current: latest ? { amount, note: latest.note, createdAt: latest.created_at } : null,
       history: history.rows.map((r) => ({ amount: Number(r.amount), note: r.note, createdAt: r.created_at })),
       totalCapitalRaised,
-      remainingPool: Math.max(0, amount - totalCapitalRaised)
+      remainingPool: Math.max(0, amount - totalCapitalRaised),
+      ownerEquityPercent
     });
   } catch (err) {
     console.error(err);
@@ -377,6 +477,18 @@ router.delete('/projects/:id', requireRole('admin'), async (req, res) => {
 router.get('/withdrawal-requests', async (req, res) => {
   try {
     if (req.user.role === 'admin') {
+      // While previewing a specific investor's dashboard, scope this down to
+      // that investor's own history instead of the full business-wide list.
+      if (req.query.investorId) {
+        const result = await db.execute({
+          sql: 'SELECT * FROM withdrawal_requests WHERE investor_id = ? ORDER BY requested_at DESC',
+          args: [req.query.investorId]
+        });
+        return res.json(result.rows.map((r) => ({
+          id: r.id, type: r.type, amount: Number(r.amount), status: r.status,
+          requestedAt: r.requested_at, processedAt: r.processed_at, note: r.note
+        })));
+      }
       const result = await db.execute(`
         SELECT withdrawal_requests.*, investors.investor_code, users.username
         FROM withdrawal_requests
@@ -422,7 +534,9 @@ router.post('/withdrawal-requests', requireRole('investor'), async (req, res) =>
 
     if (type === 'dividend') {
       const valuation = await currentValuation();
-      const earnings = await investorEarnings(investor, valuation ? Number(valuation.amount) : 0);
+      const totalCapitalRaised = await getTotalCapitalRaised();
+      const ownerEquityPercent = await getOwnerEquityPercent();
+      const earnings = await investorEarnings(investor, valuation ? Number(valuation.amount) : 0, totalCapitalRaised, ownerEquityPercent);
       if (Number(amount) > earnings.availableToWithdraw) {
         return res.status(400).json({ error: `Only Rs. ${Math.round(earnings.availableToWithdraw).toLocaleString('en-US')} is currently available to withdraw` });
       }

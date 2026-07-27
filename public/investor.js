@@ -372,6 +372,7 @@ document.getElementById('investorTabs').addEventListener('click', (e) => {
 ================================================================ */
 const COMPLIANCE_LABELS = { pending: 'Pending', verified: 'Verified', signed: 'Signed', rejected: 'Rejected' };
 let myInvestorProfile = null;
+let previewInvestorId = null;
 
 let trendRange = '7d';
 let revExpTrendChartInstance = null;
@@ -389,29 +390,62 @@ function rangeForTrendToggle(key) {
 async function loadMyInvestmentTab() {
     const notice = document.getElementById('investorAdminNotice');
     const body = document.getElementById('myInvestmentBody');
+    const isPreview = currentUser.role !== 'investor';
 
-    if (currentUser.role !== 'investor') {
-        notice.innerHTML = `
-            <div class="glass-card">
-                <p style="color: var(--text-2);">This admin account isn't linked to an investor profile — "My Investment" is personalized per investor. Use the Investor Accounts panel in Admin to create and manage investor profiles.</p>
-            </div>
-        `;
+    if (isPreview && !previewInvestorId) {
         body.style.display = 'none';
+        try {
+            const investors = await apiGet('/api/investor-accounts');
+            notice.innerHTML = `
+                <div class="glass-card">
+                    <p style="color: var(--text-2); margin-bottom: 14px;">This admin account isn't linked to an investor profile — "My Investment" is personalized per investor. Preview any investor's dashboard below (read-only; withdrawal actions stay disabled while previewing).</p>
+                    <select id="previewInvestorSelect" style="background: rgba(255,255,255,0.04); border: 1px solid var(--hair); color: var(--text-1); border-radius: 8px; padding: 10px 14px; font-size: 0.85rem;">
+                        <option value="">Select an investor to preview…</option>
+                        ${investors.map((inv) => `<option value="${inv.id}">${escapeHtml(inv.investorCode)} — ${escapeHtml(inv.username)}</option>`).join('')}
+                    </select>
+                </div>
+            `;
+            const select = document.getElementById('previewInvestorSelect');
+            if (select) {
+                select.addEventListener('change', (e) => {
+                    if (e.target.value) {
+                        previewInvestorId = e.target.value;
+                        loadMyInvestmentTab();
+                    }
+                });
+            }
+        } catch (err) {
+            notice.innerHTML = `<div class="glass-card"><p class="danger-text">${err.message}</p></div>`;
+        }
         return;
     }
-    notice.innerHTML = '';
+
+    notice.innerHTML = isPreview ? `
+        <div class="glass-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <span style="color: var(--gold-light);"><i class="fas fa-eye"></i> Previewing an investor's dashboard — read-only admin view.</span>
+            <button type="button" class="action-btn" id="exitPreviewBtn">Exit Preview</button>
+        </div>
+    ` : '';
     body.style.display = 'block';
 
     try {
+        const qs = isPreview ? `?investorId=${previewInvestorId}` : '';
         const [me, requests] = await Promise.all([
-            apiGet('/api/investor-accounts/me'),
-            apiGet('/api/investor-accounts/withdrawal-requests')
+            apiGet(`/api/investor-accounts/me${qs}`),
+            apiGet(`/api/investor-accounts/withdrawal-requests${qs}`)
         ]);
         myInvestorProfile = me;
 
+        if (isPreview) {
+            document.getElementById('exitPreviewBtn').addEventListener('click', () => {
+                previewInvestorId = null;
+                loadMyInvestmentTab();
+            });
+        }
+
         countUpTo(document.getElementById('miAccruedDividend'), me.accruedDividend, money);
         document.getElementById('miAvailableLine').innerHTML = `Available to withdraw: <strong style="color: var(--text-1);">${money(me.availableToWithdraw)}</strong>`;
-        document.getElementById('openDividendWithdrawBtn').disabled = me.availableToWithdraw <= 0;
+        document.getElementById('openDividendWithdrawBtn').disabled = isPreview || me.availableToWithdraw <= 0;
 
         countUpTo(document.getElementById('miOwnership'), me.ownershipPercent, (v) => `${v.toFixed(2)}%`);
         countUpTo(document.getElementById('miEquityValue'), me.equityValue, money);
@@ -420,7 +454,7 @@ async function loadMyInvestmentTab() {
         document.getElementById('miLockupNote').innerHTML = me.lockup.unlocked
             ? '<span class="emerald"><i class="fas fa-lock-open"></i> Capital unlocked — release is available.</span>'
             : `<i class="fas fa-hourglass-half"></i> ${me.lockup.daysRemaining} day(s) remaining until capital can be released.`;
-        document.getElementById('openCapitalWithdrawBtn').disabled = !me.lockup.unlocked;
+        document.getElementById('openCapitalWithdrawBtn').disabled = isPreview || !me.lockup.unlocked;
 
         const complianceBadge = (label, status) => `
             <div>
@@ -567,6 +601,8 @@ async function renderValuationGaugeAndSimulator() {
     const amount = valuation.current ? valuation.current.amount : 0;
     roiBaseline.valuation = amount;
     roiBaseline.monthlyNetIncome = summary90.netProfit / 3;
+    roiBaseline.totalCapitalRaised = Number(valuation.totalCapitalRaised) || 0;
+    roiBaseline.ownerEquityPercent = Number(valuation.ownerEquityPercent) || 0;
 
     countUpTo(document.getElementById('miValuationBig'), amount, money);
     const raisedPct = amount > 0 ? Math.min(100, (valuation.totalCapitalRaised / amount) * 100) : 0;
@@ -576,9 +612,23 @@ async function renderValuationGaugeAndSimulator() {
     updateSimulator();
 }
 
+// Mirrors the server's ownership formula (routes/investorAccounts.js
+// computeOwnershipPercent): once the owner has fixed a retained equity %,
+// a hypothetical new investor's share comes out of the remaining pool,
+// proportional to their capital against the pool the enlarged total
+// capital raised would represent — not a flat fraction of valuation.
+function computeSimulatedOwnership(amount) {
+    if (roiBaseline.ownerEquityPercent > 0) {
+        const investablePoolPercent = Math.max(0, 100 - roiBaseline.ownerEquityPercent);
+        const newTotal = roiBaseline.totalCapitalRaised + amount;
+        return newTotal > 0 ? (amount / newTotal) * investablePoolPercent : 0;
+    }
+    return roiBaseline.valuation > 0 ? (amount / roiBaseline.valuation) * 100 : 0;
+}
+
 function updateSimulator() {
     const amount = Number(document.getElementById('simAmount').value || 0);
-    const ownership = roiBaseline.valuation > 0 ? (amount / roiBaseline.valuation) * 100 : 0;
+    const ownership = computeSimulatedOwnership(amount);
     const monthly = Math.max(0, roiBaseline.monthlyNetIncome * (ownership / 100));
     countUpTo(document.getElementById('simOwnership'), ownership, (v) => `${v.toFixed(2)}%`, 350);
     countUpTo(document.getElementById('simMonthly'), monthly, money, 350);
@@ -712,7 +762,7 @@ function ninetyDaysAgo() { const d = new Date(); d.setDate(d.getDate() - 90); re
 /* ================================================================
    Upcoming Projects & ROI Calculator
 ================================================================ */
-let roiBaseline = { valuation: 0, monthlyNetIncome: 0 };
+let roiBaseline = { valuation: 0, monthlyNetIncome: 0, totalCapitalRaised: 0, ownerEquityPercent: 0 };
 
 async function loadProjectsTab() {
     try {
@@ -724,6 +774,8 @@ async function loadProjectsTab() {
 
         roiBaseline.valuation = valuation.current ? valuation.current.amount : 0;
         roiBaseline.monthlyNetIncome = summary90.netProfit / 3;
+        roiBaseline.totalCapitalRaised = Number(valuation.totalCapitalRaised) || 0;
+        roiBaseline.ownerEquityPercent = Number(valuation.ownerEquityPercent) || 0;
         document.getElementById('roiValuationRef').textContent = money(roiBaseline.valuation);
 
         document.getElementById('projectGrid').innerHTML = projects.map((p) => `
@@ -755,7 +807,7 @@ function escapeHtml(str) {
 
 function updateRoiCalculator() {
     const amount = Number(document.getElementById('roiAmount').value || 0);
-    const ownership = roiBaseline.valuation > 0 ? (amount / roiBaseline.valuation) * 100 : 0;
+    const ownership = computeSimulatedOwnership(amount);
     const monthlyDividend = Math.max(0, roiBaseline.monthlyNetIncome * (ownership / 100));
     const annualRoi = amount > 0 ? ((monthlyDividend * 12) / amount) * 100 : 0;
 
