@@ -58,6 +58,7 @@
                 <button class="admin-tab active" data-tab="bookings">Bookings</button>
                 <button class="admin-tab" data-tab="payments">Payments</button>
                 <button class="admin-tab" data-tab="daily">Daily Summary</button>
+                <button class="admin-tab" data-tab="handover">Cash &amp; Handover</button>
                 <button class="admin-tab" data-tab="availability">Availability</button>
                 <button class="admin-tab" data-tab="guests">Guests</button>
                 <button class="admin-tab" data-tab="rooms">Rooms &amp; Pricing</button>
@@ -188,8 +189,120 @@
                 </div>
             </section>
 
+            <!-- Cash & Handover -->
+            <section class="admin-panel" id="panel-handover" style="display: none;">
+                <div class="investor-note" style="margin-bottom: 20px;">
+                    <i class="fas fa-lock"></i>
+                    Every row here is a completed, checked-out stay. None of these records can be edited or deleted &mdash; not even by an admin &mdash; once the guest has checked out. This is the permanent financial ledger.
+                </div>
+
+                <div class="summary-cards" id="handoverSummaryCards"></div>
+
+                <div class="panel-toolbar" style="margin-top: 24px;">
+                    <span id="handoverDateLabel" style="font-weight: 600; font-size: 1.05rem;"></span>
+                    <button type="button" class="action-btn details-toggle" id="handoverViewToggle">View Full Details</button>
+                    <button type="button" class="action-btn confirm" id="openHandoverModalBtn" style="margin-left: auto;">Handover Cash</button>
+                </div>
+
+                <!-- Simple view: plain readable list, no table -->
+                <div id="handoverSimpleView">
+                    <ul class="simple-list" id="handoverSimpleList"></ul>
+                    <div class="simple-total" id="handoverSimpleTotal"></div>
+                </div>
+
+                <!-- Detailed view: full 9-column ledger -->
+                <div id="handoverDetailedView" style="display: none; overflow-x: auto;">
+                    <table class="admin-table" id="handoverLedgerTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Invoice #</th>
+                                <th>Guest</th>
+                                <th>Room</th>
+                                <th>Check-in</th>
+                                <th>Check-out</th>
+                                <th>Total (PKR)</th>
+                                <th>Payment Method</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="handoverLedgerBody"></tbody>
+                    </table>
+                </div>
+
+                <h2 style="text-align: left; font-size: 1.2rem; margin-top: 40px;">Handover History</h2>
+                <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 12px;">Every past handover, permanently locked. Click one to see exactly which bookings it covered.</p>
+                <ul class="simple-list" id="handoverHistoryList"></ul>
+            </section>
+
+            <!-- Handover confirmation modal -->
+            <div class="modal-overlay" id="handoverModalOverlay" style="display: none;">
+                <div class="modal-box">
+                    <h3 style="margin-bottom: 4px;">Confirm Handover</h3>
+                    <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 18px;">This will lock every unhanded-over checked-out booking and expense into a single, permanent handover record.</p>
+
+                    <div class="modal-summary" id="handoverModalSummary"></div>
+
+                    <form id="handoverForm">
+                        <div class="form-group">
+                            <label>Staff Name</label>
+                            <input type="text" id="handoverStaffName" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>Date &amp; Time</label>
+                            <input type="text" id="handoverDateTime" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>Hand Over To</label>
+                            <select id="handoverReceiverType" required>
+                                <option value="owner">Owner</option>
+                                <option value="bank">Deposit to Bank</option>
+                                <option value="staff">Next Staff on Duty (Shift Handover)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label id="handoverReceiverNameLabel">Owner Name</label>
+                            <input type="text" id="handoverReceiverName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Note (optional)</label>
+                            <input type="text" id="handoverNote">
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button type="submit" class="action-btn confirm">Confirm Handover</button>
+                            <button type="button" class="action-btn cancel" id="closeHandoverModalBtn">Cancel</button>
+                        </div>
+                        <p class="form-message" id="handoverMessage"></p>
+                    </form>
+                </div>
+            </div>
+
             <!-- Availability -->
             <section class="admin-panel" id="panel-availability" style="display: none;">
+                <h2 style="text-align: left; font-size: 1.2rem;">Room Status Board</h2>
+                <div class="room-status-board" id="roomStatusBoard"></div>
+
+                <h2 style="text-align: left; font-size: 1.2rem; margin-top: 30px;">Advance Booking (Room Lock)</h2>
+                <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 12px;">Pay an advance to lock a room for a guest before their full registration is filled in at check-in.</p>
+                <form id="quickBookingForm" class="inline-form">
+                    <select id="quickRoomId" required></select>
+                    <input type="text" id="quickGuestName" placeholder="Guest name" required>
+                    <input type="tel" id="quickPhone" placeholder="Phone number" required>
+                    <input type="date" id="quickCheckin" required>
+                    <input type="date" id="quickCheckout" required>
+                    <input type="number" id="quickAdvance" placeholder="Advance (Rs., tax included)" min="1" required>
+                    <select id="quickPaymentMethod">
+                        <option value="pay_at_property">Cash</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                        <option value="easypaisa">EasyPaisa</option>
+                        <option value="jazzcash">JazzCash</option>
+                    </select>
+                    <input type="text" id="quickTransactionId" placeholder="Transaction ID (if applicable)">
+                    <button type="submit" class="action-btn confirm">Lock Room</button>
+                </form>
+                <p class="form-message" id="quickBookingMessage"></p>
+
+                <h2 style="text-align: left; font-size: 1.2rem; margin-top: 30px;">Calendar</h2>
                 <div class="panel-toolbar">
                     <select id="availabilityRoom"></select>
                     <button class="action-btn details-toggle" id="prevMonth">&larr; Prev</button>

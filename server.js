@@ -15,6 +15,7 @@ const publicInvoiceRouter = require('./routes/publicInvoice');
 const settingsRouter = require('./routes/settings');
 const mediaRouter = require('./routes/media');
 const investorRouter = require('./routes/investor');
+const handoversRouter = require('./routes/handovers');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -35,6 +36,7 @@ app.use('/api/public-invoice', publicInvoiceRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/media', mediaRouter);
 app.use('/api/investor', investorRouter);
+app.use('/api/handovers', handoversRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

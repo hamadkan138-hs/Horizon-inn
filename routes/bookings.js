@@ -5,6 +5,7 @@ const { requireRole } = adminAuth;
 const { isRoomAvailable } = require('../lib/availability');
 const { computeTotalAmount } = require('../lib/pricing');
 const { recomputeBookingTotal } = require('../lib/billing');
+const { assertBookingUnlocked, BookingLockedError } = require('../lib/lock');
 
 const router = express.Router();
 
@@ -95,6 +96,74 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Quick advance booking (admin/staff) — for a guest who calls or walks in and
+// pays an advance to lock a room before the full guest-registration paperwork
+// is filled in (that happens later at actual check-in via /:id/details).
+// The room is locked for the requested dates the instant this succeeds,
+// because the booking is created with status 'confirmed' and every other
+// route already treats 'confirmed'/'checked_in' bookings as occupying the
+// room for overlap purposes.
+router.post('/quick', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
+  try {
+    const { guestName, phone, roomId, checkin, checkout, advanceAmount, paymentMethod, transactionId } = req.body;
+
+    if (!guestName || !phone || !roomId || !checkin || !checkout) {
+      return res.status(400).json({ error: 'Guest name, phone, room and dates are required' });
+    }
+    if (!isValidDate(checkin) || !isValidDate(checkout) || checkin >= checkout) {
+      return res.status(400).json({ error: 'Check-out date must be after check-in date' });
+    }
+    if (!advanceAmount || Number(advanceAmount) <= 0) {
+      return res.status(400).json({ error: 'Advance amount must be greater than zero' });
+    }
+    const method = PAYMENT_METHODS.includes(paymentMethod) ? paymentMethod : 'pay_at_property';
+
+    const roomResult = await db.execute({ sql: 'SELECT * FROM rooms WHERE id = ?', args: [roomId] });
+    const room = roomResult.rows[0];
+    if (!room) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
+    if (!(await isRoomAvailable(room, checkin, checkout))) {
+      return res.status(409).json({ error: 'Room already booked for selected dates' });
+    }
+
+    const roomAmount = await computeTotalAmount(room, checkin, checkout, 1);
+
+    const insertResult = await db.execute({
+      sql: `
+        INSERT INTO bookings (
+          room_id, name, email, phone, checkin, checkout, guests,
+          payment_method, transaction_id, terms_accepted, status, payment_status, total_amount, room_amount,
+          invoice_token
+        )
+        VALUES (?, ?, '', ?, ?, ?, 1, ?, ?, 1, 'confirmed', 'unpaid', ?, ?, lower(hex(randomblob(12))))
+      `,
+      args: [roomId, guestName, phone, checkin, checkout, method, transactionId || '', roomAmount, roomAmount]
+    });
+
+    const bookingId = Number(insertResult.lastInsertRowid);
+    const year = new Date(checkin).getFullYear();
+    const invoiceNumber = `INV-${year}-${String(bookingId).padStart(4, '0')}`;
+    await db.execute({ sql: 'UPDATE bookings SET invoice_number = ? WHERE id = ?', args: [invoiceNumber, bookingId] });
+
+    await db.execute({
+      sql: `
+        INSERT INTO payments (booking_id, amount, method, transaction_id, note, recorded_by)
+        VALUES (?, ?, ?, ?, 'Advance payment (tax included)', ?)
+      `,
+      args: [bookingId, advanceAmount, method, transactionId || '', req.user.username]
+    });
+
+    const totals = await recomputeBookingTotal(bookingId);
+    const bookingResult = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [bookingId] });
+
+    res.status(201).json({ booking: bookingResult.rows[0], advanceAmount: Number(advanceAmount), ...totals });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to create advance booking' });
+  }
+});
+
 // List all bookings (admin) — includes paid_total/balance so the Bookings and
 // Payments tabs can render financial state without an N+1 query per row.
 router.get('/', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
@@ -126,6 +195,7 @@ router.patch('/:id/invoice-fields', adminAuth, requireRole('admin', 'staff'), as
     if (!existing.rows[0]) {
       return res.status(404).json({ error: 'Booking not found' });
     }
+    assertBookingUnlocked(existing.rows[0]);
     const updates = [];
     const args = [];
     if (roomNumber !== undefined) { updates.push('room_number = ?'); args.push(roomNumber); }
@@ -135,6 +205,7 @@ router.patch('/:id/invoice-fields', adminAuth, requireRole('admin', 'staff'), as
     const updated = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
     res.json(updated.rows[0]);
   } catch (err) {
+    if (err instanceof BookingLockedError) return res.status(err.status).json({ error: err.message });
     console.error(err);
     res.status(500).json({ error: 'Failed to update invoice fields' });
   }
@@ -190,6 +261,7 @@ router.patch('/:id/details', adminAuth, requireRole('admin', 'staff'), async (re
     if (!booking) {
       return res.status(404).json({ error: 'Booking not found' });
     }
+    assertBookingUnlocked(booking);
 
     const updates = [];
     const args = [];
@@ -232,6 +304,7 @@ router.patch('/:id/details', adminAuth, requireRole('admin', 'staff'), async (re
     const updated = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
     res.json(updated.rows[0]);
   } catch (err) {
+    if (err instanceof BookingLockedError) return res.status(err.status).json({ error: err.message });
     console.error(err);
     res.status(500).json({ error: 'Failed to update booking details' });
   }
@@ -253,8 +326,18 @@ router.patch('/:id', adminAuth, requireRole('admin', 'staff'), async (req, res) 
     }
 
     const existingResult = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
-    if (!existingResult.rows[0]) {
+    const booking = existingResult.rows[0];
+    if (!booking) {
       return res.status(404).json({ error: 'Booking not found' });
+    }
+    // A checked-out booking is settled and locked — no further status or
+    // payment-status change is allowed, by anyone, including admins.
+    assertBookingUnlocked(booking);
+
+    // A confirmed (advance-paid, room-locked) booking can only be cancelled by
+    // an admin — front-desk staff can't override a locked room on their own.
+    if (status === 'cancelled' && booking.status === 'confirmed' && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Only an admin can cancel a room that has an advance payment locking it.' });
     }
 
     const updates = [];
@@ -267,6 +350,7 @@ router.patch('/:id', adminAuth, requireRole('admin', 'staff'), async (req, res) 
     const updatedResult = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
     res.json(updatedResult.rows[0]);
   } catch (err) {
+    if (err instanceof BookingLockedError) return res.status(err.status).json({ error: err.message });
     console.error(err);
     res.status(500).json({ error: 'Failed to update booking' });
   }
@@ -283,10 +367,12 @@ router.patch('/:id/tax', adminAuth, requireRole('admin'), async (req, res) => {
     if (!existing.rows[0]) {
       return res.status(404).json({ error: 'Booking not found' });
     }
+    assertBookingUnlocked(existing.rows[0]);
     await db.execute({ sql: 'UPDATE bookings SET tax_percent = ? WHERE id = ?', args: [taxPercent, req.params.id] });
     const result = await recomputeBookingTotal(req.params.id);
     res.json(result);
   } catch (err) {
+    if (err instanceof BookingLockedError) return res.status(err.status).json({ error: err.message });
     console.error(err);
     res.status(500).json({ error: 'Failed to update tax rate' });
   }
@@ -304,6 +390,7 @@ router.post('/:id/charges', adminAuth, requireRole('admin', 'staff'), async (req
     if (!existing.rows[0]) {
       return res.status(404).json({ error: 'Booking not found' });
     }
+    assertBookingUnlocked(existing.rows[0]);
     await db.execute({
       sql: 'INSERT INTO booking_charges (booking_id, description, amount) VALUES (?, ?, ?)',
       args: [req.params.id, description, amount]
@@ -315,6 +402,7 @@ router.post('/:id/charges', adminAuth, requireRole('admin', 'staff'), async (req
     });
     res.status(201).json({ charges: chargesResult.rows, ...totals });
   } catch (err) {
+    if (err instanceof BookingLockedError) return res.status(err.status).json({ error: err.message });
     console.error(err);
     res.status(500).json({ error: 'Failed to add charge' });
   }
@@ -323,6 +411,11 @@ router.post('/:id/charges', adminAuth, requireRole('admin', 'staff'), async (req
 // Remove an extra service charge (admin)
 router.delete('/:id/charges/:chargeId', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
   try {
+    const booking = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
+    if (!booking.rows[0]) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+    assertBookingUnlocked(booking.rows[0]);
     const existing = await db.execute({ sql: 'SELECT * FROM booking_charges WHERE id = ? AND booking_id = ?', args: [req.params.chargeId, req.params.id] });
     if (!existing.rows[0]) {
       return res.status(404).json({ error: 'Charge not found' });
@@ -335,6 +428,7 @@ router.delete('/:id/charges/:chargeId', adminAuth, requireRole('admin', 'staff')
     });
     res.json({ charges: chargesResult.rows, ...totals });
   } catch (err) {
+    if (err instanceof BookingLockedError) return res.status(err.status).json({ error: err.message });
     console.error(err);
     res.status(500).json({ error: 'Failed to remove charge' });
   }
@@ -353,6 +447,7 @@ router.post('/:id/payments', adminAuth, requireRole('admin', 'staff'), async (re
     if (!bookingResult.rows[0]) {
       return res.status(404).json({ error: 'Booking not found' });
     }
+    assertBookingUnlocked(bookingResult.rows[0]);
 
     await db.execute({
       sql: `
@@ -370,6 +465,7 @@ router.post('/:id/payments', adminAuth, requireRole('admin', 'staff'), async (re
     });
     res.status(201).json({ payments: paymentsResult.rows, ...totals });
   } catch (err) {
+    if (err instanceof BookingLockedError) return res.status(err.status).json({ error: err.message });
     console.error(err);
     res.status(500).json({ error: 'Failed to record payment' });
   }

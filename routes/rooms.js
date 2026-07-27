@@ -41,6 +41,62 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Live room status board (admin/staff) — Available / Occupied / Booked
+// (advance paid & locked), each with the relevant date range so front desk
+// can see at a glance which rooms are free without cross-referencing the
+// bookings list.
+router.get('/status-board', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const roomsResult = await db.execute('SELECT * FROM rooms WHERE active = 1 ORDER BY price ASC');
+    const bookingsResult = await db.execute({
+      sql: `
+        SELECT bookings.*, COALESCE(p.paid, 0) AS paid_total
+        FROM bookings
+        LEFT JOIN (SELECT booking_id, SUM(amount) AS paid FROM payments GROUP BY booking_id) p ON p.booking_id = bookings.id
+        WHERE bookings.status IN ('confirmed', 'checked_in') AND bookings.checkout > ?
+        ORDER BY bookings.checkin ASC
+      `,
+      args: [today]
+    });
+
+    const board = roomsResult.rows.map((room) => {
+      const roomBookings = bookingsResult.rows.filter((b) => b.room_id === room.id);
+      const occupied = roomBookings.find((b) => b.status === 'checked_in' && b.checkin <= today && b.checkout > today);
+      const booked = !occupied && roomBookings.find((b) => b.status === 'confirmed');
+
+      let status = 'available';
+      let current = null;
+      if (occupied) {
+        status = 'occupied';
+        current = occupied;
+      } else if (booked) {
+        status = 'booked';
+        current = booked;
+      }
+
+      return {
+        id: room.id,
+        name: room.name,
+        status,
+        booking: current ? {
+          id: current.id,
+          guestName: current.name,
+          checkin: current.checkin,
+          checkout: current.checkout,
+          advancePaid: Number(current.paid_total) > 0,
+          paidTotal: Number(current.paid_total)
+        } : null
+      };
+    });
+
+    res.json(board);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load room status board' });
+  }
+});
+
 function slugify(name) {
   return String(name)
     .toLowerCase()

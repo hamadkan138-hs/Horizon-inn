@@ -86,6 +86,7 @@ document.querySelectorAll('.admin-tab').forEach((btn) => {
         if (btn.dataset.tab === 'payments') loadTransactionsPanel();
         if (btn.dataset.tab === 'daily') loadDailySummary();
         if (btn.dataset.tab === 'availability') loadAvailability();
+        if (btn.dataset.tab === 'handover') loadHandoverPanel();
         if (btn.dataset.tab === 'guests') loadGuests();
         if (btn.dataset.tab === 'rooms') loadRoomsPanel();
         if (btn.dataset.tab === 'expenses') loadExpenses();
@@ -469,6 +470,140 @@ async function loadDailySummary() {
 
 document.getElementById('dailyDate').addEventListener('change', loadDailySummary);
 
+/* ---------------- Cash & Handover (locked ledger) ---------------- */
+let handoverDetailedVisible = false;
+
+function paymentMethodBucketLabel(method) {
+    if (method === 'bank_transfer') return 'Bank';
+    if (method === 'easypaisa') return 'EasyPaisa';
+    if (method === 'jazzcash') return 'JazzCash';
+    return 'Cash';
+}
+
+async function loadHandoverPanel() {
+    try {
+        document.getElementById('handoverDateLabel').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        const [preview, allBookingsFresh, history] = await Promise.all([
+            apiGet('/api/handovers/preview'),
+            apiGet('/api/bookings'),
+            apiGet('/api/handovers')
+        ]);
+
+        document.getElementById('handoverSummaryCards').innerHTML = `
+            <div class="summary-card"><span>Total Cash Collected</span><strong>${money(preview.cashTotal)}</strong></div>
+            <div class="summary-card"><span>Total Bank Transfers</span><strong>${money(preview.bankTotal)}</strong></div>
+            <div class="summary-card"><span>Total Online Payments</span><strong>${money(preview.onlineTotal)}</strong></div>
+            <div class="summary-card"><span>Grand Total (Pending Handover)</span><strong>${money(preview.cashTotal + preview.bankTotal + preview.onlineTotal)}</strong></div>
+        `;
+
+        document.getElementById('handoverSimpleList').innerHTML = preview.bookings.map((b) => `
+            <li>
+                <span class="item-label">${escapeHtml(b.name)} <span class="item-meta">${escapeHtml(b.invoice_number)} &middot; ${paymentMethodBucketLabel(b.payment_method)}</span></span>
+                <span class="item-amount">${money(b.total_amount)}</span>
+            </li>
+        `).join('') || '<li class="empty-row">No completed checkouts awaiting handover.</li>';
+
+        document.getElementById('handoverSimpleTotal').innerHTML = `
+            <span class="label">Total Collection</span>
+            <span class="value">${money(preview.cashTotal + preview.bankTotal + preview.onlineTotal)}</span>
+        `;
+
+        const checkedOutBookings = allBookingsFresh
+            .filter((b) => b.status === 'checked_out')
+            .sort((a, b) => (b.checkout > a.checkout ? 1 : -1));
+
+        document.getElementById('handoverLedgerBody').innerHTML = checkedOutBookings.map((b) => `
+            <tr>
+                <td>${b.checkout}</td>
+                <td>${escapeHtml(b.invoice_number)}</td>
+                <td>${escapeHtml(b.name)}</td>
+                <td>${b.room_number ? escapeHtml(b.room_number) : '&mdash;'}</td>
+                <td>${b.checkin}</td>
+                <td>${b.checkout}</td>
+                <td>${money(b.total_amount)}</td>
+                <td>${paymentMethodBucketLabel(b.payment_method)}</td>
+                <td><span class="status-pill ${b.handover_id ? 'handed-over' : 'active-pending'}">${b.handover_id ? 'Handed Over' : 'Active'}</span></td>
+            </tr>
+        `).join('') || '<tr><td colspan="9">No completed checkouts yet.</td></tr>';
+
+        document.getElementById('handoverHistoryList').innerHTML = history.map((h) => `
+            <li>
+                <span class="item-label">
+                    ${new Date(h.created_at.replace(' ', 'T')).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
+                    <span class="item-meta">
+                        ${h.booking_count} booking(s) &middot; Cash ${money(h.cash_total)} &middot; Bank ${money(h.bank_total)} &middot; Online ${money(h.online_total)}
+                        &middot; Expenses ${money(h.expenses_total)} &middot; By ${escapeHtml(h.staff_name)} &rarr; ${escapeHtml(h.receiver_type)}: ${escapeHtml(h.receiver_name)}
+                    </span>
+                </span>
+                <span class="item-amount">${money(h.net_cash_handed + h.bank_total + h.online_total)}</span>
+            </li>
+        `).join('') || '<li class="empty-row">No handovers recorded yet.</li>';
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('handoverViewToggle').addEventListener('click', () => {
+    handoverDetailedVisible = !handoverDetailedVisible;
+    document.getElementById('handoverSimpleView').style.display = handoverDetailedVisible ? 'none' : 'block';
+    document.getElementById('handoverDetailedView').style.display = handoverDetailedVisible ? 'block' : 'none';
+    document.getElementById('handoverViewToggle').textContent = handoverDetailedVisible ? 'View Simple Summary' : 'View Full Details';
+});
+
+const RECEIVER_LABELS = { owner: 'Owner Name', bank: 'Bank Name', staff: 'Next Staff Name' };
+
+async function openHandoverModal() {
+    const msg = document.getElementById('handoverMessage');
+    msg.textContent = '';
+    msg.className = 'form-message';
+    try {
+        const preview = await apiGet('/api/handovers/preview');
+        document.getElementById('handoverModalSummary').innerHTML = `
+            <div><span>Cash Collected</span><span>${money(preview.cashTotal)}</span></div>
+            <div><span>Bank Transfers</span><span>${money(preview.bankTotal)}</span></div>
+            <div><span>Online Payments</span><span>${money(preview.onlineTotal)}</span></div>
+            <div><span>Expenses Paid Out (cash)</span><span>-${money(preview.expensesTotal)}</span></div>
+            <div class="grand"><span>Total Cash in Hand</span><span>${money(preview.netCashHanded)}</span></div>
+        `;
+        document.getElementById('handoverStaffName').value = currentUser.username;
+        document.getElementById('handoverDateTime').value = new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+        document.getElementById('handoverReceiverType').value = 'owner';
+        document.getElementById('handoverReceiverNameLabel').textContent = RECEIVER_LABELS.owner;
+        document.getElementById('handoverReceiverName').value = '';
+        document.getElementById('handoverNote').value = '';
+        document.getElementById('handoverModalOverlay').style.display = 'flex';
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+document.getElementById('openHandoverModalBtn').addEventListener('click', openHandoverModal);
+document.getElementById('closeHandoverModalBtn').addEventListener('click', () => {
+    document.getElementById('handoverModalOverlay').style.display = 'none';
+});
+document.getElementById('handoverModalOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'handoverModalOverlay') document.getElementById('handoverModalOverlay').style.display = 'none';
+});
+document.getElementById('handoverReceiverType').addEventListener('change', (e) => {
+    document.getElementById('handoverReceiverNameLabel').textContent = RECEIVER_LABELS[e.target.value];
+});
+
+document.getElementById('handoverForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('handoverMessage');
+    try {
+        await apiSend('POST', '/api/handovers', {
+            receiverType: document.getElementById('handoverReceiverType').value,
+            receiverName: document.getElementById('handoverReceiverName').value,
+            note: document.getElementById('handoverNote').value
+        });
+        document.getElementById('handoverModalOverlay').style.display = 'none';
+        loadHandoverPanel();
+    } catch (err) {
+        msg.textContent = err.message;
+        msg.className = 'form-message error';
+    }
+});
+
 /* ---------------- Payments / Transactions ---------------- */
 function isOverdue(b) {
     const today = new Date().toISOString().slice(0, 10);
@@ -569,8 +704,67 @@ async function loadAvailability() {
         select.innerHTML = allRooms.map((r) => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
         select.addEventListener('change', renderCalendar);
     }
+    const quickSelect = document.getElementById('quickRoomId');
+    if (!quickSelect.options.length) {
+        quickSelect.innerHTML = allRooms.map((r) => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
+    }
     renderCalendar();
+    loadRoomStatusBoard();
 }
+
+const ROOM_STATUS_META = {
+    available: { label: 'Available', icon: 'fa-circle-check' },
+    occupied: { label: 'Occupied', icon: 'fa-bed' },
+    booked: { label: 'Booked (Locked)', icon: 'fa-lock' }
+};
+
+async function loadRoomStatusBoard() {
+    try {
+        const board = await apiGet('/api/rooms/status-board');
+        document.getElementById('roomStatusBoard').innerHTML = board.map((r) => {
+            const meta = ROOM_STATUS_META[r.status];
+            const dates = r.booking ? `${r.booking.checkin} &rarr; ${r.booking.checkout}` : 'No upcoming stay';
+            const guestLine = r.booking && r.status !== 'available' ? `<div class="room-status-dates">${escapeHtml(r.booking.guestName)}</div>` : '';
+            return `
+                <div class="room-status-card ${r.status}">
+                    <h4>${escapeHtml(r.name)}</h4>
+                    <span class="room-status-badge ${r.status}"><i class="fas ${meta.icon}"></i> ${meta.label}</span>
+                    <div class="room-status-dates">${dates}</div>
+                    ${guestLine}
+                    ${r.booking && r.booking.advancePaid ? '<span class="advance-paid-tag">Advance Paid</span>' : ''}
+                </div>
+            `;
+        }).join('');
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('quickBookingForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('quickBookingMessage');
+    msg.textContent = '';
+    msg.className = 'form-message';
+    try {
+        const result = await apiSend('POST', '/api/bookings/quick', {
+            guestName: document.getElementById('quickGuestName').value,
+            phone: document.getElementById('quickPhone').value,
+            roomId: Number(document.getElementById('quickRoomId').value),
+            checkin: document.getElementById('quickCheckin').value,
+            checkout: document.getElementById('quickCheckout').value,
+            advanceAmount: Number(document.getElementById('quickAdvance').value),
+            paymentMethod: document.getElementById('quickPaymentMethod').value,
+            transactionId: document.getElementById('quickTransactionId').value
+        });
+        msg.textContent = `Room locked. Advance received: ${money(result.advanceAmount)} (tax included).`;
+        msg.className = 'form-message success';
+        document.getElementById('quickBookingForm').reset();
+        allRooms = [];
+        loadRoomStatusBoard();
+        renderCalendar();
+    } catch (err) {
+        msg.textContent = err.message;
+        msg.className = 'form-message error';
+    }
+});
 
 function renderCalendar() {
     const roomId = Number(document.getElementById('availabilityRoom').value || allRooms[0]?.id);

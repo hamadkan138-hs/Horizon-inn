@@ -1703,6 +1703,219 @@ table.admin-table th {
     color: var(--charcoal);
 }
 
+/* Info banner (used for the locked-ledger notice, investor dashboard, etc.) */
+.investor-note {
+    background: #f8f7f3;
+    border-left: 3px solid var(--gold);
+    padding: 12px 18px;
+    font-size: 0.88rem;
+    color: var(--text-light);
+}
+
+.investor-note i {
+    color: var(--gold);
+    margin-right: 8px;
+}
+
+/* Simple, human-readable vertical list (Daily Summary / Handover / Cash In-Out) */
+.simple-list {
+    list-style: none;
+    margin: 0 0 20px;
+    padding: 0;
+    background: var(--white);
+    box-shadow: var(--shadow);
+}
+
+.simple-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0efe9;
+    font-size: 0.98rem;
+}
+
+.simple-list li:last-child {
+    border-bottom: none;
+}
+
+.simple-list .item-label {
+    color: var(--text-dark);
+}
+
+.simple-list .item-meta {
+    color: var(--text-light);
+    font-size: 0.8rem;
+    display: block;
+    margin-top: 2px;
+}
+
+.simple-list .item-amount {
+    font-weight: 700;
+    color: var(--charcoal);
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    white-space: nowrap;
+}
+
+.simple-list .item-amount.negative {
+    color: #a5473c;
+}
+
+.simple-list .empty-row {
+    color: var(--text-light);
+    font-style: italic;
+    justify-content: center;
+}
+
+.simple-total {
+    background: var(--charcoal);
+    color: var(--white);
+    padding: 22px 26px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.simple-total .label {
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gold-soft);
+}
+
+.simple-total .value {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.status-pill.handed-over {
+    background: #e9e6df;
+    color: #6f6a5a;
+}
+
+.status-pill.active-pending {
+    background: #fdf0e2;
+    color: #9a6c1f;
+}
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 22, 31, 0.6);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-box {
+    background: var(--white);
+    max-width: 460px;
+    width: 100%;
+    padding: 28px;
+    box-shadow: var(--shadow-lg);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-box .form-group {
+    margin-bottom: 14px;
+}
+
+.modal-summary {
+    background: #f8f7f3;
+    padding: 16px 18px;
+    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.modal-summary div {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.88rem;
+}
+
+.modal-summary .grand {
+    border-top: 1px solid #ddd;
+    margin-top: 6px;
+    padding-top: 10px;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--charcoal);
+}
+
+/* Room status board */
+.room-status-board {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 10px;
+}
+
+.room-status-card {
+    background: var(--white);
+    box-shadow: var(--shadow);
+    padding: 18px;
+    border-top: 4px solid #ccc;
+}
+
+.room-status-card.available {
+    border-top-color: #3d7a4f;
+}
+
+.room-status-card.occupied {
+    border-top-color: #a5473c;
+}
+
+.room-status-card.booked {
+    border-top-color: var(--gold);
+}
+
+.room-status-card h4 {
+    margin: 0 0 8px;
+    font-size: 1rem;
+    color: var(--charcoal);
+}
+
+.room-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+}
+
+.room-status-badge.available { color: #3d7a4f; }
+.room-status-badge.occupied { color: #a5473c; }
+.room-status-badge.booked { color: #9a6c1f; }
+
+.room-status-dates {
+    font-size: 0.82rem;
+    color: var(--text-light);
+}
+
+.advance-paid-tag {
+    display: inline-block;
+    background: var(--gold);
+    color: var(--charcoal);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    margin-top: 8px;
+}
+
 .report-controls {
     margin-bottom: 16px;
     font-size: 0.9rem;

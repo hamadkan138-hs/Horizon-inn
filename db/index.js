@@ -255,6 +255,31 @@ function init() {
         )
       `);
 
+      // A cash handover sweeps every checked-out booking and every expense that
+      // hasn't already been claimed by an earlier handover, snapshots the totals,
+      // and stamps handover_id onto each of them. Once stamped, those rows are
+      // permanently excluded from every future handover's totals — that's what
+      // makes a handover an immutable, one-way ledger entry.
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS handovers (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          receiver_type TEXT NOT NULL,
+          receiver_name TEXT NOT NULL DEFAULT '',
+          staff_name TEXT NOT NULL,
+          cash_total REAL NOT NULL DEFAULT 0,
+          bank_total REAL NOT NULL DEFAULT 0,
+          online_total REAL NOT NULL DEFAULT 0,
+          expenses_total REAL NOT NULL DEFAULT 0,
+          net_cash_handed REAL NOT NULL DEFAULT 0,
+          booking_count INTEGER NOT NULL DEFAULT 0,
+          note TEXT NOT NULL DEFAULT '',
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+
+      await addColumnsIfMissing('bookings', ['handover_id INTEGER']);
+      await addColumnsIfMissing('expenses', ['handover_id INTEGER']);
+
       const DEFAULT_SETTINGS = {
         hero_eyebrow: 'Est. 2026 · Boutique Hospitality',
         hero_heading: 'Welcome to Horizon Inn',
