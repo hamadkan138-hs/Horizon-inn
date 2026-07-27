@@ -517,7 +517,7 @@ router.post('/:id/checkout', adminAuth, requireRole('admin', 'staff'), async (re
     }
 
     await db.execute({
-      sql: `UPDATE bookings SET status = 'checked_out', checked_out_at = datetime('now') WHERE id = ?`,
+      sql: `UPDATE bookings SET status = 'checked_out', checked_out_at = datetime('now'), cleaning_status = 'pending' WHERE id = ?`,
       args: [req.params.id]
     });
 
@@ -527,6 +527,28 @@ router.post('/:id/checkout', adminAuth, requireRole('admin', 'staff'), async (re
     if (err instanceof BookingLockedError) return res.status(err.status).json({ error: err.message });
     console.error(err);
     res.status(500).json({ error: 'Failed to complete checkout. Nothing was changed — please try again.' });
+  }
+});
+
+// Housekeeping: mark a checked-out room clean again. This is deliberately
+// exempt from assertBookingUnlocked — cleaning_status is operational, not
+// part of the financial record the lock protects, so it must stay editable
+// on bookings that are otherwise permanently locked.
+router.patch('/:id/cleaning', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
+  try {
+    const existing = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
+    const booking = existing.rows[0];
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+    if (booking.status !== 'checked_out') {
+      return res.status(400).json({ error: 'Only a checked-out stay can be marked as cleaned' });
+    }
+    await db.execute({ sql: `UPDATE bookings SET cleaning_status = 'clean' WHERE id = ?`, args: [req.params.id] });
+    res.json({ id: Number(req.params.id), cleaningStatus: 'clean' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update cleaning status' });
   }
 });
 

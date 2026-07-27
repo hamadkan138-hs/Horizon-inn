@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Horizon Inn - Room Management</title>
+<link rel="icon" type="image/png" href="images/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Manrope', 'sans-serif'],
+          display: ['Playfair Display', 'serif']
+        },
+        colors: {
+          gold: { DEFAULT: '#c6a15b', soft: '#e0c48a' },
+          ink: '#0b0d14'
+        },
+        boxShadow: {
+          glass: '0 8px 32px rgba(0,0,0,0.18)',
+          'glass-dark': '0 8px 32px rgba(0,0,0,0.5)'
+        }
+      }
+    }
+  };
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Manrope', sans-serif; }
+  .font-display { font-family: 'Playfair Display', serif; }
+
+  .glass {
+    background: rgba(255,255,255,0.65);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.4);
+  }
+  .dark .glass {
+    background: rgba(30,32,44,0.55);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .bg-app {
+    background: radial-gradient(circle at 15% 0%, #f3ecd8 0%, #f8f6f1 45%, #f1eee6 100%);
+  }
+  .dark .bg-app {
+    background: radial-gradient(circle at 15% 0%, #1b2438 0%, #0b0d14 45%, #0b0d14 100%);
+  }
+
+  .card-enter { animation: cardEnter 0.35s ease both; }
+  @keyframes cardEnter {
+    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .status-dot { box-shadow: 0 0 0 4px currentColor22; }
+
+  .drawer {
+    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+  }
+  .modal-fade { transition: opacity 0.25s ease; }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: rgba(198,161,91,0.5); border-radius: 8px; }
+</style>
+</head>
+<body class="bg-app text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-300">
+
+<!-- Login gate -->
+<div id="loginPanel" class="min-h-screen flex items-center justify-center px-4">
+  <div class="glass shadow-glass dark:shadow-glass-dark rounded-2xl p-10 w-full max-w-sm">
+    <div class="flex items-center gap-3 mb-8">
+      <img src="images/logo-mark.png" alt="Horizon Inn" class="w-10 h-10 object-contain">
+      <div>
+        <p class="font-display text-lg font-bold leading-tight">Horizon Inn</p>
+        <p class="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400">Room Management</p>
+      </div>
+    </div>
+    <form id="loginForm" class="space-y-4">
+      <div>
+        <label class="block text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Username</label>
+        <input id="rmUser" type="text" required class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gold">
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Password</label>
+        <input id="rmPass" type="password" required class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gold">
+      </div>
+      <button type="submit" class="w-full py-3 rounded-lg bg-ink dark:bg-gold text-white dark:text-ink font-semibold tracking-wide hover:opacity-90 transition">Sign In</button>
+      <p id="loginMessage" class="text-sm text-red-500 min-h-[1.2em]"></p>
+    </form>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard" class="hidden">
+
+  <!-- Top bar -->
+  <header class="sticky top-0 z-30 glass shadow-glass dark:shadow-glass-dark">
+    <div class="max-w-[1600px] mx-auto px-5 py-4 flex flex-wrap items-center gap-4">
+      <div class="flex items-center gap-3 mr-4">
+        <img src="images/logo-mark.png" alt="Horizon Inn" class="w-9 h-9 object-contain">
+        <div>
+          <p class="font-display text-base font-bold leading-tight">Horizon Inn</p>
+          <p class="text-[11px] uppercase tracking-widest text-slate-500 dark:text-slate-400">Duty Room Dashboard</p>
+        </div>
+      </div>
+
+      <div class="relative flex-1 min-w-[220px] max-w-md">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+        <input id="searchInput" type="text" placeholder="Search guest, phone, CNIC, invoice..."
+          class="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-gold text-sm">
+      </div>
+
+      <div id="statusChips" class="flex flex-wrap gap-2 text-xs font-semibold"></div>
+
+      <select id="roomTypeFilter" class="rounded-xl bg-white/60 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold">
+        <option value="">All Room Types</option>
+      </select>
+
+      <div class="flex items-center gap-2 ml-auto">
+        <span id="lastUpdated" class="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline"></span>
+        <button id="themeToggle" title="Toggle theme" class="w-10 h-10 rounded-xl glass flex items-center justify-center hover:scale-105 transition">
+          <i class="fa-solid fa-moon dark:hidden"></i>
+          <i class="fa-solid fa-sun hidden dark:inline text-gold"></i>
+        </button>
+        <div class="text-right hidden md:block">
+          <p class="text-sm font-semibold" id="whoami"></p>
+          <a href="#" id="logoutLink" class="text-xs text-slate-500 dark:text-slate-400 hover:text-gold">Sign out</a>
+        </div>
+        <a href="frontdesk.html" class="w-10 h-10 rounded-xl glass flex items-center justify-center hover:scale-105 transition" title="Front Desk">
+          <i class="fa-solid fa-id-card"></i>
+        </a>
+        <a href="admin.html" class="w-10 h-10 rounded-xl glass flex items-center justify-center hover:scale-105 transition" title="Admin Dashboard">
+          <i class="fa-solid fa-gauge"></i>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Summary strip -->
+  <div class="max-w-[1600px] mx-auto px-5 pt-6">
+    <div id="summaryStrip" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6"></div>
+  </div>
+
+  <!-- Room grid -->
+  <main class="max-w-[1600px] mx-auto px-5 pb-16">
+    <div id="roomGrid" class="grid gap-4 grid-cols-[repeat(auto-fill,minmax(260px,1fr))]"></div>
+    <p id="emptyState" class="hidden text-center text-slate-500 dark:text-slate-400 py-20">No rooms match your filters.</p>
+  </main>
+</div>
+
+<!-- View Details Modal -->
+<div id="detailsModalOverlay" class="hidden fixed inset-0 z-40 bg-black/50 modal-fade items-center justify-center p-4">
+  <div class="glass shadow-glass dark:shadow-glass-dark rounded-2xl w-full max-w-md p-6" id="detailsModalBox"></div>
+</div>
+
+<!-- Manage Drawer -->
+<div id="manageOverlay" class="hidden fixed inset-0 z-40 bg-black/50 modal-fade">
+  <div id="manageDrawer" class="drawer absolute right-0 top-0 h-full w-full max-w-md glass shadow-glass dark:shadow-glass-dark p-6 overflow-y-auto translate-x-full" id="manageDrawerBox"></div>
+</div>
+
+<!-- Quick Assign Modal -->
+<div id="assignOverlay" class="hidden fixed inset-0 z-40 bg-black/50 modal-fade items-center justify-center p-4">
+  <div class="glass shadow-glass dark:shadow-glass-dark rounded-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="font-display text-xl font-bold">Quick Assign</h3>
+      <button id="closeAssignBtn" class="w-8 h-8 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="assignForm" class="space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Guest Name</label>
+          <input id="assignName" required class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold">
+        </div>
+        <div>
+          <label class="block text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Phone</label>
+          <input id="assignPhone" required class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">CNIC (optional)</label>
+          <input id="assignCnic" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold">
+        </div>
+        <div>
+          <label class="block text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Guests</label>
+          <input id="assignGuests" type="number" min="1" value="1" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Check-In</label>
+          <input id="assignCheckin" type="date" required class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold">
+        </div>
+        <div>
+          <label class="block text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Check-Out</label>
+          <input id="assignCheckout" type="date" required class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold">
+        </div>
+      </div>
+
+      <label class="flex items-center gap-2 text-sm">
+        <input id="assignCheckInNow" type="checkbox" class="w-4 h-4 accent-gold">
+        Check in immediately (walk-in)
+      </label>
+
+      <div>
+        <p class="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Suggested Available Rooms</p>
+        <div id="suggestionList" class="space-y-2 max-h-56 overflow-y-auto"></div>
+      </div>
+
+      <input type="hidden" id="assignRoomId">
+      <button type="submit" id="assignSubmitBtn" disabled class="w-full py-3 rounded-lg bg-ink dark:bg-gold text-white dark:text-ink font-semibold tracking-wide hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed">
+        Assign Room
+      </button>
+      <p id="assignMessage" class="text-sm min-h-[1.2em]"></p>
+    </form>
+  </div>
+</div>
+
+<!-- Checkout Modal -->
+<div id="checkoutOverlay" class="hidden fixed inset-0 z-40 bg-black/50 modal-fade items-center justify-center p-4">
+  <div class="glass shadow-glass dark:shadow-glass-dark rounded-2xl w-full max-w-md p-6">
+    <h3 class="font-display text-xl font-bold mb-1">Confirm Check-Out</h3>
+    <p id="checkoutSubtitle" class="text-sm text-slate-500 dark:text-slate-400 mb-4"></p>
+    <div id="checkoutSummary" class="rounded-xl bg-black/5 dark:bg-white/5 p-4 mb-4 space-y-1 text-sm"></div>
+    <form id="checkoutForm" class="space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Payment Method</label>
+          <select id="checkoutMethod" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold">
+            <option value="cash">Cash</option>
+            <option value="bank_transfer">Bank Transfer</option>
+            <option value="easypaisa">EasyPaisa</option>
+            <option value="jazzcash">JazzCash</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Amount (Rs.)</label>
+          <input id="checkoutAmount" type="number" min="0" step="0.01" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold">
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button type="submit" class="flex-1 py-3 rounded-lg bg-ink dark:bg-gold text-white dark:text-ink font-semibold hover:opacity-90 transition">Confirm Check-Out</button>
+        <button type="button" id="closeCheckoutBtn" class="px-5 py-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-black/5 dark:hover:bg-white/10">Cancel</button>
+      </div>
+      <p id="checkoutMessage" class="text-sm min-h-[1.2em]"></p>
+    </form>
+  </div>
+</div>
+
+<script src="room-management.js"></script>
+</body>
+</html>

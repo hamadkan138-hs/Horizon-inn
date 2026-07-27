@@ -97,6 +97,77 @@ router.get('/status-board', adminAuth, requireRole('admin', 'staff'), async (req
   }
 });
 
+// Duty-staff room management dashboard: expands each active room type into
+// its individual unit slots (one card per physical unit) so front desk sees
+// a real room grid instead of a type-level summary. There's no separate
+// "physical room" table in this schema — a room type just has a total_units
+// count — so slot identity here is assigned deterministically each request
+// (occupied first, then needs-cleaning, then reserved, remaining vacant)
+// rather than tracking a persistent unit number per booking.
+router.get('/dashboard', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const roomsResult = await db.execute('SELECT * FROM rooms WHERE active = 1 ORDER BY price ASC');
+
+    const bookingsResult = await db.execute({
+      sql: `
+        SELECT bookings.*, COALESCE(p.paid, 0) AS paid_total
+        FROM bookings
+        LEFT JOIN (SELECT booking_id, SUM(amount) AS paid FROM payments GROUP BY booking_id) p ON p.booking_id = bookings.id
+        WHERE
+          (bookings.status = 'checked_in' AND bookings.checkin <= ? AND bookings.checkout > ?)
+          OR (bookings.status = 'confirmed' AND bookings.checkin <= ? AND bookings.checkout > ?)
+          OR (bookings.status = 'checked_out' AND bookings.cleaning_status = 'pending')
+        ORDER BY bookings.id ASC
+      `,
+      args: [today, today, today, today]
+    });
+
+    const toSlotBooking = (b) => ({
+      id: b.id,
+      guestName: b.name,
+      phone: b.phone,
+      cnic: b.cnic,
+      invoiceNumber: b.invoice_number,
+      checkin: b.checkin,
+      checkout: b.checkout,
+      createdAt: b.created_at,
+      checkedOutAt: b.checked_out_at,
+      totalAmount: Number(b.total_amount),
+      paidTotal: Number(b.paid_total),
+      paymentStatus: b.payment_status
+    });
+
+    const board = roomsResult.rows.map((room) => {
+      const roomBookings = bookingsResult.rows.filter((b) => b.room_id === room.id);
+      const occupied = roomBookings.filter((b) => b.status === 'checked_in');
+      const cleaning = roomBookings.filter((b) => b.status === 'checked_out');
+      const reserved = roomBookings.filter((b) => b.status === 'confirmed');
+
+      const totalUnits = Number(room.total_units) || 1;
+      const slots = [];
+      occupied.forEach((b) => { if (slots.length < totalUnits) slots.push({ status: 'occupied', booking: toSlotBooking(b) }); });
+      cleaning.forEach((b) => { if (slots.length < totalUnits) slots.push({ status: 'cleaning', booking: toSlotBooking(b) }); });
+      reserved.forEach((b) => { if (slots.length < totalUnits) slots.push({ status: 'reserved', booking: toSlotBooking(b) }); });
+      while (slots.length < totalUnits) slots.push({ status: 'available', booking: null });
+
+      return {
+        id: room.id,
+        slug: room.slug,
+        name: room.name,
+        price: room.price,
+        totalUnits,
+        slots: slots.map((slot, index) => ({ unit: index + 1, ...slot }))
+      };
+    });
+
+    res.json(board);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load room dashboard' });
+  }
+});
+
 function slugify(name) {
   return String(name)
     .toLowerCase()

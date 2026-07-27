@@ -285,6 +285,13 @@ function init() {
       // converted to Pakistan Standard Time only at display time.
       await addColumnsIfMissing('bookings', ['checked_out_at TEXT']);
 
+      // Lightweight housekeeping flag: set to 'pending' the moment a stay is
+      // checked out (the room needs cleaning before it can be shown as
+      // available again), cleared once staff mark the room clean. Purely
+      // operational — never touches the financial record, so it stays
+      // writable even after the booking itself is locked by checkout.
+      await addColumnsIfMissing('bookings', ["cleaning_status TEXT NOT NULL DEFAULT ''"]);
+
       const DEFAULT_SETTINGS = {
         hero_eyebrow: 'Est. 2026 · Boutique Hospitality',
         hero_heading: 'Welcome to Horizon Inn',
