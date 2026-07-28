@@ -205,8 +205,8 @@ function roomCardHtml(room, index) {
     `;
 }
 
-function initGallerySliders() {
-    roomsGrid.querySelectorAll('.room-gallery').forEach((gallery) => {
+function initGallerySliders(container) {
+    (container || roomsGrid).querySelectorAll('.room-gallery').forEach((gallery) => {
         const slides = gallery.querySelectorAll('.gallery-slide');
         const dots = gallery.querySelectorAll('.gallery-dot');
         let current = 0;
@@ -268,6 +268,76 @@ async function loadRooms() {
 checkinInput.addEventListener('change', loadRooms);
 checkoutInput.addEventListener('change', loadRooms);
 loadRooms();
+
+// Upcoming expansion projects — public read-only teaser so prospective
+// investors browsing the main site can see what's coming without logging in.
+const projectsGrid = document.getElementById('projectsGrid');
+const PROJECT_STATUS_LABELS = { planned: 'Planned', in_progress: 'Under Construction', completed: 'Completed' };
+
+function projectGalleryHtml(project) {
+    const images = Array.isArray(project.images) ? project.images.filter(Boolean) : [];
+    if (!images.length) {
+        return '<div class="room-image" style="background: linear-gradient(135deg, #2c2620, #6b5a3a);"></div>';
+    }
+    if (images.length === 1) {
+        return `<div class="room-image" style="background: url('${images[0]}') center/cover no-repeat;"></div>`;
+    }
+    const slides = images.map((img, i) => `<div class="gallery-slide ${i === 0 ? 'active' : ''}" style="background-image: url('${img}')"></div>`).join('');
+    const dots = images.map((_, i) => `<button type="button" class="gallery-dot ${i === 0 ? 'active' : ''}" data-index="${i}" aria-label="Photo ${i + 1}"></button>`).join('');
+    return `
+        <div class="room-image room-gallery" data-count="${images.length}">
+            ${slides}
+            <button type="button" class="gallery-arrow prev" aria-label="Previous photo"><i class="fas fa-chevron-left"></i></button>
+            <button type="button" class="gallery-arrow next" aria-label="Next photo"><i class="fas fa-chevron-right"></i></button>
+            <div class="gallery-dots">${dots}</div>
+        </div>
+    `;
+}
+
+function projectCardHtml(project, index) {
+    const statusLabel = PROJECT_STATUS_LABELS[project.status] || project.status;
+    const metaItems = [
+        project.location ? `<li><i class="fas fa-map-marker-alt"></i> ${project.location}</li>` : '',
+        (project.timeline && project.timeline !== 'TBD') ? `<li><i class="fas fa-calendar"></i> Target: ${project.timeline}</li>` : ''
+    ].filter(Boolean).join('');
+
+    return `
+        <div class="room-card fade-in-up" style="animation-delay: ${index * 0.12}s">
+            <div class="featured-badge">${statusLabel}</div>
+            ${projectGalleryHtml(project)}
+            <div class="room-content">
+                <h3>${project.name}</h3>
+                <p class="room-desc">${project.description}</p>
+                ${metaItems ? `<ul class="room-features">${metaItems}</ul>` : ''}
+                <a href="#contact" class="book-btn primary">Interested in Investing?</a>
+            </div>
+        </div>
+    `;
+}
+
+function renderProjects(projects) {
+    const section = projectsGrid.closest('section');
+    if (!projects.length) {
+        section.style.display = 'none';
+        return;
+    }
+    section.style.display = '';
+    projectsGrid.innerHTML = projects.map(projectCardHtml).join('');
+    initGallerySliders(projectsGrid);
+}
+
+async function loadProjects() {
+    try {
+        const res = await fetch('/api/investor-accounts/public/projects');
+        if (!res.ok) throw new Error('Failed to load projects');
+        const projects = await res.json();
+        renderProjects(projects);
+    } catch (err) {
+        projectsGrid.closest('section').style.display = 'none';
+    }
+}
+
+loadProjects();
 
 // Booking form
 const bookingForm = document.getElementById('bookingForm');

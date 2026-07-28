@@ -11,6 +11,21 @@ const COMPLIANCE_STATUSES = ['pending', 'verified', 'signed', 'rejected'];
 const WITHDRAWAL_TYPES = ['dividend', 'capital'];
 const WITHDRAWAL_STATUSES = ['pending', 'processing', 'completed', 'rejected'];
 
+// Public, unauthenticated: lets prospective investors browsing the main site see
+// upcoming expansion projects (name, renders, capital/timeline) without needing an
+// investor login — everything below this route still requires admin/investor auth.
+router.get('/public/projects', async (req, res) => {
+  try {
+    const result = await db.execute(
+      "SELECT * FROM investment_projects WHERE status != 'archived' ORDER BY created_at DESC"
+    );
+    res.json(result.rows.map(parseProject));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load projects' });
+  }
+});
+
 router.use(adminAuth, requireRole('admin', 'investor'));
 
 function generatePassword() {
