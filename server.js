@@ -23,6 +23,11 @@ const investorAccountsRouter = require('./routes/investorAccounts');
 const venuesRouter = require('./routes/venues');
 const investorLeadsRouter = require('./routes/investorLeads');
 const reviewsRouter = require('./routes/reviews');
+const statsRouter = require('./routes/stats');
+const promoCodesRouter = require('./routes/promoCodes');
+const giftVouchersRouter = require('./routes/giftVouchers');
+const corporateAccountsRouter = require('./routes/corporateAccounts');
+const abandonedBookingsRouter = require('./routes/abandonedBookings');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -49,6 +54,11 @@ app.use('/api/investor-accounts', investorAccountsRouter);
 app.use('/api/venues', venuesRouter);
 app.use('/api/investor-leads', investorLeadsRouter);
 app.use('/api/reviews', reviewsRouter);
+app.use('/api/stats', statsRouter);
+app.use('/api/promo-codes', promoCodesRouter);
+app.use('/api/gift-vouchers', giftVouchersRouter);
+app.use('/api/corporate-accounts', corporateAccountsRouter);
+app.use('/api/abandoned-bookings', abandonedBookingsRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

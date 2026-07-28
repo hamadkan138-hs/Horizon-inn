@@ -513,6 +513,81 @@ function init() {
         )
       `);
 
+      // Sales/growth features: a single reusable "code" applied at hotel
+      // checkout can resolve to a promo code, a gift voucher, or another
+      // guest's referral code — kept as separate tables since they mean
+      // different things (a % discount vs. real prepaid money vs. crediting
+      // a specific past guest), but all checked from the same booking field.
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS promo_codes (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          code TEXT UNIQUE NOT NULL,
+          discount_percent REAL NOT NULL,
+          max_uses INTEGER,
+          used_count INTEGER NOT NULL DEFAULT 0,
+          active INTEGER NOT NULL DEFAULT 1,
+          expires_at TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS gift_vouchers (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          code TEXT UNIQUE NOT NULL,
+          amount REAL NOT NULL,
+          purchaser_name TEXT NOT NULL DEFAULT '',
+          purchaser_email TEXT NOT NULL DEFAULT '',
+          purchaser_phone TEXT NOT NULL DEFAULT '',
+          recipient_name TEXT NOT NULL DEFAULT '',
+          payment_method TEXT NOT NULL DEFAULT 'cash',
+          transaction_id TEXT NOT NULL DEFAULT '',
+          status TEXT NOT NULL DEFAULT 'pending_payment',
+          redeemed_booking_id INTEGER REFERENCES bookings(id),
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          activated_at TEXT,
+          redeemed_at TEXT,
+          expires_at TEXT
+        )
+      `);
+
+      await addColumnsIfMissing('bookings', ['referral_code TEXT', 'referred_by_code TEXT']);
+
+      // Corporate/B2B accounts for repeat Crescent Grove clients (companies
+      // booking the Meeting Hall regularly) — saved terms so each booking
+      // doesn't need re-negotiating, distinct from a one-off event guest.
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS corporate_accounts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          company_name TEXT NOT NULL,
+          contact_person TEXT NOT NULL DEFAULT '',
+          contact_email TEXT NOT NULL DEFAULT '',
+          contact_phone TEXT NOT NULL DEFAULT '',
+          billing_terms TEXT NOT NULL DEFAULT 'due_on_receipt',
+          agreed_discount_percent REAL NOT NULL DEFAULT 0,
+          notes TEXT NOT NULL DEFAULT '',
+          active INTEGER NOT NULL DEFAULT 1,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+      // Captures a still-interested visitor (name/email/phone typed into the
+      // booking form) before they necessarily finish booking, so staff can
+      // follow up on genuine drop-off instead of losing that lead entirely.
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS abandoned_bookings (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL DEFAULT '',
+          email TEXT NOT NULL DEFAULT '',
+          phone TEXT NOT NULL DEFAULT '',
+          room_id INTEGER REFERENCES rooms(id),
+          checkin TEXT,
+          checkout TEXT,
+          status TEXT NOT NULL DEFAULT 'open',
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+
       await db.execute(`
         CREATE TABLE IF NOT EXISTS venue_bookings (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -546,6 +621,7 @@ function init() {
       // hotel's own expenses. NULL (the existing default) means unchanged, existing
       // hotel-side behavior; only rows explicitly tagged count toward venue P&L.
       await addColumnsIfMissing('expenses', ['venue_id INTEGER']);
+      await addColumnsIfMissing('venue_bookings', ['corporate_account_id INTEGER']);
 
       const SEED_VENUES = [
         {
@@ -608,6 +684,13 @@ function init() {
           });
         }
       }
+
+      // Default exit-intent promo code, so that feature works without extra
+      // manual setup — admin can deactivate/replace it from the Promo Codes tab.
+      await db.execute({
+        sql: 'INSERT INTO promo_codes (code, discount_percent) VALUES (?, ?) ON CONFLICT(code) DO NOTHING',
+        args: ['WELCOME5', 5]
+      });
 
       // Retire the old generic placeholder rooms now that Horizon Inn has real room
       // content. Delete them if nothing ever booked them; otherwise just hide them from

@@ -113,6 +113,9 @@ document.querySelectorAll('.admin-tab').forEach((btn) => {
         if (btn.dataset.tab === 'venues') loadVenuesPanel();
         if (btn.dataset.tab === 'leads') loadLeadsPanel();
         if (btn.dataset.tab === 'reviews') loadReviewsPanel();
+        if (btn.dataset.tab === 'promotions') loadPromotionsPanel();
+        if (btn.dataset.tab === 'corporate') loadCorporatePanel();
+        if (btn.dataset.tab === 'recovery') loadRecoveryPanel();
         if (btn.dataset.tab === 'bookings') { localStorage.setItem('horizonLastSeen', new Date().toISOString()); updateNotifyBell(); }
     });
 });
@@ -2157,3 +2160,194 @@ document.getElementById('externalReviewForm').addEventListener('submit', async (
         msg.textContent = err.message;
     }
 });
+
+/* ---------------- Promotions: Promo Codes + Gift Vouchers ---------------- */
+async function loadPromotionsPanel() {
+    try {
+        const [codes, vouchers] = await Promise.all([
+            apiGet('/api/promo-codes'),
+            apiGet('/api/gift-vouchers')
+        ]);
+
+        document.getElementById('promoCodesBody').innerHTML = codes.length
+            ? codes.map((c) => `
+                <tr>
+                    <td>${escapeHtml(c.code)}</td>
+                    <td>${c.discountPercent}%</td>
+                    <td>${c.usedCount}${c.maxUses ? ` / ${c.maxUses}` : ''}</td>
+                    <td>${c.expiresAt || '—'}</td>
+                    <td>${c.active ? '<span class="action-btn confirm" style="cursor:default;">Active</span>' : '<span class="action-btn cancel" style="cursor:default;">Inactive</span>'}</td>
+                    <td>
+                        <button type="button" class="action-btn details-toggle promo-toggle-btn" data-id="${c.id}" data-active="${c.active ? 0 : 1}">${c.active ? 'Deactivate' : 'Activate'}</button>
+                        <button type="button" class="action-btn cancel promo-delete-btn" data-id="${c.id}">Delete</button>
+                    </td>
+                </tr>
+            `).join('')
+            : '<tr><td colspan="6" style="text-align: center; color: var(--text-light);">No promo codes yet.</td></tr>';
+
+        document.querySelectorAll('.promo-toggle-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                try {
+                    await apiSend('PATCH', `/api/promo-codes/${btn.dataset.id}`, { active: btn.dataset.active === '1' });
+                    loadPromotionsPanel();
+                } catch (err) { alert(err.message); }
+            });
+        });
+        document.querySelectorAll('.promo-delete-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('Delete this promo code?')) return;
+                try {
+                    await apiSend('DELETE', `/api/promo-codes/${btn.dataset.id}`, {});
+                    loadPromotionsPanel();
+                } catch (err) { alert(err.message); }
+            });
+        });
+
+        const voucherStatusFilter = document.getElementById('vouchersFilterStatus').value;
+        const filteredVouchers = voucherStatusFilter ? vouchers.filter((v) => v.status === voucherStatusFilter) : vouchers;
+        document.getElementById('vouchersBody').innerHTML = filteredVouchers.length
+            ? filteredVouchers.map((v) => `
+                <tr>
+                    <td>${escapeHtml(v.code)}</td>
+                    <td>${money(v.amount)}</td>
+                    <td>${escapeHtml(v.purchaserName)}<br><small>${escapeHtml(v.purchaserPhone)}</small></td>
+                    <td>${escapeHtml(v.recipientName) || '—'}</td>
+                    <td>${escapeHtml(v.paymentMethod)}</td>
+                    <td>${v.status}</td>
+                    <td>${v.status === 'pending_payment' ? `<button type="button" class="action-btn confirm voucher-activate-btn" data-id="${v.id}">Verify &amp; Activate</button>` : ''}</td>
+                </tr>
+            `).join('')
+            : '<tr><td colspan="7" style="text-align: center; color: var(--text-light);">No gift vouchers yet.</td></tr>';
+
+        document.querySelectorAll('.voucher-activate-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                try {
+                    const result = await apiSend('PATCH', `/api/gift-vouchers/${btn.dataset.id}/activate`, {});
+                    alert(`Voucher activated: ${result.code} — Rs. ${result.amount}. Send this code to the purchaser.`);
+                    loadPromotionsPanel();
+                } catch (err) { alert(err.message); }
+            });
+        });
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('vouchersFilterStatus').addEventListener('change', loadPromotionsPanel);
+
+document.getElementById('promoCodeForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('promoCodeMessage');
+    try {
+        await apiSend('POST', '/api/promo-codes', {
+            code: document.getElementById('promoCode').value,
+            discountPercent: Number(document.getElementById('promoDiscount').value),
+            maxUses: document.getElementById('promoMaxUses').value ? Number(document.getElementById('promoMaxUses').value) : null,
+            expiresAt: document.getElementById('promoExpires').value || null
+        });
+        msg.style.color = '#3d7a4f';
+        msg.textContent = 'Promo code created.';
+        document.getElementById('promoCodeForm').reset();
+        loadPromotionsPanel();
+    } catch (err) {
+        msg.style.color = '#a5473c';
+        msg.textContent = err.message;
+    }
+});
+
+/* ---------------- Corporate Accounts ---------------- */
+const BILLING_TERMS_LABELS = { due_on_receipt: 'Due on Receipt', net_15: 'Net 15', net_30: 'Net 30' };
+
+async function loadCorporatePanel() {
+    try {
+        const accounts = await apiGet('/api/corporate-accounts');
+        document.getElementById('corporateAccountsBody').innerHTML = accounts.length
+            ? accounts.map((a) => `
+                <tr>
+                    <td>${escapeHtml(a.companyName)}</td>
+                    <td>${escapeHtml(a.contactPerson)}<br><small>${escapeHtml(a.contactEmail)} &middot; ${escapeHtml(a.contactPhone)}</small></td>
+                    <td>${BILLING_TERMS_LABELS[a.billingTerms] || a.billingTerms}</td>
+                    <td>${a.agreedDiscountPercent}%</td>
+                    <td><button type="button" class="action-btn cancel corp-deactivate-btn" data-id="${a.id}">Deactivate</button></td>
+                </tr>
+            `).join('')
+            : '<tr><td colspan="5" style="text-align: center; color: var(--text-light);">No corporate accounts yet.</td></tr>';
+
+        document.querySelectorAll('.corp-deactivate-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('Deactivate this corporate account?')) return;
+                try {
+                    await apiSend('PATCH', `/api/corporate-accounts/${btn.dataset.id}`, { active: false });
+                    loadCorporatePanel();
+                } catch (err) { alert(err.message); }
+            });
+        });
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('corporateAccountForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('corporateAccountMessage');
+    try {
+        await apiSend('POST', '/api/corporate-accounts', {
+            companyName: document.getElementById('corpCompanyName').value,
+            contactPerson: document.getElementById('corpContactPerson').value,
+            contactEmail: document.getElementById('corpContactEmail').value,
+            contactPhone: document.getElementById('corpContactPhone').value,
+            billingTerms: document.getElementById('corpBillingTerms').value,
+            agreedDiscountPercent: Number(document.getElementById('corpDiscount').value) || 0
+        });
+        msg.style.color = '#3d7a4f';
+        msg.textContent = 'Corporate account added.';
+        document.getElementById('corporateAccountForm').reset();
+        loadCorporatePanel();
+    } catch (err) {
+        msg.style.color = '#a5473c';
+        msg.textContent = err.message;
+    }
+});
+
+/* ---------------- Recovery: abandoned booking interest ---------------- */
+async function loadRecoveryPanel() {
+    try {
+        const statusFilter = document.getElementById('recoveryFilterStatus').value;
+        const all = await apiGet(`/api/abandoned-bookings${statusFilter ? `?status=${statusFilter}` : ''}`);
+
+        const allForSummary = statusFilter ? await apiGet('/api/abandoned-bookings') : all;
+        document.getElementById('recoverySummaryCards').innerHTML = `
+            <div class="summary-card"><span>Open</span><strong>${allForSummary.filter((r) => r.status === 'open').length}</strong></div>
+            <div class="summary-card"><span>Contacted</span><strong>${allForSummary.filter((r) => r.status === 'contacted').length}</strong></div>
+            <div class="summary-card"><span>Converted</span><strong>${allForSummary.filter((r) => r.status === 'converted').length}</strong></div>
+            <div class="summary-card"><span>Total Captured</span><strong>${allForSummary.length}</strong></div>
+        `;
+
+        document.getElementById('recoveryBody').innerHTML = all.length
+            ? all.map((r) => `
+                <tr>
+                    <td>${escapeHtml(r.name)}</td>
+                    <td>${escapeHtml(r.phone)}${r.email ? `<br><small>${escapeHtml(r.email)}</small>` : ''}</td>
+                    <td>${r.checkin || '—'} &rarr; ${r.checkout || '—'}</td>
+                    <td>${formatPKT(r.createdAt)}</td>
+                    <td>
+                        <select class="recovery-status-select" data-id="${r.id}">
+                            <option value="open" ${r.status === 'open' ? 'selected' : ''}>Open</option>
+                            <option value="contacted" ${r.status === 'contacted' ? 'selected' : ''}>Contacted</option>
+                            <option value="converted" ${r.status === 'converted' ? 'selected' : ''}>Converted</option>
+                            <option value="dismissed" ${r.status === 'dismissed' ? 'selected' : ''}>Dismissed</option>
+                        </select>
+                    </td>
+                    <td>${r.phone ? `<a class="action-btn confirm" href="https://wa.me/${r.phone.replace(/\D/g, '').replace(/^0/, '92')}" target="_blank" rel="noopener">WhatsApp</a>` : ''}</td>
+                </tr>
+            `).join('')
+            : '<tr><td colspan="6" style="text-align: center; color: var(--text-light);">No interest captured yet.</td></tr>';
+
+        document.querySelectorAll('.recovery-status-select').forEach((sel) => {
+            sel.addEventListener('change', async () => {
+                try {
+                    await apiSend('PATCH', `/api/abandoned-bookings/${sel.dataset.id}`, { status: sel.value });
+                    loadRecoveryPanel();
+                } catch (err) { alert(err.message); }
+            });
+        });
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('recoveryFilterStatus').addEventListener('change', loadRecoveryPanel);

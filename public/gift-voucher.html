@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gift Vouchers - Horizon Inn</title>
+    <meta name="description" content="Give the gift of a stay at Horizon Inn — buy a prepaid gift voucher for any amount, redeemable on any future booking.">
+    <link rel="icon" type="image/png" href="images/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar scrolled">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <img src="images/logo-mark.png" alt="Horizon Inn" class="nav-logo">
+                <span>Horizon Inn</span>
+            </div>
+            <ul class="nav-menu active" style="position: static; background: none; padding: 0; flex-direction: row;">
+                <li><a href="index.html">Back to Site</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div style="max-width: 600px; margin: 0 auto; padding: 140px 24px 100px;">
+        <h2 style="text-align: center;">Give the Gift of a Stay</h2>
+        <p style="text-align: center; color: var(--text-light); margin-bottom: 30px;">Buy a prepaid gift voucher, redeemable on any future room booking. Valid for 1 year from activation.</p>
+
+        <form id="voucherForm" class="booking-form-wrapper" style="background: var(--white); box-shadow: var(--shadow); padding: 32px;">
+            <div class="form-group">
+                <label>Voucher Amount (Rs.)</label>
+                <div class="tier-select-row">
+                    <button type="button" class="tier-btn" data-amount="5000">Rs. 5,000</button>
+                    <button type="button" class="tier-btn" data-amount="10000">Rs. 10,000</button>
+                    <button type="button" class="tier-btn" data-amount="20000">Rs. 20,000</button>
+                </div>
+                <input type="number" id="voucherAmount" min="1000" step="500" placeholder="Or enter a custom amount" required style="margin-top: 10px;">
+            </div>
+            <div class="form-group">
+                <label>Your Name *</label>
+                <input type="text" id="purchaserName" required>
+            </div>
+            <div class="form-group">
+                <label>Your Phone *</label>
+                <input type="tel" id="purchaserPhone" required>
+            </div>
+            <div class="form-group">
+                <label>Your Email</label>
+                <input type="email" id="purchaserEmail">
+            </div>
+            <div class="form-group">
+                <label>Recipient Name (optional)</label>
+                <input type="text" id="recipientName" placeholder="Who is this gift for?">
+            </div>
+            <div class="form-group">
+                <label>Payment Method</label>
+                <select id="voucherPaymentMethod">
+                    <option value="cash">Cash on-site</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="easypaisa">EasyPaisa</option>
+                    <option value="jazzcash">JazzCash</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Transaction ID (if paid via transfer)</label>
+                <input type="text" id="voucherTransactionId" placeholder="From your payment receipt">
+            </div>
+            <button type="submit" class="submit-btn">Submit Voucher Request</button>
+            <p class="form-message" id="voucherFormMessage"></p>
+        </form>
+    </div>
+
+    <style>
+        .tier-select-row { display: flex; gap: 10px; flex-wrap: wrap; }
+        .tier-btn { flex: 1; min-width: 100px; padding: 12px; border: 1px solid #d8d4c9; background: var(--cream); cursor: pointer; font-family: inherit; font-size: 0.9rem; transition: all 0.2s ease; }
+        .tier-btn.selected { background: var(--gold); border-color: var(--gold); color: var(--charcoal); font-weight: 700; }
+    </style>
+
+    <script src="gift-voucher.js"></script>
+</body>
+</html>
