@@ -635,28 +635,118 @@ function updateSimulator() {
 }
 document.getElementById('simAmount').addEventListener('input', updateSimulator);
 
+/* ---------------- Project image galleries + lightbox ---------------- */
+// All upcoming-project galleries (card grid + spotlight) render from this
+// one list so the lightbox can page through a project's images regardless
+// of which card was clicked.
+let lightboxProjects = [];
+
+// Builds the auto-cycling crossfade/Ken-Burns slide stack for one project's
+// .project-media container. Pure CSS animation (duration/delay computed
+// per image) — keeps cycling correctly no matter when the card re-renders.
+function buildMediaSlidesHtml(images) {
+    if (!images.length) return '';
+    if (images.length === 1) {
+        return `<div class="media-slide only" style="background-image: url('${escapeHtml(images[0])}');"></div>`;
+    }
+    const perSlide = 5; // seconds each image is showcased before the next crossfades in
+    const duration = images.length * perSlide;
+    return images.map((src, i) => `
+        <div class="media-slide" style="background-image: url('${escapeHtml(src)}'); animation-duration: ${duration}s; animation-delay: ${i * perSlide - duration}s;"></div>
+    `).join('');
+}
+
+function projectMediaHtml(project, projectIndex, extraStyle) {
+    const images = Array.isArray(project.images) ? project.images.filter(Boolean) : [];
+    const styleAttr = extraStyle ? ` style="${extraStyle}"` : '';
+    if (!images.length) {
+        return `<div class="project-media no-image"${styleAttr}><i class="fas fa-hotel"></i></div>`;
+    }
+    return `
+        <div class="project-media" data-project-index="${projectIndex}"${styleAttr}>
+            ${buildMediaSlidesHtml(images)}
+            <i class="fas fa-expand media-expand"></i>
+            ${images.length > 1 ? `<span class="media-count"><i class="fas fa-images"></i> ${images.length}</span>` : ''}
+        </div>
+    `;
+}
+
+function wireProjectMediaClicks(container) {
+    container.querySelectorAll('.project-media[data-project-index]').forEach((el) => {
+        el.addEventListener('click', () => openProjectLightbox(Number(el.dataset.projectIndex), 0));
+    });
+}
+
+let lightboxState = { images: [], index: 0, name: '', caption: '' };
+
+function openProjectLightbox(projectIndex, startIndex) {
+    const project = lightboxProjects[projectIndex];
+    if (!project) return;
+    const images = Array.isArray(project.images) ? project.images.filter(Boolean) : [];
+    if (!images.length) return;
+    lightboxState = { images, index: startIndex || 0, name: project.name, caption: project.description || '' };
+    renderLightbox();
+    document.getElementById('projectLightboxOverlay').style.display = 'flex';
+}
+
+function renderLightbox() {
+    const { images, index, name, caption } = lightboxState;
+    document.getElementById('lightboxImage').src = images[index];
+    document.getElementById('lightboxTitle').textContent = name;
+    document.getElementById('lightboxSubtitle').textContent = `${caption}${images.length > 1 ? ` — image ${index + 1} of ${images.length}` : ''}`;
+    document.getElementById('lightboxDots').innerHTML = images.length > 1
+        ? images.map((_, i) => `<span class="${i === index ? 'active' : ''}" data-i="${i}"></span>`).join('')
+        : '';
+    document.querySelectorAll('#lightboxDots span').forEach((dot) => {
+        dot.addEventListener('click', () => { lightboxState.index = Number(dot.dataset.i); renderLightbox(); });
+    });
+    const single = images.length <= 1;
+    document.getElementById('lightboxPrevBtn').style.display = single ? 'none' : 'flex';
+    document.getElementById('lightboxNextBtn').style.display = single ? 'none' : 'flex';
+}
+
+document.getElementById('lightboxCloseBtn').addEventListener('click', () => {
+    document.getElementById('projectLightboxOverlay').style.display = 'none';
+});
+document.getElementById('projectLightboxOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'projectLightboxOverlay') document.getElementById('projectLightboxOverlay').style.display = 'none';
+});
+document.getElementById('lightboxPrevBtn').addEventListener('click', () => {
+    lightboxState.index = (lightboxState.index - 1 + lightboxState.images.length) % lightboxState.images.length;
+    renderLightbox();
+});
+document.getElementById('lightboxNextBtn').addEventListener('click', () => {
+    lightboxState.index = (lightboxState.index + 1) % lightboxState.images.length;
+    renderLightbox();
+});
+document.addEventListener('keydown', (e) => {
+    if (document.getElementById('projectLightboxOverlay').style.display !== 'flex') return;
+    if (e.key === 'Escape') document.getElementById('projectLightboxOverlay').style.display = 'none';
+    if (e.key === 'ArrowLeft') document.getElementById('lightboxPrevBtn').click();
+    if (e.key === 'ArrowRight') document.getElementById('lightboxNextBtn').click();
+});
+
 async function renderProjectsPreview() {
     const projects = await apiGet('/api/investor-accounts/projects');
+    lightboxProjects = projects;
     const el = document.getElementById('projectSpotlight');
     if (!projects.length) {
         el.innerHTML = '<p style="color: var(--text-2); font-size: 0.85rem;">No upcoming projects listed yet.</p>';
         return;
     }
     const p = projects[0];
-    const img = p.images && p.images[0];
     const roiMatch = String(p.growthPotential || '').match(/(\d+(\.\d+)?)/);
     const roiPct = roiMatch ? Math.min(100, Number(roiMatch[1])) : 0;
     el.innerHTML = `
         <h4 style="font-size: 0.85rem; color: var(--gold-light); margin-bottom: 10px; font-family: 'Playfair Display', serif;"><i class="fas fa-rocket"></i> ${escapeHtml(p.name)}</h4>
-        <div class="project-spotlight-media"${img ? ` style="background-image: url('${escapeHtml(img)}'); background-size: cover; background-position: center;"` : ''}>
-            ${img ? '' : '<i class="fas fa-hotel"></i>'}
-        </div>
+        ${projectMediaHtml(p, 0, 'height: 130px; border-radius: 12px; margin-bottom: 10px;')}
         <p style="color: var(--text-2); font-size: 0.8rem;">${money(p.targetCapital)} needed &middot; ${escapeHtml(p.timeline || 'TBD')}</p>
         <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-top: 10px;">
             <span style="color: var(--text-2);">Target ROI</span><strong class="emerald">${escapeHtml(p.growthPotential || 'N/A')}</strong>
         </div>
         <div class="roi-mini-bar"><div class="roi-mini-bar-fill" style="width: ${roiPct}%;"></div></div>
     `;
+    wireProjectMediaClicks(el);
 }
 document.getElementById('viewAllProjectsBtn').addEventListener('click', () => {
     document.querySelector('.admin-tab[data-tab="projects"]').click();
@@ -778,9 +868,11 @@ async function loadProjectsTab() {
         roiBaseline.ownerEquityPercent = Number(valuation.ownerEquityPercent) || 0;
         document.getElementById('roiValuationRef').textContent = money(roiBaseline.valuation);
 
-        document.getElementById('projectGrid').innerHTML = projects.map((p) => `
+        lightboxProjects = projects;
+        const projectGrid = document.getElementById('projectGrid');
+        projectGrid.innerHTML = projects.map((p, i) => `
             <div class="glass-card project-card">
-                <div class="project-media"><i class="fas fa-hotel"></i></div>
+                ${projectMediaHtml(p, i)}
                 <div class="project-body">
                     <span class="status-chip">${p.status}</span>
                     <h4>${escapeHtml(p.name)}</h4>
@@ -794,6 +886,7 @@ async function loadProjectsTab() {
                 </div>
             </div>
         `).join('') || '<p style="color: var(--text-2);">No upcoming projects listed yet.</p>';
+        wireProjectMediaClicks(projectGrid);
 
         updateRoiCalculator();
     } catch (err) { /* handled */ }
