@@ -110,6 +110,7 @@ document.querySelectorAll('.admin-tab').forEach((btn) => {
         if (btn.dataset.tab === 'media') loadMediaLibrary();
         if (btn.dataset.tab === 'content') loadSiteContent();
         if (btn.dataset.tab === 'investors') loadInvestorsPanel();
+        if (btn.dataset.tab === 'venues') loadVenuesPanel();
         if (btn.dataset.tab === 'bookings') { localStorage.setItem('horizonLastSeen', new Date().toISOString()); updateNotifyBell(); }
     });
 });
@@ -1316,6 +1317,215 @@ async function renderRoomRevenueChart() {
         },
         options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } } }
     });
+}
+
+/* ---------------- Cash & Financial Controls (Crescent Grove venue bookings) ---------------- */
+const VENUE_STATUS_LABELS = {
+    pending_cash: 'Pending Cash', confirmed: 'Confirmed', completed: 'Completed', cancelled: 'Cancelled'
+};
+let allVenues = [];
+let venueLineItems = [];
+let venueRevenueChartInstance = null;
+let venueOccupancyChartInstance = null;
+
+function venueStatusBadge(status) {
+    const cls = status === 'confirmed' || status === 'completed' ? 'confirm' : status === 'cancelled' ? 'cancel' : 'details-toggle';
+    return `<span class="action-btn ${cls}" style="cursor: default; display: inline-block;">${VENUE_STATUS_LABELS[status] || status}</span>`;
+}
+
+function venueBookingRow(b, pendingOnly) {
+    const actions = pendingOnly
+        ? `<button type="button" class="action-btn confirm venue-verify-btn" data-id="${b.id}" data-action="approve">Approve Cash Payment</button>
+           <button type="button" class="action-btn cancel venue-verify-btn" data-id="${b.id}" data-action="reject">Reject / Cancel</button>`
+        : `<a class="action-btn details-toggle" href="venue-invoice.html?id=${b.id}" target="_blank" rel="opener">Invoice</a>
+           ${b.status === 'confirmed' ? `<button type="button" class="action-btn confirm venue-complete-btn" data-id="${b.id}">Mark Completed</button>` : ''}
+           ${b.status !== 'cancelled' && b.status !== 'completed' ? `<button type="button" class="action-btn cancel venue-cancel-btn" data-id="${b.id}">Cancel</button>` : ''}`;
+    return `
+        <tr>
+            <td>${b.bookingCode}</td>
+            <td>${escapeHtml(b.customerName)}</td>
+            <td>${escapeHtml(b.venueName)}</td>
+            <td>${b.eventDate}</td>
+            <td>${money(b.totalAmount)}</td>
+            <td>${venueStatusBadge(b.status)}</td>
+            <td>${actions}</td>
+        </tr>
+    `;
+}
+
+async function loadVenueBookingsTables() {
+    const all = await apiGet('/api/venues/bookings');
+    const pending = all.filter((b) => b.status === 'pending_cash');
+    document.getElementById('venuePendingBody').innerHTML = pending.length
+        ? pending.map((b) => venueBookingRow(b, true)).join('')
+        : '<tr><td colspan="7" style="text-align: center; color: var(--text-light);">No pending cash/bank confirmations right now.</td></tr>';
+
+    const statusFilter = document.getElementById('venueFilterStatus').value;
+    const filtered = statusFilter ? all.filter((b) => b.status === statusFilter) : all;
+    document.getElementById('venueBookingsBody').innerHTML = filtered.length
+        ? filtered.map((b) => venueBookingRow(b, false)).join('')
+        : '<tr><td colspan="7" style="text-align: center; color: var(--text-light);">No bookings yet.</td></tr>';
+
+    wireVenueRowActions();
+}
+
+function wireVenueRowActions() {
+    document.querySelectorAll('.venue-verify-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            try {
+                await apiSend('PATCH', `/api/venues/bookings/${btn.dataset.id}/verify`, { action: btn.dataset.action });
+                loadVenuesPanel();
+            } catch (err) { alert(err.message); }
+        });
+    });
+    document.querySelectorAll('.venue-complete-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            try {
+                await apiSend('PATCH', `/api/venues/bookings/${btn.dataset.id}`, { status: 'completed' });
+                loadVenuesPanel();
+            } catch (err) { alert(err.message); }
+        });
+    });
+    document.querySelectorAll('.venue-cancel-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            if (!confirm('Cancel this booking?')) return;
+            try {
+                await apiSend('PATCH', `/api/venues/bookings/${btn.dataset.id}`, { status: 'cancelled' });
+                loadVenuesPanel();
+            } catch (err) { alert(err.message); }
+        });
+    });
+}
+
+async function loadVenueSummaryCards() {
+    const from = document.getElementById('venueReportFrom').value;
+    const to = document.getElementById('venueReportTo').value;
+    const qs = from && to ? `?from=${from}&to=${to}` : '';
+    const summary = await apiGet(`/api/venues/analytics${qs}`);
+
+    document.getElementById('venueSummaryCards').innerHTML = `
+        <div class="summary-card"><span>Gross Revenue (period)</span><strong>${money(summary.grossRevenue)}</strong></div>
+        <div class="summary-card"><span>Pending Cash Confirmations</span><strong>${summary.pendingCashCount} &middot; ${money(summary.pendingCashValue)}</strong></div>
+        <div class="summary-card"><span>Net Profit Margin</span><strong>${summary.netMarginPct.toFixed(1)}%</strong></div>
+        <div class="summary-card"><span>Occupancy Rate</span><strong>${summary.occupancyPct}%</strong></div>
+    `;
+
+    if (venueRevenueChartInstance) venueRevenueChartInstance.destroy();
+    venueRevenueChartInstance = new Chart(document.getElementById('venueRevenueChart'), {
+        type: 'bar',
+        data: {
+            labels: summary.revenueByMonth.map((r) => r.period),
+            datasets: [
+                { label: 'Gross Revenue', data: summary.revenueByMonth.map((r) => r.revenue), backgroundColor: '#d4af37' },
+                { label: 'Operating Expenses', data: summary.revenueByMonth.map((r) => r.expenses), backgroundColor: '#a5473c' }
+            ]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+
+    if (venueOccupancyChartInstance) venueOccupancyChartInstance.destroy();
+    const occupancyEntries = Object.entries(summary.perVenueOccupancy);
+    venueOccupancyChartInstance = new Chart(document.getElementById('venueOccupancyChart'), {
+        type: 'doughnut',
+        data: {
+            labels: occupancyEntries.map(([name]) => name),
+            datasets: [{ data: occupancyEntries.map(([, pct]) => pct), backgroundColor: ['#d4af37', '#14161f', '#3d7a4f', '#2f5faa'] }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+}
+
+function renderVenueLineItemsList() {
+    document.getElementById('venueLineItemsList').innerHTML = venueLineItems.map((li, i) => `
+        <li>${escapeHtml(li.description)} — ${money(li.amount)} <a href="#" data-i="${i}" class="venue-remove-line-item">(remove)</a></li>
+    `).join('');
+    document.querySelectorAll('.venue-remove-line-item').forEach((a) => {
+        a.addEventListener('click', (e) => {
+            e.preventDefault();
+            venueLineItems.splice(Number(a.dataset.i), 1);
+            renderVenueLineItemsList();
+        });
+    });
+}
+
+document.getElementById('venueAddLineItemBtn').addEventListener('click', () => {
+    const desc = document.getElementById('venueLineItemDesc').value.trim();
+    const amount = Number(document.getElementById('venueLineItemAmount').value);
+    if (!desc || !amount) return;
+    venueLineItems.push({ description: desc, amount });
+    document.getElementById('venueLineItemDesc').value = '';
+    document.getElementById('venueLineItemAmount').value = '';
+    renderVenueLineItemsList();
+});
+
+document.getElementById('venueNewBookingToggle').addEventListener('click', () => {
+    const form = document.getElementById('venueBookingForm');
+    form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+});
+
+document.getElementById('venueBookingForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('venueBookingMessage');
+    try {
+        await apiSend('POST', '/api/venues/bookings', {
+            venueId: Number(document.getElementById('venueSelect').value),
+            customerName: document.getElementById('venueCustomerName').value,
+            customerPhone: document.getElementById('venueCustomerPhone').value,
+            customerEmail: document.getElementById('venueCustomerEmail').value,
+            eventDate: document.getElementById('venueEventDate').value,
+            eventType: document.getElementById('venueEventType').value,
+            guestCount: Number(document.getElementById('venueGuestCount').value) || 0,
+            paymentMethod: document.getElementById('venuePaymentMethod').value,
+            transactionId: document.getElementById('venueTransactionId').value,
+            securityDeposit: Number(document.getElementById('venueSecurityDeposit').value) || 0,
+            discountAmount: Number(document.getElementById('venueDiscount').value) || 0,
+            gstPercent: Number(document.getElementById('venueGstPercent').value) || 0,
+            lineItems: venueLineItems,
+            notes: document.getElementById('venueNotes').value
+        });
+        msg.style.color = '#3d7a4f';
+        msg.textContent = 'Booking saved.';
+        document.getElementById('venueBookingForm').reset();
+        venueLineItems = [];
+        renderVenueLineItemsList();
+        document.getElementById('venueBookingForm').style.display = 'none';
+        loadVenuesPanel();
+    } catch (err) {
+        msg.style.color = '#a5473c';
+        msg.textContent = err.message;
+    }
+});
+
+document.getElementById('venueFilterStatus').addEventListener('change', loadVenueBookingsTables);
+document.getElementById('venueReportFrom').addEventListener('change', loadVenueSummaryCards);
+document.getElementById('venueReportTo').addEventListener('change', loadVenueSummaryCards);
+
+document.getElementById('venueExportBtn').addEventListener('click', () => {
+    const from = document.getElementById('venueReportFrom').value;
+    const to = document.getElementById('venueReportTo').value;
+    const token = localStorage.getItem('horizonAdminAuth');
+    const qs = from && to ? `?from=${from}&to=${to}` : '';
+    fetch(`/api/venues/analytics/export${qs}`, { headers: { Authorization: `Basic ${token}` } })
+        .then((res) => res.blob())
+        .then((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'venue-bookings-report.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+});
+
+async function loadVenuesPanel() {
+    try {
+        if (!allVenues.length) {
+            allVenues = await apiGet('/api/venues');
+            document.getElementById('venueSelect').innerHTML = '<option value="">Select space&hellip;</option>' +
+                allVenues.map((v) => `<option value="${v.id}">${v.name} (${money(v.baseDayRate)}/day)</option>`).join('');
+        }
+        await Promise.all([loadVenueSummaryCards(), loadVenueBookingsTables()]);
+    } catch (err) { /* handled */ }
 }
 
 document.getElementById('reportExportBtn').addEventListener('click', () => {

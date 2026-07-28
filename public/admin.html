@@ -85,6 +85,7 @@
                 <button class="admin-tab" data-tab="rooms"><i class="fas fa-bed"></i> Rooms &amp; Pricing</button>
                 <button class="admin-tab" data-tab="expenses"><i class="fas fa-receipt"></i> Expenses</button>
                 <button class="admin-tab" data-tab="reports"><i class="fas fa-chart-pie"></i> Reports</button>
+                <button class="admin-tab" data-tab="venues"><i class="fas fa-cash-register"></i> Cash &amp; Financial Controls</button>
                 <button class="admin-tab" data-tab="media" id="mediaTabBtn" style="display: none;"><i class="fas fa-images"></i> Media Library</button>
                 <button class="admin-tab" data-tab="content" id="contentTabBtn" style="display: none;"><i class="fas fa-pen-to-square"></i> Site Content</button>
                 <button class="admin-tab" data-tab="staff" id="staffTabBtn" style="display: none;"><i class="fas fa-user-tie"></i> Staff</button>
@@ -505,6 +506,97 @@
                 <div class="chart-card">
                     <h3>Revenue by Room Type</h3>
                     <canvas id="roomRevenueChart" height="90"></canvas>
+                </div>
+            </section>
+
+            <!-- Cash & Financial Controls (Crescent Grove venue bookings) -->
+            <section class="admin-panel" id="panel-venues" style="display: none;">
+                <div class="summary-cards" id="venueSummaryCards"></div>
+
+                <div class="panel-toolbar">
+                    <button type="button" class="action-btn confirm" id="venueNewBookingToggle">+ New Booking</button>
+                    <button type="button" class="action-btn details-toggle" id="venueExportBtn">Export Full Monthly Report</button>
+                </div>
+
+                <form id="venueBookingForm" class="inline-form" style="display: none; flex-wrap: wrap;">
+                    <select id="venueSelect" required>
+                        <option value="">Select space&hellip;</option>
+                    </select>
+                    <input type="text" id="venueCustomerName" placeholder="Customer name" required>
+                    <input type="tel" id="venueCustomerPhone" placeholder="Phone">
+                    <input type="email" id="venueCustomerEmail" placeholder="Email">
+                    <input type="date" id="venueEventDate" required>
+                    <input type="text" id="venueEventType" placeholder="Event type (e.g. birthday, corporate)">
+                    <input type="number" id="venueGuestCount" placeholder="Guest count" min="0">
+                    <select id="venuePaymentMethod">
+                        <option value="cash">Cash on-site</option>
+                        <option value="bank_transfer">Bank transfer</option>
+                        <option value="card">Card (instant confirm)</option>
+                    </select>
+                    <input type="text" id="venueTransactionId" placeholder="Transaction / reference ID (if bank/card)">
+                    <input type="number" id="venueSecurityDeposit" placeholder="Security deposit (Rs.)" min="0" step="0.01">
+                    <input type="number" id="venueDiscount" placeholder="Discount (Rs.)" min="0" step="0.01">
+                    <input type="number" id="venueGstPercent" placeholder="GST %" min="0" step="0.01">
+
+                    <div style="flex-basis: 100%; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <input type="text" id="venueLineItemDesc" placeholder="Line item (e.g. Catering package B)">
+                        <input type="number" id="venueLineItemAmount" placeholder="Amount (Rs.)" min="0" step="0.01" style="max-width: 160px;">
+                        <button type="button" class="action-btn details-toggle" id="venueAddLineItemBtn">Add Line Item</button>
+                    </div>
+                    <ul id="venueLineItemsList" style="flex-basis: 100%; list-style: none; padding: 0; margin: 0; font-size: 0.85rem; color: var(--text-light);"></ul>
+
+                    <input type="text" id="venueNotes" placeholder="Notes" style="flex-basis: 100%;">
+                    <button type="submit" class="action-btn confirm">Save Booking</button>
+                </form>
+                <p class="form-message" id="venueBookingMessage"></p>
+
+                <h3 style="margin-top: 24px;">Unverified Cash / Bank Bookings</h3>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="venuePendingTable">
+                        <thead>
+                            <tr>
+                                <th>Booking</th><th>Customer</th><th>Space</th><th>Event Date</th>
+                                <th>Amount</th><th>Status</th><th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="venuePendingBody"></tbody>
+                    </table>
+                </div>
+
+                <h3 style="margin-top: 24px;">All Venue Bookings</h3>
+                <div class="panel-toolbar">
+                    <select id="venueFilterStatus">
+                        <option value="">All statuses</option>
+                        <option value="pending_cash">Pending Cash</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="venueBookingsTable">
+                        <thead>
+                            <tr>
+                                <th>Booking</th><th>Customer</th><th>Space</th><th>Event Date</th>
+                                <th>Amount</th><th>Status</th><th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="venueBookingsBody"></tbody>
+                    </table>
+                </div>
+
+                <h3 style="margin-top: 24px;">Investor Financial Analytics</h3>
+                <div class="report-controls">
+                    <label>From: <input type="date" id="venueReportFrom"></label>
+                    <label>To: <input type="date" id="venueReportTo"></label>
+                </div>
+                <div class="chart-card">
+                    <h3>Gross Revenue vs. Operating Expenses</h3>
+                    <canvas id="venueRevenueChart" height="90"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Space Occupancy Breakdown</h3>
+                    <canvas id="venueOccupancyChart" height="90"></canvas>
                 </div>
             </section>
 
