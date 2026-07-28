@@ -7,6 +7,7 @@ const { isRoomAvailable } = require('../lib/availability');
 const { computeTotalAmount } = require('../lib/pricing');
 const { recomputeBookingTotal } = require('../lib/billing');
 const { assertBookingUnlocked, BookingLockedError } = require('../lib/lock');
+const { sendBookingConfirmationEmail } = require('../lib/mailer');
 
 const router = express.Router();
 
@@ -213,6 +214,8 @@ router.post('/', async (req, res) => {
 
     const bookingResult = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [bookingId] });
     const booking = bookingResult.rows[0];
+
+    sendBookingConfirmationEmail(booking, room).catch((err) => console.error('[bookingConfirmationEmail]', err));
 
     res.status(201).json({ booking, room: { ...room, features: JSON.parse(room.features) } });
   } catch (err) {
