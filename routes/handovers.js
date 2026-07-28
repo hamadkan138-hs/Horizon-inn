@@ -128,17 +128,27 @@ router.post('/', async (req, res) => {
     });
     const handoverId = Number(insertResult.lastInsertRowid);
 
-    if (summary.bookings.length) {
-      await db.execute({
-        sql: `UPDATE bookings SET handover_id = ? WHERE status = 'checked_out' AND handover_id IS NULL`,
-        args: [handoverId]
-      });
-    }
-    if (summary.expenses.length) {
-      await db.execute({
-        sql: `UPDATE expenses SET handover_id = ? WHERE handover_id IS NULL`,
-        args: [handoverId]
-      });
+    // A staff -> staff handover is a custody transfer, not a settlement: the
+    // cash stays inside the business, it just changes hands between shifts.
+    // Only bank/owner handovers actually remove money from the business, so
+    // only those claim the swept bookings/expenses (dropping them out of the
+    // pending-handover total). A staff handover still creates the row above
+    // — so who handed over to whom, and when, is on the record — it just
+    // leaves handover_id untouched so the pending total is unaffected and
+    // the same cash still shows up (correctly) in the next real handover.
+    if (receiverType !== 'staff') {
+      if (summary.bookings.length) {
+        await db.execute({
+          sql: `UPDATE bookings SET handover_id = ? WHERE status = 'checked_out' AND handover_id IS NULL`,
+          args: [handoverId]
+        });
+      }
+      if (summary.expenses.length) {
+        await db.execute({
+          sql: `UPDATE expenses SET handover_id = ? WHERE handover_id IS NULL`,
+          args: [handoverId]
+        });
+      }
     }
 
     const created = await db.execute({ sql: 'SELECT * FROM handovers WHERE id = ?', args: [handoverId] });
