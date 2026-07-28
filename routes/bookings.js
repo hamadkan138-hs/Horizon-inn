@@ -173,7 +173,8 @@ router.post('/quick', adminAuth, requireRole('admin', 'staff'), async (req, res)
   try {
     const {
       guestName, phone, roomId, checkin, checkout, advanceAmount, paymentMethod, transactionId,
-      cnic, address, checkInNow
+      cnic, address, checkInNow, email, maritalStatus, guests, purposeOfStay, arrivalTime,
+      vehicleNumber, arrivalFrom, departureTo
     } = req.body;
 
     if (!guestName || !phone || !roomId || !checkin || !checkout) {
@@ -228,12 +229,17 @@ router.post('/quick', adminAuth, requireRole('admin', 'staff'), async (req, res)
       sql: `
         INSERT INTO bookings (
           room_id, physical_room_id, name, email, phone, cnic, address, checkin, checkout, guests,
+          marital_status, arrival_from, departure_to, arrival_time, purpose_of_stay, vehicle_number,
           payment_method, transaction_id, terms_accepted, status, payment_status, total_amount, room_amount,
           invoice_token
         )
-        VALUES (?, ?, ?, '', ?, ?, ?, ?, ?, 1, ?, ?, 1, ?, 'unpaid', ?, ?, lower(hex(randomblob(12))))
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 'unpaid', ?, ?, lower(hex(randomblob(12))))
       `,
-      args: [roomId, physicalRoomId, guestName, phone, cnic || '', address || '', checkin, checkout, method, transactionId || '', status, roomAmount, roomAmount]
+      args: [
+        roomId, physicalRoomId, guestName, email || '', phone, cnic || '', address || '', checkin, checkout,
+        Number(guests) || 1, maritalStatus || '', arrivalFrom || '', departureTo || '', arrivalTime || '',
+        purposeOfStay || '', vehicleNumber || '', method, transactionId || '', status, roomAmount, roomAmount
+      ]
     });
 
     const bookingId = Number(insertResult.lastInsertRowid);
