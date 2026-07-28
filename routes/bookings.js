@@ -403,16 +403,45 @@ router.post('/quick', adminAuth, requireRole('admin', 'staff'), async (req, res)
 // Payments tabs can render financial state without an N+1 query per row.
 router.get('/', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
   try {
-    const result = await db.execute(`
-      SELECT bookings.*, rooms.name AS room_name,
-             COALESCE(p.paid, 0) AS paid_total,
-             bookings.total_amount - COALESCE(p.paid, 0) AS balance
-      FROM bookings
-      JOIN rooms ON rooms.id = bookings.room_id
-      LEFT JOIN (SELECT booking_id, SUM(amount) AS paid FROM payments GROUP BY booking_id) p ON p.booking_id = bookings.id
-      ORDER BY bookings.created_at DESC
-    `);
-    res.json(result.rows);
+    const { status, paymentStatus, search, limit, offset } = req.query;
+    const where = [];
+    const args = [];
+    if (status) { where.push('bookings.status = ?'); args.push(status); }
+    if (paymentStatus) { where.push('bookings.payment_status = ?'); args.push(paymentStatus); }
+    if (search) {
+      const like = `%${search.trim()}%`;
+      where.push('(bookings.name LIKE ? OR bookings.email LIKE ? OR bookings.phone LIKE ? OR bookings.cnic LIKE ?)');
+      args.push(like, like, like, like);
+    }
+    const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+    const countResult = await db.execute({ sql: `SELECT COUNT(*) AS total FROM bookings ${whereClause}`, args });
+    const total = Number(countResult.rows[0].total);
+
+    // limit/offset are optional — callers that need the full matching set
+    // (e.g. the cash-handover ledger) simply omit them.
+    let limitClause = '';
+    if (limit) {
+      const lim = Math.max(1, Math.min(200, Number(limit) || 50));
+      const off = Math.max(0, Number(offset) || 0);
+      limitClause = ` LIMIT ${lim} OFFSET ${off}`;
+    }
+
+    const result = await db.execute({
+      sql: `
+        SELECT bookings.*, rooms.name AS room_name,
+               COALESCE(p.paid, 0) AS paid_total,
+               bookings.total_amount - COALESCE(p.paid, 0) AS balance
+        FROM bookings
+        JOIN rooms ON rooms.id = bookings.room_id
+        LEFT JOIN (SELECT booking_id, SUM(amount) AS paid FROM payments GROUP BY booking_id) p ON p.booking_id = bookings.id
+        ${whereClause}
+        ORDER BY bookings.created_at DESC
+        ${limitClause}
+      `,
+      args
+    });
+    res.json({ bookings: result.rows, total });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to load bookings' });

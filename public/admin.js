@@ -16,6 +16,8 @@ const CHARGE_CATEGORY_LABELS = { amenity: 'Amenity', event_rental: 'Event Rental
 
 let currentUser = null;
 let allBookings = [];
+let bookingsPage = 1;
+const BOOKINGS_PAGE_SIZE = 50;
 let allRooms = [];
 let allRoomsForPanel = [];
 let calendarDate = new Date();
@@ -424,7 +426,8 @@ async function renderBookingDetail(id) {
 
 async function loadBookings(keepOpen, reopenId) {
     try {
-        allBookings = await apiGet('/api/bookings');
+        const data = await apiGet('/api/bookings');
+        allBookings = data.bookings;
         applyBookingFilters();
         updateNotifyBell();
         if (keepOpen && reopenId) {
@@ -445,8 +448,18 @@ function applyBookingFilters() {
         return matchesSearch && matchesStatus && matchesPayment;
     });
 
+    const totalPages = Math.max(1, Math.ceil(filtered.length / BOOKINGS_PAGE_SIZE));
+    bookingsPage = Math.min(bookingsPage, totalPages);
+    const pageStart = (bookingsPage - 1) * BOOKINGS_PAGE_SIZE;
+    const pageRows = filtered.slice(pageStart, pageStart + BOOKINGS_PAGE_SIZE);
+
+    document.getElementById('bookingsPageLabel').textContent =
+        filtered.length ? `Page ${bookingsPage} of ${totalPages} (${filtered.length} bookings)` : '';
+    document.getElementById('bookingsPrevPage').disabled = bookingsPage <= 1;
+    document.getElementById('bookingsNextPage').disabled = bookingsPage >= totalPages;
+
     const body = document.getElementById('bookingsBody');
-    body.innerHTML = filtered.map(bookingRowHtml).join('') || '<tr><td colspan="9">No bookings match.</td></tr>';
+    body.innerHTML = pageRows.map(bookingRowHtml).join('') || '<tr><td colspan="9">No bookings match.</td></tr>';
 
     body.querySelectorAll('.status-select').forEach((select) => {
         const previousValue = select.value;
@@ -474,9 +487,15 @@ function applyBookingFilters() {
     });
 }
 
-document.getElementById('bookingSearch').addEventListener('input', applyBookingFilters);
-document.getElementById('bookingStatusFilter').addEventListener('change', applyBookingFilters);
-document.getElementById('bookingPaymentFilter').addEventListener('change', applyBookingFilters);
+let bookingSearchDebounceTimer = null;
+document.getElementById('bookingSearch').addEventListener('input', () => {
+    clearTimeout(bookingSearchDebounceTimer);
+    bookingSearchDebounceTimer = setTimeout(() => { bookingsPage = 1; applyBookingFilters(); }, 300);
+});
+document.getElementById('bookingStatusFilter').addEventListener('change', () => { bookingsPage = 1; applyBookingFilters(); });
+document.getElementById('bookingPaymentFilter').addEventListener('change', () => { bookingsPage = 1; applyBookingFilters(); });
+document.getElementById('bookingsPrevPage').addEventListener('click', () => { bookingsPage -= 1; applyBookingFilters(); });
+document.getElementById('bookingsNextPage').addEventListener('click', () => { bookingsPage += 1; applyBookingFilters(); });
 
 /* ---------------- Checkout ---------------- */
 function openCheckoutModal(booking) {
@@ -602,9 +621,9 @@ async function loadHandoverPanel() {
     try {
         document.getElementById('handoverDateLabel').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-        const [preview, allBookingsFresh, history] = await Promise.all([
+        const [preview, checkedOutData, history] = await Promise.all([
             apiGet('/api/handovers/preview'),
-            apiGet('/api/bookings'),
+            apiGet('/api/bookings?status=checked_out'),
             apiGet('/api/handovers')
         ]);
 
@@ -627,8 +646,7 @@ async function loadHandoverPanel() {
             <span class="value">${money(preview.cashTotal + preview.bankTotal + preview.onlineTotal)}</span>
         `;
 
-        const checkedOutBookings = allBookingsFresh
-            .filter((b) => b.status === 'checked_out')
+        const checkedOutBookings = checkedOutData.bookings
             .sort((a, b) => (b.checkout > a.checkout ? 1 : -1));
 
         document.getElementById('handoverLedgerBody').innerHTML = checkedOutBookings.map((b) => `
@@ -792,7 +810,17 @@ function applyTransactionFilters() {
 });
 
 function jumpToBooking(id) {
+    // Clear any active filters and jump to whichever page the target
+    // booking actually falls on, since the table only renders one page
+    // at a time now.
+    document.getElementById('bookingSearch').value = '';
+    document.getElementById('bookingStatusFilter').value = '';
+    document.getElementById('bookingPaymentFilter').value = '';
+    const indexInList = allBookings.findIndex((b) => String(b.id) === String(id));
+    bookingsPage = indexInList >= 0 ? Math.floor(indexInList / BOOKINGS_PAGE_SIZE) + 1 : 1;
+
     document.querySelector('.admin-tab[data-tab="bookings"]').click();
+    applyBookingFilters();
     setTimeout(() => {
         const toggleBtn = document.querySelector(`.details-toggle[data-target="details-${id}"]`);
         if (toggleBtn) {
