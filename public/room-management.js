@@ -66,17 +66,11 @@ const STATUS_META = {
 };
 
 /* ---------------- Theme ---------------- */
+// Always dark, matching the obsidian glassmorphism theme shared with
+// investor.html/admin.html — no light mode, no toggle.
 function initTheme() {
-    const saved = localStorage.getItem('horizonDashboardTheme');
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const dark = saved ? saved === 'dark' : prefersDark;
-    document.documentElement.classList.toggle('dark', dark);
+    document.documentElement.classList.add('dark');
 }
-
-document.getElementById('themeToggle').addEventListener('click', () => {
-    const isDark = document.documentElement.classList.toggle('dark');
-    localStorage.setItem('horizonDashboardTheme', isDark ? 'dark' : 'light');
-});
 
 /* ---------------- Login ---------------- */
 const loginPanel = document.getElementById('loginPanel');
