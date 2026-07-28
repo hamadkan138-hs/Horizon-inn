@@ -111,6 +111,7 @@ document.querySelectorAll('.admin-tab').forEach((btn) => {
         if (btn.dataset.tab === 'content') loadSiteContent();
         if (btn.dataset.tab === 'investors') loadInvestorsPanel();
         if (btn.dataset.tab === 'venues') loadVenuesPanel();
+        if (btn.dataset.tab === 'leads') loadLeadsPanel();
         if (btn.dataset.tab === 'bookings') { localStorage.setItem('horizonLastSeen', new Date().toISOString()); updateNotifyBell(); }
     });
 });
@@ -1527,6 +1528,67 @@ async function loadVenuesPanel() {
         await Promise.all([loadVenueSummaryCards(), loadVenueBookingsTables()]);
     } catch (err) { /* handled */ }
 }
+
+/* ---------------- Investor Leads (from public site "Become a Partner" CTA) ---------------- */
+const LEAD_STATUS_LABELS = {
+    new_lead: 'New Lead', contacted: 'Contacted', meeting_scheduled: 'Meeting Scheduled', closed: 'Closed'
+};
+const LEAD_STATUS_BADGE_CLASS = {
+    new_lead: 'details-toggle', contacted: 'confirm', meeting_scheduled: 'confirm', closed: 'cancel'
+};
+
+async function loadLeadsPanel() {
+    try {
+        const all = await apiGet('/api/investor-leads');
+        document.getElementById('leadsSummaryCards').innerHTML = `
+            <div class="summary-card"><span>Total Leads</span><strong>${all.length}</strong></div>
+            <div class="summary-card"><span>New</span><strong>${all.filter((l) => l.status === 'new_lead').length}</strong></div>
+            <div class="summary-card"><span>Meetings Scheduled</span><strong>${all.filter((l) => l.status === 'meeting_scheduled').length}</strong></div>
+            <div class="summary-card"><span>Closed</span><strong>${all.filter((l) => l.status === 'closed').length}</strong></div>
+        `;
+
+        const statusFilter = document.getElementById('leadsFilterStatus').value;
+        const filtered = statusFilter ? all.filter((l) => l.status === statusFilter) : all;
+        document.getElementById('leadsBody').innerHTML = filtered.length
+            ? filtered.map((l) => `
+                <tr>
+                    <td>${escapeHtml(l.fullName)}</td>
+                    <td>${escapeHtml(l.phone)}${l.email ? `<br><span style="color: var(--text-light); font-size: 0.8rem;">${escapeHtml(l.email)}</span>` : ''}</td>
+                    <td>${escapeHtml(l.location)}</td>
+                    <td>${escapeHtml(l.investmentTier)}</td>
+                    <td>${escapeHtml(l.investmentType)}</td>
+                    <td style="max-width: 220px; white-space: normal;">${escapeHtml(l.notes)}</td>
+                    <td>
+                        <select class="lead-status-select" data-id="${l.id}">
+                            ${Object.entries(LEAD_STATUS_LABELS).map(([val, label]) => `<option value="${val}" ${l.status === val ? 'selected' : ''}>${label}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td><button type="button" class="action-btn cancel lead-delete-btn" data-id="${l.id}">Delete</button></td>
+                </tr>
+            `).join('')
+            : '<tr><td colspan="8" style="text-align: center; color: var(--text-light);">No investor leads yet.</td></tr>';
+
+        document.querySelectorAll('.lead-status-select').forEach((sel) => {
+            sel.addEventListener('change', async () => {
+                try {
+                    await apiSend('PATCH', `/api/investor-leads/${sel.dataset.id}`, { status: sel.value });
+                    loadLeadsPanel();
+                } catch (err) { alert(err.message); }
+            });
+        });
+        document.querySelectorAll('.lead-delete-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('Delete this lead?')) return;
+                try {
+                    await apiSend('DELETE', `/api/investor-leads/${btn.dataset.id}`, {});
+                    loadLeadsPanel();
+                } catch (err) { alert(err.message); }
+            });
+        });
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('leadsFilterStatus').addEventListener('change', loadLeadsPanel);
 
 document.getElementById('reportExportBtn').addEventListener('click', () => {
     const rows = [['Period', 'Revenue', 'Expenses']];

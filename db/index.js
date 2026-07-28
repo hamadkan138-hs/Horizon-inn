@@ -456,6 +456,43 @@ function init() {
           active INTEGER NOT NULL DEFAULT 1
         )
       `);
+      await addColumnsIfMissing('venues', [
+        "amenities TEXT NOT NULL DEFAULT '[]'",
+        'capacity INTEGER NOT NULL DEFAULT 0',
+        "images TEXT NOT NULL DEFAULT '[]'"
+      ]);
+
+      // Public-facing catering add-ons shown in each facility's detail view —
+      // shared across venues rather than per-venue, since the same menu applies
+      // to any space (events pick items regardless of which room they booked).
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS catering_items (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          category TEXT NOT NULL,
+          name TEXT NOT NULL,
+          description TEXT NOT NULL DEFAULT '',
+          price REAL NOT NULL DEFAULT 0,
+          active INTEGER NOT NULL DEFAULT 1
+        )
+      `);
+
+      // Prospective-investor leads captured from the public site's "Become a
+      // Partner" CTA — a sales queue, deliberately separate from `investors`
+      // (real onboarded accounts with login access, capital ledgers, etc).
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS investor_leads (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          full_name TEXT NOT NULL,
+          phone TEXT NOT NULL DEFAULT '',
+          email TEXT NOT NULL DEFAULT '',
+          location TEXT NOT NULL DEFAULT '',
+          investment_tier TEXT NOT NULL DEFAULT '',
+          investment_type TEXT NOT NULL DEFAULT '',
+          notes TEXT NOT NULL DEFAULT '',
+          status TEXT NOT NULL DEFAULT 'new_lead',
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
 
       await db.execute(`
         CREATE TABLE IF NOT EXISTS venue_bookings (
@@ -492,20 +529,65 @@ function init() {
       await addColumnsIfMissing('expenses', ['venue_id INTEGER']);
 
       const SEED_VENUES = [
-        { slug: 'lawn-firepit', name: 'Outdoor Lawn & Fire Pit Courtyard', description: 'Private events, bonfires, and party bookings on the outdoor lawn with fire pit.', size_sqft: 2178, base_day_rate: 40000, is_buyout: 0 },
-        { slug: 'meeting-hall', name: 'Executive Meeting Hall', description: 'Corporate meetings, workshops, and presentations.', size_sqft: 600, base_day_rate: 25000, is_buyout: 0 },
-        { slug: 'cafe-lounge', name: 'Crescent Grove Cafe & Lounge', description: 'Daily dining, coffee, and event catering space.', size_sqft: 760, base_day_rate: 30000, is_buyout: 0 },
-        { slug: 'full-complex', name: 'Full Complex Buyout', description: 'Exclusive whole-facility day/evening rental.', size_sqft: 3538, base_day_rate: 75000, is_buyout: 1 }
+        {
+          slug: 'lawn-firepit', name: 'Outdoor Lawn & Fire Pit Courtyard',
+          description: 'Private events, bonfires, and party bookings on the outdoor lawn with fire pit.',
+          size_sqft: 2178, base_day_rate: 40000, is_buyout: 0, capacity: 80,
+          amenities: ['Stone Fire Pit', 'Canopy Sail Shade', 'Ambient String Lighting', 'Lounge Seating', 'Firewood Service', 'Outdoor Sound System']
+        },
+        {
+          slug: 'meeting-hall', name: 'Executive Meeting Hall',
+          description: 'Corporate meetings, workshops, and presentations.',
+          size_sqft: 600, base_day_rate: 25000, is_buyout: 0, capacity: 20,
+          amenities: ['Smart A/V & Projector', 'High-Speed Wi-Fi', 'Conference Seating for 12', 'Glass-Walled Privacy', 'Climate Control', 'Whiteboard & Flipchart']
+        },
+        {
+          slug: 'cafe-lounge', name: 'Crescent Grove Cafe & Lounge',
+          description: 'Daily dining, coffee, and event catering space.',
+          size_sqft: 760, base_day_rate: 30000, is_buyout: 0, capacity: 40,
+          amenities: ['Espresso Bar', 'Ambient String Lighting', 'Lounge & Table Seating', 'High-Speed Wi-Fi', 'Dedicated Bar Staff']
+        },
+        {
+          slug: 'full-complex', name: 'Full Complex Buyout',
+          description: 'Exclusive whole-facility day/evening rental.',
+          size_sqft: 3538, base_day_rate: 75000, is_buyout: 1, capacity: 140,
+          amenities: ['All Facility Amenities Included', 'Dedicated Event Manager', 'Dedicated Valet', 'Priority Catering Slots', 'Full Venue Exclusivity']
+        }
       ];
       for (const v of SEED_VENUES) {
         await db.execute({
           sql: `
-            INSERT INTO venues (slug, name, description, size_sqft, base_day_rate, is_buyout)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO venues (slug, name, description, size_sqft, base_day_rate, is_buyout, capacity, amenities)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(slug) DO NOTHING
           `,
-          args: [v.slug, v.name, v.description, v.size_sqft, v.base_day_rate, v.is_buyout]
+          args: [v.slug, v.name, v.description, v.size_sqft, v.base_day_rate, v.is_buyout, v.capacity, JSON.stringify(v.amenities)]
         });
+        // Backfill amenities/capacity on venues that already existed before this
+        // migration (created with the old, narrower schema) — only touches rows
+        // still at the untouched default, never overwrites an admin's own edits.
+        await db.execute({
+          sql: `UPDATE venues SET capacity = ?, amenities = ? WHERE slug = ? AND capacity = 0 AND amenities = '[]'`,
+          args: [v.capacity, JSON.stringify(v.amenities), v.slug]
+        });
+      }
+
+      const CATERING_ITEMS = [
+        { category: 'platters', name: 'Continental Platter', description: 'Assorted sandwiches, wraps, and finger food for up to 10 guests.', price: 6500 },
+        { category: 'platters', name: 'Live BBQ Add-On', description: 'Grilled seekh kebab, chicken tikka, and boti, served live at your event.', price: 950 },
+        { category: 'high_tea', name: 'Classic High Tea', description: 'Assorted pastries, samosas, and tea/coffee service for up to 10 guests.', price: 5500 },
+        { category: 'high_tea', name: 'Premium High Tea', description: 'Classic High Tea plus scones, cakes, and a mocktail selection.', price: 8500 },
+        { category: 'espresso_bar', name: 'Espresso Bar (per guest)', description: 'Barista-served espresso, cappuccino, and latte for the duration of your event.', price: 450 },
+        { category: 'espresso_bar', name: 'Specialty Coffee Add-On (per guest)', description: 'Adds cold brew and flavored syrups to the Espresso Bar package.', price: 200 }
+      ];
+      for (const item of CATERING_ITEMS) {
+        const existing = await db.execute({ sql: 'SELECT id FROM catering_items WHERE name = ?', args: [item.name] });
+        if (!existing.rows[0]) {
+          await db.execute({
+            sql: 'INSERT INTO catering_items (category, name, description, price) VALUES (?, ?, ?, ?)',
+            args: [item.category, item.name, item.description, item.price]
+          });
+        }
       }
 
       // Retire the old generic placeholder rooms now that Horizon Inn has real room
