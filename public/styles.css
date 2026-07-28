@@ -2910,3 +2910,161 @@ table.admin-table th {
     font-size: 1.05rem;
     color: var(--charcoal);
 }
+
+/* ---- Sales features: scarcity, add-ons, WhatsApp button, social proof ---- */
+.scarcity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fdf0e2;
+    color: #9a6c1f;
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-top: 6px;
+}
+
+.addon-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.addon-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--cream);
+    padding: 12px 14px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    border: 1px solid #ece8de;
+}
+
+.addon-option input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--gold);
+}
+
+.addon-option strong {
+    display: block;
+    color: var(--gold);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.whatsapp-float-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 999;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: #25d366;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.7rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    text-decoration: none;
+    transition: transform 0.25s ease;
+}
+
+.whatsapp-float-btn:hover {
+    transform: scale(1.08);
+}
+
+.social-proof-bar {
+    background: var(--charcoal);
+    padding: 30px 0;
+}
+
+.social-proof-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 20px;
+    text-align: center;
+}
+
+.social-proof-grid .stat-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    color: var(--gold);
+    display: block;
+}
+
+.social-proof-grid .stat-label {
+    color: #cfcac0;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+/* ---- Exit-intent offer popup ---- */
+.exit-intent-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 22, 31, 0.75);
+    z-index: 4000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.exit-intent-box {
+    background: var(--white);
+    max-width: 420px;
+    width: 100%;
+    padding: 40px 32px;
+    text-align: center;
+    position: relative;
+}
+
+.exit-intent-box .exit-close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--text-light);
+}
+
+.exit-intent-box h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+.exit-intent-code {
+    display: inline-block;
+    background: var(--cream);
+    border: 1px dashed var(--gold);
+    padding: 10px 20px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    margin: 16px 0;
+    color: var(--charcoal);
+}
+
+.exit-intent-box .cta-button {
+    color: var(--charcoal);
+    margin-top: 16px;
+}
+
+.exit-intent-box .cta-button:hover {
+    color: var(--charcoal);
+}
+
+@media (max-width: 640px) {
+    .addon-grid {
+        grid-template-columns: 1fr;
+    }
+}

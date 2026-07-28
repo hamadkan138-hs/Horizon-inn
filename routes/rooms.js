@@ -1,6 +1,6 @@
 const express = require('express');
 const { db } = require('../db');
-const { isRoomAvailable } = require('../lib/availability');
+const { isRoomAvailable, countOverlappingBookings } = require('../lib/availability');
 const { effectivePrice } = require('../lib/pricing');
 const adminAuth = require('../middleware/adminAuth');
 const { requireRole } = adminAuth;
@@ -30,6 +30,8 @@ router.get('/', async (req, res) => {
       }
       if (checkin && checkout) {
         parsed.available = await isRoomAvailable(room, checkin, checkout);
+        const overlapping = await countOverlappingBookings(room.id, checkin, checkout);
+        parsed.remainingUnits = Math.max(0, room.total_units - overlapping);
       }
       return parsed;
     }));

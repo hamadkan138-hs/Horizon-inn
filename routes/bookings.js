@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const { db } = require('../db');
 const adminAuth = require('../middleware/adminAuth');
 const { requireRole } = adminAuth;
@@ -15,8 +16,50 @@ const MARITAL_STATUSES = ['Single', 'Married', 'Divorced', 'Widowed'];
 const BOOKING_STATUSES = ['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled'];
 const PAYMENT_STATUSES = ['unpaid', 'partial', 'paid'];
 
+// Optional upsells offered at checkout — small, fixed catalog rather than a
+// full admin-managed table, since these rarely change.
+const HOTEL_ADDONS = {
+  breakfast_upgrade: { label: 'Breakfast Upgrade', amount: 800 },
+  airport_pickup: { label: 'Airport Pickup', amount: 2500 },
+  late_checkout: { label: 'Late Check-out (until 3 PM)', amount: 1000 },
+  crescent_dinner: { label: 'Crescent Grove Candlelight Dinner for Two', amount: 6500 }
+};
+
 function isValidDate(value) {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value));
+}
+
+// One "Promo / Gift Voucher / Referral Code" field on the booking form can
+// resolve to any of three different things — checked in this order. Each
+// means something different (a % discount vs. real prepaid money vs.
+// crediting a specific past guest), so the caller applies them differently.
+async function resolveDiscountCode(rawCode) {
+  const code = rawCode.trim().toUpperCase();
+  const today = new Date().toISOString().slice(0, 10);
+
+  const promoResult = await db.execute({ sql: 'SELECT * FROM promo_codes WHERE code = ? AND active = 1', args: [code] });
+  if (promoResult.rows[0]) {
+    const p = promoResult.rows[0];
+    if (p.expires_at && p.expires_at < today) return { error: 'This promo code has expired' };
+    if (p.max_uses !== null && Number(p.used_count) >= Number(p.max_uses)) {
+      return { error: 'This promo code has reached its usage limit' };
+    }
+    return { type: 'promo', id: Number(p.id), code, discountPercent: Number(p.discount_percent) };
+  }
+
+  const voucherResult = await db.execute({ sql: "SELECT * FROM gift_vouchers WHERE code = ? AND status = 'active'", args: [code] });
+  if (voucherResult.rows[0]) {
+    const v = voucherResult.rows[0];
+    if (v.expires_at && v.expires_at < today) return { error: 'This gift voucher has expired' };
+    return { type: 'voucher', id: Number(v.id), code, amount: Number(v.amount) };
+  }
+
+  const referralResult = await db.execute({ sql: 'SELECT * FROM bookings WHERE referral_code = ?', args: [code] });
+  if (referralResult.rows[0]) {
+    return { type: 'referral', referrerBookingId: Number(referralResult.rows[0].id), code, discountPercent: 10 };
+  }
+
+  return { error: 'That code was not recognized' };
 }
 
 // Create a booking (public)
@@ -25,7 +68,7 @@ router.post('/', async (req, res) => {
     const {
       name, email, phone, roomId, checkin, checkout, guests, specialRequests,
       cnic, maritalStatus, arrivalFrom, departureTo, arrivalTime, purposeOfStay, vehicleNumber, address,
-      paymentMethod, transactionId, termsAccepted
+      paymentMethod, transactionId, termsAccepted, addons, discountCode
     } = req.body;
 
     if (!name || !email || !phone || !roomId || !checkin || !checkout || !guests) {
@@ -51,6 +94,16 @@ router.post('/', async (req, res) => {
     }
     if (!termsAccepted) {
       return res.status(400).json({ error: 'You must accept the Terms & Conditions to book' });
+    }
+
+    // Resolve any discount code before creating the booking, so a bad code
+    // fails fast instead of leaving an orphan booking behind.
+    let discountResolution = null;
+    if (discountCode && discountCode.trim()) {
+      discountResolution = await resolveDiscountCode(discountCode);
+      if (discountResolution.error) {
+        return res.status(400).json({ error: discountResolution.error });
+      }
     }
 
     const roomResult = await db.execute({ sql: 'SELECT * FROM rooms WHERE id = ?', args: [roomId] });
@@ -85,7 +138,78 @@ router.post('/', async (req, res) => {
     const bookingId = Number(insertResult.lastInsertRowid);
     const year = new Date(checkin).getFullYear();
     const invoiceNumber = `INV-${year}-${String(bookingId).padStart(4, '0')}`;
-    await db.execute({ sql: 'UPDATE bookings SET invoice_number = ? WHERE id = ?', args: [invoiceNumber, bookingId] });
+    const referralCode = `${(name.replace(/[^a-zA-Z]/g, '').slice(0, 4) || 'STAY').toUpperCase()}${bookingId}`;
+    await db.execute({
+      sql: 'UPDATE bookings SET invoice_number = ?, referral_code = ? WHERE id = ?',
+      args: [invoiceNumber, referralCode, bookingId]
+    });
+
+    const selectedAddons = Array.isArray(addons) ? addons.filter((key) => HOTEL_ADDONS[key]) : [];
+    for (const key of selectedAddons) {
+      const addon = HOTEL_ADDONS[key];
+      await db.execute({
+        sql: "INSERT INTO booking_charges (booking_id, description, amount, category) VALUES (?, ?, ?, 'amenity')",
+        args: [bookingId, addon.label, addon.amount]
+      });
+    }
+
+    if (discountResolution) {
+      if (discountResolution.type === 'promo') {
+        const discountAmount = -Math.round(roomAmount * (discountResolution.discountPercent / 100));
+        await db.execute({
+          sql: "INSERT INTO booking_charges (booking_id, description, amount, category) VALUES (?, ?, ?, 'other')",
+          args: [bookingId, `Promo code ${discountResolution.code} (${discountResolution.discountPercent}% off)`, discountAmount]
+        });
+        await db.execute({ sql: 'UPDATE promo_codes SET used_count = used_count + 1 WHERE id = ?', args: [discountResolution.id] });
+      } else if (discountResolution.type === 'voucher') {
+        const addonsTotal = selectedAddons.reduce((sum, key) => sum + HOTEL_ADDONS[key].amount, 0);
+        const cappedAmount = Math.min(discountResolution.amount, roomAmount + addonsTotal);
+        await db.execute({
+          sql: "INSERT INTO booking_charges (booking_id, description, amount, category) VALUES (?, ?, ?, 'other')",
+          args: [bookingId, `Gift voucher ${discountResolution.code}`, -cappedAmount]
+        });
+        await db.execute({
+          sql: "UPDATE gift_vouchers SET status = 'redeemed', redeemed_booking_id = ?, redeemed_at = datetime('now') WHERE id = ?",
+          args: [bookingId, discountResolution.id]
+        });
+      } else if (discountResolution.type === 'referral') {
+        const discountAmount = -Math.round(roomAmount * (discountResolution.discountPercent / 100));
+        await db.execute({
+          sql: "INSERT INTO booking_charges (booking_id, description, amount, category) VALUES (?, ?, ?, 'other')",
+          args: [bookingId, `Referral discount (${discountResolution.discountPercent}% off)`, discountAmount]
+        });
+        await db.execute({ sql: 'UPDATE bookings SET referred_by_code = ? WHERE id = ?', args: [discountResolution.code, bookingId] });
+
+        // Reward the referrer with a Rs. 1,000 gift voucher, redeemable on their next stay.
+        const referrer = await db.execute({ sql: 'SELECT name, email, phone FROM bookings WHERE id = ?', args: [discountResolution.referrerBookingId] });
+        if (referrer.rows[0]) {
+          const rewardExpiry = new Date();
+          rewardExpiry.setFullYear(rewardExpiry.getFullYear() + 1);
+          await db.execute({
+            sql: `
+              INSERT INTO gift_vouchers (code, amount, purchaser_name, purchaser_email, purchaser_phone, recipient_name, payment_method, status, activated_at, expires_at)
+              VALUES (?, 1000, ?, ?, ?, ?, 'referral_reward', 'active', datetime('now'), ?)
+            `,
+            args: [
+              `GIFT-${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
+              referrer.rows[0].name, referrer.rows[0].email, referrer.rows[0].phone, referrer.rows[0].name,
+              rewardExpiry.toISOString().slice(0, 10)
+            ]
+          });
+        }
+      }
+    }
+
+    if (selectedAddons.length || discountResolution) {
+      await recomputeBookingTotal(bookingId);
+    }
+
+    // Best-effort: this booking completing means any open "abandoned" capture
+    // for the same guest wasn't actually abandoned — close it out.
+    await db.execute({
+      sql: "UPDATE abandoned_bookings SET status = 'converted', updated_at = datetime('now') WHERE status = 'open' AND (email = ? OR phone = ?)",
+      args: [email, phone]
+    });
 
     const bookingResult = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [bookingId] });
     const booking = bookingResult.rows[0];

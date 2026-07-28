@@ -16,6 +16,13 @@ async function loadSiteSettings() {
 
         if (settings.contact_address) document.getElementById('contactAddress').innerHTML = settings.contact_address.replace(/\n/g, '<br>');
         if (settings.contact_phone) document.getElementById('contactPhone').textContent = settings.contact_phone;
+        if (settings.contact_phone) {
+            const digits = settings.contact_phone.replace(/\D/g, '');
+            const waNumber = digits.startsWith('92') ? digits : `92${digits.replace(/^0/, '')}`;
+            const waBtn = document.getElementById('whatsappFloatBtn');
+            waBtn.href = `https://wa.me/${waNumber}?text=${encodeURIComponent('Hi! I have a question about booking a stay at Horizon Inn.')}`;
+            waBtn.style.display = 'flex';
+        }
         if (settings.contact_email) document.getElementById('contactEmailDisplay').textContent = settings.contact_email;
         if (settings.contact_hours) document.getElementById('contactHours').textContent = settings.contact_hours;
         if (settings.contact_map_embed) document.getElementById('contactMapEmbed').src = settings.contact_map_embed;
@@ -46,6 +53,17 @@ async function loadSiteSettings() {
                 image: 'https://horizon-inn.onrender.com/images/gallery/courtyard-lounge.jpg',
                 priceRange: 'PKR'
             });
+        }
+
+        if (settings.ga4_measurement_id) {
+            const gaScript = document.createElement('script');
+            gaScript.async = true;
+            gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${settings.ga4_measurement_id}`;
+            document.head.appendChild(gaScript);
+            window.dataLayer = window.dataLayer || [];
+            function gtag() { window.dataLayer.push(arguments); }
+            gtag('js', new Date());
+            gtag('config', settings.ga4_measurement_id);
         }
 
         if (settings.policies_text) {
@@ -210,6 +228,9 @@ function roomCardHtml(room, index) {
     const availabilityHtml = typeof room.available === 'boolean'
         ? `<span class="availability-badge ${room.available ? 'available' : 'unavailable'}">${room.available ? 'Available' : 'Fully booked'}</span>`
         : '';
+    const scarcityHtml = room.available && typeof room.remainingUnits === 'number' && room.remainingUnits <= 2
+        ? `<span class="scarcity-badge"><i class="fas fa-triangle-exclamation"></i> Only ${room.remainingUnits} left for these dates</span>`
+        : '';
 
     return `
         <div class="room-card fade-in-up ${room.featured ? 'featured' : ''}" style="animation-delay: ${index * 0.12}s">
@@ -219,6 +240,7 @@ function roomCardHtml(room, index) {
                 <h3>${room.name}</h3>
                 <p class="room-desc">${room.description}</p>
                 ${availabilityHtml}
+                ${scarcityHtml}
                 <ul class="room-features">${featuresHtml}</ul>
                 ${pricingTiersHtml(room, mattressFeature)}
                 <a href="#booking" class="book-btn ${room.featured ? 'primary' : ''}" data-room-id="${room.id}">Book Now</a>
@@ -449,7 +471,9 @@ bookingForm.addEventListener('submit', async (e) => {
         paymentMethod: paymentMethodSelect.value,
         transactionId: transactionIdInput.value,
         specialRequests: document.getElementById('special').value,
-        termsAccepted: document.getElementById('termsAccepted').checked
+        termsAccepted: document.getElementById('termsAccepted').checked,
+        addons: Array.from(document.querySelectorAll('input[name="addon"]:checked')).map((el) => el.value),
+        discountCode: document.getElementById('discountCode').value
     };
 
     const submitBtn = bookingForm.querySelector('.submit-btn');
@@ -467,7 +491,10 @@ bookingForm.addEventListener('submit', async (e) => {
             bookingMessage.textContent = data.error || 'Something went wrong. Please try again.';
             bookingMessage.classList.add('error');
         } else {
-            bookingMessage.textContent = `Booking request received! Confirmation #${data.booking.id} — status: Pending review. We'll confirm shortly by email at ${data.booking.email}.`;
+            const referralNote = data.booking.referral_code
+                ? ` Share your referral code <strong>${data.booking.referral_code}</strong> with friends — they get 10% off, and you get a Rs. 1,000 gift voucher when they book.`
+                : '';
+            bookingMessage.innerHTML = `Booking request received! Confirmation #${data.booking.id} — status: Pending review. We'll confirm shortly by email at ${data.booking.email}.${referralNote}`;
             bookingMessage.classList.add('success');
             bookingForm.reset();
             updatePaymentMethodUI();
@@ -871,3 +898,78 @@ document.getElementById('reviewForm')?.addEventListener('submit', async (e) => {
 });
 
 loadReviews();
+
+/* ==================================================================
+   Sales features: social proof bar, abandoned-booking capture,
+   exit-intent offer.
+   ================================================================== */
+async function loadSocialProof() {
+    const bar = document.getElementById('socialProofBar');
+    if (!bar) return;
+    try {
+        const res = await fetch('/api/stats/public');
+        if (!res.ok) throw new Error('Failed to load stats');
+        const stats = await res.json();
+        const items = [
+            { value: stats.guestsHosted, label: 'Guests Hosted' },
+            { value: stats.eventsHosted, label: 'Events at Crescent Grove' },
+            { value: stats.reviewCount, label: 'Guest Reviews' },
+            { value: stats.averageRating || '—', label: 'Average Rating' }
+        ].filter((item) => Number(item.value) > 0 || item.label === 'Average Rating' && stats.reviewCount > 0);
+        if (!items.length) return;
+        document.getElementById('socialProofGrid').innerHTML = items.map((item) => `
+            <div><span class="stat-value">${item.value}${item.label === 'Average Rating' ? ' / 5' : '+'}</span><span class="stat-label">${item.label}</span></div>
+        `).join('');
+        bar.style.display = 'block';
+    } catch (err) { /* fail silently — not critical */ }
+}
+loadSocialProof();
+
+// Abandoned-booking capture: once name + email + phone are all filled in,
+// record interest (debounced) so staff can follow up if the guest never
+// actually submits. Fires on blur of the phone field, the last of the three.
+let abandonedCaptureTimer = null;
+const abandonedPhoneInput = document.getElementById('phone');
+if (abandonedPhoneInput) {
+    abandonedPhoneInput.addEventListener('blur', () => {
+        clearTimeout(abandonedCaptureTimer);
+        abandonedCaptureTimer = setTimeout(() => {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            if (!name || !phone || (!email && !phone)) return;
+            fetch('/api/abandoned-bookings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name, email, phone,
+                    roomId: roomSelect.value ? Number(roomSelect.value) : null,
+                    checkin: checkinInput.value, checkout: checkoutInput.value
+                })
+            }).catch(() => { /* best-effort */ });
+        }, 600);
+    });
+}
+
+// Exit-intent offer — shown once per browser session, only when the mouse
+// leaves via the top of the viewport (the classic "about to close the tab"
+// signal), and never if the guest already reached the booking form.
+(() => {
+    const overlay = document.getElementById('exitIntentOverlay');
+    if (!overlay || sessionStorage.getItem('exitIntentShown')) return;
+
+    const trigger = (e) => {
+        if (e.clientY > 0) return;
+        const bookingSection = document.getElementById('booking');
+        const rect = bookingSection ? bookingSection.getBoundingClientRect() : null;
+        if (rect && rect.top < window.innerHeight) return; // already at/near the booking form
+        overlay.style.display = 'flex';
+        sessionStorage.setItem('exitIntentShown', '1');
+        document.removeEventListener('mouseleave', trigger);
+    };
+    document.addEventListener('mouseleave', trigger);
+
+    document.getElementById('exitIntentCloseBtn').addEventListener('click', () => { overlay.style.display = 'none'; });
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.style.display = 'none'; });
+    document.getElementById('exitIntentBookBtn').addEventListener('click', () => { overlay.style.display = 'none'; });
+})();

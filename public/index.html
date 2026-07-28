@@ -75,6 +75,13 @@
         <a href="#about" class="scroll-cue" aria-label="Scroll down"><i class="fas fa-chevron-down"></i></a>
     </section>
 
+    <!-- Social Proof Bar -->
+    <div class="social-proof-bar" id="socialProofBar" style="display: none;">
+        <div class="container">
+            <div class="social-proof-grid" id="socialProofGrid"></div>
+        </div>
+    </div>
+
     <!-- About Section -->
     <section class="about" id="about">
         <div class="container">
@@ -374,6 +381,36 @@
                     </fieldset>
 
                     <fieldset class="form-fieldset">
+                        <legend>Enhance Your Stay (optional)</legend>
+                        <div class="addon-grid">
+                            <label class="addon-option">
+                                <input type="checkbox" name="addon" value="breakfast_upgrade">
+                                <span>Breakfast Upgrade <strong>+Rs. 800</strong></span>
+                            </label>
+                            <label class="addon-option">
+                                <input type="checkbox" name="addon" value="airport_pickup">
+                                <span>Airport Pickup <strong>+Rs. 2,500</strong></span>
+                            </label>
+                            <label class="addon-option">
+                                <input type="checkbox" name="addon" value="late_checkout">
+                                <span>Late Check-out (until 3 PM) <strong>+Rs. 1,000</strong></span>
+                            </label>
+                            <label class="addon-option">
+                                <input type="checkbox" name="addon" value="crescent_dinner">
+                                <span>Crescent Grove Candlelight Dinner for Two <strong>+Rs. 6,500</strong></span>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="form-fieldset">
+                        <legend>Promo / Gift Voucher / Referral Code</legend>
+                        <div class="form-group">
+                            <label for="discountCode">Have a code?</label>
+                            <input type="text" id="discountCode" name="discountCode" placeholder="Optional">
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="form-fieldset">
                         <legend>Special Requests</legend>
                         <div class="form-group">
                             <label for="special">Anything else we should know?</label>
@@ -491,6 +528,7 @@
                         <li><a href="#booking">Booking</a></li>
                         <li><a href="#contact">Contact</a></li>
                         <li><a href="manage-booking.html">Manage My Booking</a></li>
+                        <li><a href="gift-voucher.html">Gift Vouchers</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
@@ -603,6 +641,23 @@
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- WhatsApp click-to-chat -->
+    <a href="#" class="whatsapp-float-btn" id="whatsappFloatBtn" style="display: none;" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+    <!-- Exit-intent offer -->
+    <div class="exit-intent-overlay" id="exitIntentOverlay">
+        <div class="exit-intent-box">
+            <button type="button" class="exit-close" id="exitIntentCloseBtn"><i class="fas fa-xmark"></i></button>
+            <h3>Before you go&hellip;</h3>
+            <p style="color: var(--text-light); font-size: 0.92rem;">Here's 5% off your stay if you book today.</p>
+            <div class="exit-intent-code">WELCOME5</div>
+            <p style="font-size: 0.8rem; color: var(--text-light);">Enter this code in the "Promo / Gift Voucher / Referral Code" field at checkout.</p>
+            <a href="#booking" class="cta-button" id="exitIntentBookBtn">Book Now</a>
         </div>
     </div>
 
