@@ -854,6 +854,42 @@ function ninetyDaysAgo() { const d = new Date(); d.setDate(d.getDate() - 90); re
 ================================================================ */
 let roiBaseline = { valuation: 0, monthlyNetIncome: 0, totalCapitalRaised: 0, ownerEquityPercent: 0 };
 
+let crescentGroveOccupancyChartInstance = null;
+
+async function loadCrescentGrovePerformance() {
+    let summary;
+    try {
+        summary = await apiGet('/api/venues/analytics');
+    } catch (err) {
+        // Venue backend genuinely unavailable (e.g. an older deployment) — hide the
+        // section rather than show broken/empty numbers.
+        const card = document.getElementById('crescentGrovePerformanceCard');
+        if (card) card.style.display = 'none';
+        return;
+    }
+
+    document.getElementById('crescentGroveSummaryCards').innerHTML = `
+        <div class="summary-card"><span>Gross Revenue (30d)</span><strong>${money(summary.grossRevenue)}</strong></div>
+        <div class="summary-card"><span>Net Profit Margin</span><strong>${summary.netMarginPct.toFixed(1)}%</strong></div>
+        <div class="summary-card"><span>Occupancy Rate</span><strong>${summary.occupancyPct}%</strong></div>
+    `;
+
+    // Chart rendering is kept separate: a chart failure should never take the
+    // real revenue/margin/occupancy numbers above down with it.
+    try {
+        if (crescentGroveOccupancyChartInstance) crescentGroveOccupancyChartInstance.destroy();
+        const entries = Object.entries(summary.perVenueOccupancy);
+        crescentGroveOccupancyChartInstance = new Chart(document.getElementById('crescentGroveOccupancyChart'), {
+            type: 'doughnut',
+            data: {
+                labels: entries.map(([name]) => name),
+                datasets: [{ data: entries.map(([, pct]) => pct), backgroundColor: ['#d4af37', '#e8c874', '#10b981', '#2f5faa'] }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        });
+    } catch (err) { /* chart library unavailable — summary cards above still show */ }
+}
+
 async function loadProjectsTab() {
     try {
         const [projects, valuation, summary90] = await Promise.all([
@@ -861,6 +897,7 @@ async function loadProjectsTab() {
             apiGet('/api/investor-accounts/valuation'),
             apiGet(`/api/investor/summary?from=${ninetyDaysAgo()}&to=${todayStr()}`)
         ]);
+        loadCrescentGrovePerformance();
 
         roiBaseline.valuation = valuation.current ? valuation.current.amount : 0;
         roiBaseline.monthlyNetIncome = summary90.netProfit / 3;

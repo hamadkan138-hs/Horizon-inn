@@ -440,6 +440,74 @@ function init() {
         )
       `);
 
+      // Crescent Grove Event & Hospitality Complex — bookable spaces (Lawn & Fire Pit,
+      // Meeting Hall, Cafe & Lounge, Full Complex Buyout) are day-rate rentals, not
+      // per-night room stays, so they get their own table rather than being forced
+      // into `rooms`' per-night/per-unit-pool model.
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS venues (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          slug TEXT UNIQUE NOT NULL,
+          name TEXT NOT NULL,
+          description TEXT NOT NULL DEFAULT '',
+          size_sqft INTEGER NOT NULL DEFAULT 0,
+          base_day_rate REAL NOT NULL DEFAULT 0,
+          is_buyout INTEGER NOT NULL DEFAULT 0,
+          active INTEGER NOT NULL DEFAULT 1
+        )
+      `);
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS venue_bookings (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          venue_id INTEGER NOT NULL REFERENCES venues(id),
+          customer_name TEXT NOT NULL,
+          customer_phone TEXT NOT NULL DEFAULT '',
+          customer_email TEXT NOT NULL DEFAULT '',
+          event_date TEXT NOT NULL,
+          event_type TEXT NOT NULL DEFAULT '',
+          guest_count INTEGER NOT NULL DEFAULT 0,
+          base_rate REAL NOT NULL DEFAULT 0,
+          line_items TEXT NOT NULL DEFAULT '[]',
+          security_deposit REAL NOT NULL DEFAULT 0,
+          discount_amount REAL NOT NULL DEFAULT 0,
+          gst_percent REAL NOT NULL DEFAULT 0,
+          gst_amount REAL NOT NULL DEFAULT 0,
+          total_amount REAL NOT NULL DEFAULT 0,
+          payment_method TEXT NOT NULL DEFAULT 'cash',
+          transaction_id TEXT DEFAULT '',
+          status TEXT NOT NULL DEFAULT 'pending_cash',
+          booking_code TEXT UNIQUE NOT NULL,
+          notes TEXT DEFAULT '',
+          created_by TEXT DEFAULT '',
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          verified_by TEXT DEFAULT '',
+          verified_at TEXT
+        )
+      `);
+
+      // Lets investor reports split event-complex operating costs out from the
+      // hotel's own expenses. NULL (the existing default) means unchanged, existing
+      // hotel-side behavior; only rows explicitly tagged count toward venue P&L.
+      await addColumnsIfMissing('expenses', ['venue_id INTEGER']);
+
+      const SEED_VENUES = [
+        { slug: 'lawn-firepit', name: 'Outdoor Lawn & Fire Pit Courtyard', description: 'Private events, bonfires, and party bookings on the outdoor lawn with fire pit.', size_sqft: 2178, base_day_rate: 40000, is_buyout: 0 },
+        { slug: 'meeting-hall', name: 'Executive Meeting Hall', description: 'Corporate meetings, workshops, and presentations.', size_sqft: 600, base_day_rate: 25000, is_buyout: 0 },
+        { slug: 'cafe-lounge', name: 'Crescent Grove Cafe & Lounge', description: 'Daily dining, coffee, and event catering space.', size_sqft: 760, base_day_rate: 30000, is_buyout: 0 },
+        { slug: 'full-complex', name: 'Full Complex Buyout', description: 'Exclusive whole-facility day/evening rental.', size_sqft: 3538, base_day_rate: 75000, is_buyout: 1 }
+      ];
+      for (const v of SEED_VENUES) {
+        await db.execute({
+          sql: `
+            INSERT INTO venues (slug, name, description, size_sqft, base_day_rate, is_buyout)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(slug) DO NOTHING
+          `,
+          args: [v.slug, v.name, v.description, v.size_sqft, v.base_day_rate, v.is_buyout]
+        });
+      }
+
       // Retire the old generic placeholder rooms now that Horizon Inn has real room
       // content. Delete them if nothing ever booked them; otherwise just hide them from
       // the public listing (active = 0) so any historical booking still resolves fine.
