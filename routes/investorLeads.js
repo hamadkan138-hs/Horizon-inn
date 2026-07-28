@@ -11,7 +11,8 @@ function parseLead(row) {
   return {
     id: Number(row.id), fullName: row.full_name, phone: row.phone, email: row.email,
     location: row.location, investmentTier: row.investment_tier, investmentType: row.investment_type,
-    notes: row.notes, status: row.status, createdAt: row.created_at
+    notes: row.notes, status: row.status, createdAt: row.created_at,
+    convertedInvestorId: row.converted_investor_id ? Number(row.converted_investor_id) : null
   };
 }
 
@@ -55,7 +56,7 @@ router.get('/', async (req, res) => {
 
 router.patch('/:id', async (req, res) => {
   try {
-    const { status, notes } = req.body;
+    const { status, notes, convertedInvestorId } = req.body;
     if (status !== undefined && !VALID_STATUSES.includes(status)) {
       return res.status(400).json({ error: `status must be one of: ${VALID_STATUSES.join(', ')}` });
     }
@@ -63,6 +64,7 @@ router.patch('/:id', async (req, res) => {
     const args = [];
     if (status !== undefined) { updates.push('status = ?'); args.push(status); }
     if (notes !== undefined) { updates.push('notes = ?'); args.push(notes); }
+    if (convertedInvestorId !== undefined) { updates.push('converted_investor_id = ?'); args.push(convertedInvestorId); }
     if (!updates.length) return res.status(400).json({ error: 'No fields to update' });
     args.push(req.params.id);
     await db.execute({ sql: `UPDATE investor_leads SET ${updates.join(', ')} WHERE id = ?`, args });

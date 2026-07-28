@@ -493,6 +493,7 @@ function init() {
           created_at TEXT NOT NULL DEFAULT (datetime('now'))
         )
       `);
+      await addColumnsIfMissing('investor_leads', ['converted_investor_id INTEGER']);
 
       await db.execute(`
         CREATE TABLE IF NOT EXISTS venue_bookings (

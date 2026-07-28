@@ -88,7 +88,12 @@ loginForm.addEventListener('submit', async (e) => {
     const token = btoa(`${user}:${pass}`);
     try {
         const res = await fetch('/api/auth/me', { headers: { Authorization: `Basic ${token}` } });
-        if (!res.ok) { loginMessage.textContent = 'Invalid username or password.'; return; }
+        if (!res.ok) {
+            loginMessage.textContent = res.status === 429
+                ? (await res.json().catch(() => ({}))).error || 'Too many failed attempts. Please try again later.'
+                : 'Invalid username or password.';
+            return;
+        }
         localStorage.setItem('horizonAdminAuth', token);
         loginMessage.textContent = '';
         showKiosk();
