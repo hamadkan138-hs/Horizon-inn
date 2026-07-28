@@ -41,12 +41,85 @@
 
         /* Project cards */
         .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        .project-card { overflow: hidden; padding: 0 !important; display: flex; flex-direction: column; }
-        .project-card .project-media { height: 150px; background: linear-gradient(135deg, var(--ink-2), rgba(212,175,55,0.18)); display: flex; align-items: center; justify-content: center; color: var(--gold-light); font-size: 2rem; }
+        .project-card {
+            overflow: hidden; padding: 0 !important; display: flex; flex-direction: column;
+            opacity: 0; animation: cardRise 0.5s ease forwards;
+        }
+        @keyframes cardRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        .project-card:nth-child(1) { animation-delay: 0.05s; }
+        .project-card:nth-child(2) { animation-delay: 0.15s; }
+        .project-card:nth-child(3) { animation-delay: 0.25s; }
+        .project-card:nth-child(4) { animation-delay: 0.35s; }
+        .project-card:nth-child(n+5) { animation-delay: 0.45s; }
+
+        /* Auto-cycling crossfade + slow Ken-Burns zoom gallery. Pure CSS
+           (staggered animation-delay per slide) so it keeps running
+           correctly no matter when/how often the card is re-rendered —
+           no JS timer or state to keep in sync. */
+        .project-media { position: relative; height: 190px; overflow: hidden; cursor: pointer; color: var(--gold-light); background: linear-gradient(135deg, var(--ink-2), rgba(212,175,55,0.18)); transition: transform 0.4s ease; }
+        .project-media.no-image { display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+        .project-media .media-slide {
+            position: absolute; inset: 0; background-size: cover; background-position: center;
+            opacity: 0; animation: mediaSlideCycle linear infinite;
+        }
+        .project-media .media-slide.only { animation: mediaSlideZoom 14s ease-in-out infinite; opacity: 1; }
+        @keyframes mediaSlideZoom { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+        @keyframes mediaSlideCycle {
+            0% { opacity: 0; transform: scale(1.06); }
+            4% { opacity: 1; }
+            22% { opacity: 1; transform: scale(1.12); }
+            28% { opacity: 0; transform: scale(1.12); }
+            100% { opacity: 0; }
+        }
+        .project-media .media-count {
+            position: absolute; bottom: 10px; right: 12px; z-index: 2;
+            background: rgba(10,11,14,0.6); backdrop-filter: blur(6px); color: var(--text-1);
+            font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .project-media .media-expand {
+            position: absolute; top: 10px; right: 12px; z-index: 2; color: var(--text-1); font-size: 0.9rem;
+            opacity: 0; transition: opacity 0.25s ease;
+        }
+        .project-card:hover .media-expand { opacity: 0.85; }
+        .project-card:hover .project-media { transform: scale(1.01); }
+
         .project-card .project-body { padding: 20px; }
         .project-card h4 { color: var(--text-1); font-weight: 700; margin-bottom: 4px; }
         .project-card .meta-row { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-2); margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--hair); }
         .status-chip { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; background: rgba(212,175,55,0.15); color: var(--gold-light); }
+
+        /* Lightbox */
+        #projectLightboxOverlay { z-index: 3000; }
+        .lightbox-box {
+            background: rgba(10,11,14,0.92); backdrop-filter: blur(20px); border: 1px solid var(--hair);
+            border-radius: 16px; max-width: 900px; width: 100%; padding: 0; overflow: hidden;
+        }
+        .lightbox-image-wrap { position: relative; width: 100%; height: min(62vh, 560px); background: var(--ink-2); }
+        .lightbox-image-wrap img {
+            width: 100%; height: 100%; object-fit: contain; display: block;
+            animation: lightboxFade 0.35s ease;
+        }
+        @keyframes lightboxFade { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        .lightbox-nav {
+            position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
+            background: rgba(10,11,14,0.55); border: 1px solid var(--hair); color: var(--text-1);
+            width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: background 0.25s ease, transform 0.25s ease;
+        }
+        .lightbox-nav:hover { background: rgba(212,175,55,0.25); transform: translateY(-50%) scale(1.08); }
+        .lightbox-nav.prev { left: 14px; }
+        .lightbox-nav.next { right: 14px; }
+        .lightbox-close {
+            position: absolute; top: 12px; right: 14px; z-index: 3; color: var(--text-1); font-size: 1.1rem;
+            background: rgba(10,11,14,0.55); border: 1px solid var(--hair); width: 36px; height: 36px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
+        .lightbox-caption { padding: 16px 22px; }
+        .lightbox-caption p { color: var(--text-2); font-size: 0.85rem; margin-top: 4px; }
+        .lightbox-dots { display: flex; gap: 6px; justify-content: center; padding: 14px 0; }
+        .lightbox-dots span { width: 7px; height: 7px; border-radius: 50%; background: var(--hair); cursor: pointer; transition: background 0.25s ease, transform 0.25s ease; }
+        .lightbox-dots span.active { background: var(--gold); transform: scale(1.25); }
 
         /* ROI calculator */
         .roi-calc-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 30px; }
@@ -429,6 +502,23 @@
                 </div>
                 <p class="form-message" id="withdrawMessage"></p>
             </form>
+        </div>
+    </div>
+
+    <!-- Project image lightbox -->
+    <div class="modal-overlay" id="projectLightboxOverlay" style="display: none;">
+        <div class="modal-box lightbox-box">
+            <div class="lightbox-image-wrap">
+                <button type="button" class="lightbox-close" id="lightboxCloseBtn"><i class="fas fa-xmark"></i></button>
+                <button type="button" class="lightbox-nav prev" id="lightboxPrevBtn"><i class="fas fa-chevron-left"></i></button>
+                <img id="lightboxImage" src="" alt="">
+                <button type="button" class="lightbox-nav next" id="lightboxNextBtn"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div class="lightbox-dots" id="lightboxDots"></div>
+            <div class="lightbox-caption">
+                <h4 id="lightboxTitle" style="color: var(--text-1);"></h4>
+                <p id="lightboxSubtitle"></p>
+            </div>
         </div>
     </div>
 
