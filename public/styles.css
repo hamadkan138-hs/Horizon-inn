@@ -2037,8 +2037,9 @@ table.admin-table th {
 }
 
 /* ---------------- Front Desk Kiosk ---------------- */
+/* Front Desk Kiosk — dark obsidian theme, matching Admin/Room Management */
 .kiosk-body {
-    background: var(--cream);
+    background: #0a0b0e;
     min-height: 100vh;
 }
 
@@ -2048,23 +2049,28 @@ table.admin-table th {
     align-items: flex-start;
     justify-content: center;
     padding: 60px 20px;
+    position: relative;
+    z-index: 1;
 }
 
 .kiosk-signed-in {
     text-align: center;
     font-size: 0.85rem;
-    color: var(--text-light);
+    color: #9ca3af;
     margin-bottom: 20px;
 }
 
 .kiosk-signed-in a {
-    color: var(--gold);
+    color: #d4af37;
     text-decoration: underline;
 }
 
 .kiosk-card {
-    background: var(--white);
-    box-shadow: var(--shadow-lg);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    border-radius: 16px;
     padding: 48px;
     max-width: 520px;
     width: 100%;
@@ -2079,30 +2085,36 @@ table.admin-table th {
 .kiosk-center h1 {
     font-size: 1.7rem;
     margin: 16px 0 6px;
-    color: var(--charcoal);
+    color: #ffffff;
 }
 
 .kiosk-center h2 {
     font-size: 1.5rem;
     margin: 12px 0 6px;
     text-align: center;
+    color: #ffffff;
 }
 
 .kiosk-card h2::after {
     display: none;
 }
 
+.kiosk-card h1,
+.kiosk-card h2 {
+    color: #ffffff;
+}
+
 .kiosk-icon {
     font-size: 2.6rem;
-    color: var(--gold);
+    color: #d4af37;
 }
 
 .kiosk-icon-success {
-    color: #3d7a4f;
+    color: #10b981;
 }
 
 .kiosk-sub {
-    color: var(--text-light);
+    color: #9ca3af;
     font-size: 0.95rem;
     margin-bottom: 28px;
 }
@@ -2117,15 +2129,21 @@ table.admin-table th {
     padding: 18px 16px;
     font-size: 1.3rem;
     text-align: center;
-    border: 1px solid #d8d4c9;
-    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    color: #ffffff;
     font-family: inherit;
     letter-spacing: 0.04em;
 }
 
+.kiosk-input::placeholder {
+    color: #6b7280;
+}
+
 .kiosk-input:focus {
     outline: none;
-    border-color: var(--gold);
+    border-color: #d4af37;
 }
 
 .kiosk-btn-lg {
@@ -2136,9 +2154,9 @@ table.admin-table th {
     letter-spacing: 0.06em;
     text-transform: uppercase;
     border: none;
-    border-radius: var(--radius);
+    border-radius: 999px;
     cursor: pointer;
-    transition: background var(--transition), opacity var(--transition);
+    transition: background 0.25s ease, opacity 0.25s ease, transform 0.25s ease;
 }
 
 .kiosk-btn-lg:disabled {
@@ -2147,27 +2165,29 @@ table.admin-table th {
 }
 
 .kiosk-btn-gold {
-    background: var(--gold);
-    color: var(--charcoal);
+    background: #d4af37;
+    color: #0a0b0e;
 }
 
 .kiosk-btn-gold:hover {
-    background: var(--gold-soft);
+    background: #e8c874;
+    transform: translateY(-2px);
 }
 
 .kiosk-btn-dark {
-    background: var(--charcoal);
-    color: var(--white);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff;
 }
 
 .kiosk-btn-dark:hover {
-    background: var(--charcoal-soft);
+    background: rgba(255, 255, 255, 0.14);
 }
 
 .kiosk-back-btn {
     background: none;
     border: none;
-    color: var(--text-light);
+    color: #9ca3af;
     font-size: 0.85rem;
     cursor: pointer;
     display: inline-flex;
@@ -2178,14 +2198,16 @@ table.admin-table th {
 }
 
 .kiosk-back-btn:hover {
-    color: var(--gold);
+    color: #d4af37;
 }
 
 .kiosk-guest-summary {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
-    background: #f8f7f3;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
     padding: 20px;
     margin-bottom: 24px;
 }
@@ -2200,16 +2222,32 @@ table.admin-table th {
     font-size: 0.72rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--text-light);
+    color: #9ca3af;
 }
 
 .kiosk-guest-summary strong {
     font-size: 1.05rem;
-    color: var(--charcoal);
+    color: #ffffff;
 }
 
 .kiosk-form .form-group {
     margin-bottom: 18px;
+}
+
+.kiosk-form label {
+    color: #9ca3af;
+}
+
+.kiosk-form input,
+.kiosk-form select,
+.kiosk-form textarea {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+}
+
+.kiosk-form input::placeholder {
+    color: #6b7280;
 }
 
 /* ==================================================================

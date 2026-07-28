@@ -1532,6 +1532,7 @@ async function loadVenuesPanel() {
 }
 
 /* ---------------- Investor Leads (from public site "Become a Partner" CTA) ---------------- */
+let pendingLeadConversion = null;
 const LEAD_STATUS_LABELS = {
     new_lead: 'New Lead', contacted: 'Contacted', meeting_scheduled: 'Meeting Scheduled', closed: 'Closed'
 };
@@ -1565,7 +1566,12 @@ async function loadLeadsPanel() {
                             ${Object.entries(LEAD_STATUS_LABELS).map(([val, label]) => `<option value="${val}" ${l.status === val ? 'selected' : ''}>${label}</option>`).join('')}
                         </select>
                     </td>
-                    <td><button type="button" class="action-btn cancel lead-delete-btn" data-id="${l.id}">Delete</button></td>
+                    <td>
+                        ${l.convertedInvestorId
+                            ? `<span class="action-btn confirm" style="cursor: default;">Investor #${l.convertedInvestorId}</span>`
+                            : `<button type="button" class="action-btn confirm lead-convert-btn" data-id="${l.id}" data-name="${escapeHtml(l.fullName)}" data-tier="${escapeHtml(l.investmentTier)}">Convert to Investor</button>`}
+                        <button type="button" class="action-btn cancel lead-delete-btn" data-id="${l.id}">Delete</button>
+                    </td>
                 </tr>
             `).join('')
             : '<tr><td colspan="8" style="text-align: center; color: var(--text-light);">No investor leads yet.</td></tr>';
@@ -1585,6 +1591,20 @@ async function loadLeadsPanel() {
                     await apiSend('DELETE', `/api/investor-leads/${btn.dataset.id}`, {});
                     loadLeadsPanel();
                 } catch (err) { alert(err.message); }
+            });
+        });
+
+        const LEAD_TIER_TO_CAPITAL = { '1M': 1000000, '5M': 5000000, '10M': 10000000 };
+        document.querySelectorAll('.lead-convert-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                pendingLeadConversion = { id: btn.dataset.id };
+                const slug = btn.dataset.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+                document.getElementById('newInvestorUsername').value = slug;
+                document.getElementById('newInvestorCapital').value = LEAD_TIER_TO_CAPITAL[btn.dataset.tier] || '';
+                const msg = document.getElementById('investorAccountMessage');
+                msg.textContent = `Creating an investor account for lead "${btn.dataset.name}" — fill in the remaining details and submit.`;
+                msg.className = 'form-message';
+                document.querySelector('.admin-tab[data-tab="investors"]').click();
             });
         });
     } catch (err) { /* handled */ }
@@ -1901,7 +1921,17 @@ document.getElementById('investorAccountForm').addEventListener('submit', async 
             capitalInvested: Number(document.getElementById('newInvestorCapital').value),
             lockupMonths: Number(document.getElementById('newInvestorLockup').value) || 6
         });
-        msg.textContent = `Created ${result.investorCode} — username "${result.username}", password "${result.generatedPassword}". Copy this now — it will not be shown again.`;
+        let extraNote = '';
+        if (pendingLeadConversion) {
+            try {
+                await apiSend('PATCH', `/api/investor-leads/${pendingLeadConversion.id}`, {
+                    status: 'closed', convertedInvestorId: result.id
+                });
+                extraNote = ' Lead marked as closed and linked to this account.';
+            } catch (err) { /* account was still created; linking is best-effort */ }
+            pendingLeadConversion = null;
+        }
+        msg.textContent = `Created ${result.investorCode} — username "${result.username}", password "${result.generatedPassword}". Copy this now — it will not be shown again.${extraNote}`;
         msg.className = 'form-message success';
         e.target.reset();
         document.getElementById('newInvestorLockup').value = 6;
@@ -2028,7 +2058,12 @@ loginForm.addEventListener('submit', async (e) => {
 
     try {
         const res = await fetch('/api/auth/me', { headers: { Authorization: `Basic ${token}` } });
-        if (!res.ok) { loginMessage.textContent = 'Invalid username or password.'; return; }
+        if (!res.ok) {
+            loginMessage.textContent = res.status === 429
+                ? (await res.json().catch(() => ({}))).error || 'Too many failed attempts. Please try again later.'
+                : 'Invalid username or password.';
+            return;
+        }
         localStorage.setItem('horizonAdminAuth', token);
         loginMessage.textContent = '';
         showDashboard();

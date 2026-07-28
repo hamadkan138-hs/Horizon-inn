@@ -334,7 +334,12 @@ loginForm.addEventListener('submit', async (e) => {
 
     try {
         const res = await fetch('/api/auth/me', { headers: { Authorization: `Basic ${token}` } });
-        if (!res.ok) { loginMessage.textContent = 'Invalid username or password.'; return; }
+        if (!res.ok) {
+            loginMessage.textContent = res.status === 429
+                ? (await res.json().catch(() => ({}))).error || 'Too many failed attempts. Please try again later.'
+                : 'Invalid username or password.';
+            return;
+        }
         const who = await res.json();
         if (!['admin', 'investor'].includes(who.role)) {
             loginMessage.textContent = 'This account does not have investor access.';
