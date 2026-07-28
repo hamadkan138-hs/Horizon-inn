@@ -642,9 +642,11 @@ async function loadHandoverPanel() {
             <li>
                 <span class="item-label">
                     ${formatPKT(h.created_at)}
+                    <span class="status-pill ${h.receiver_type === 'staff' ? 'active-pending' : 'handed-over'}" style="margin-left: 8px;">${h.receiver_type === 'staff' ? 'Custody Transfer' : 'Settled'}</span>
                     <span class="item-meta">
                         ${h.booking_count} booking(s) &middot; Cash ${money(h.cash_total)} &middot; Bank ${money(h.bank_total)} &middot; Online ${money(h.online_total)}
                         &middot; Expenses ${money(h.expenses_total)} &middot; By ${escapeHtml(h.staff_name)} &rarr; ${escapeHtml(h.receiver_type)}: ${escapeHtml(h.receiver_name)}
+                        ${h.receiver_type === 'staff' ? ' &middot; shift handover only — still counted in the pending total until banked/paid out' : ''}
                     </span>
                 </span>
                 <span class="item-amount">${money(h.net_cash_handed + h.bank_total + h.online_total)}</span>
