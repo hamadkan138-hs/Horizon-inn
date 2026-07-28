@@ -281,9 +281,17 @@ document.getElementById('newGuestForm').addEventListener('submit', async (e) => 
     try {
         const result = await apiSend('POST', '/api/bookings/quick', {
             guestName: document.getElementById('newName').value,
+            email: document.getElementById('newEmail').value,
             phone: document.getElementById('newPhone').value,
             cnic: document.getElementById('newCnic').value,
+            maritalStatus: document.getElementById('newMaritalStatus').value,
+            guests: document.getElementById('newGuestsCount').value,
             address: document.getElementById('newAddress').value,
+            purposeOfStay: document.getElementById('newPurposeOfStay').value,
+            arrivalTime: document.getElementById('newArrivalTime').value,
+            vehicleNumber: document.getElementById('newVehicleNumber').value,
+            arrivalFrom: document.getElementById('newArrivalFrom').value,
+            departureTo: document.getElementById('newDepartureTo').value,
             roomId, checkin, checkout,
             checkInNow: true
         });
