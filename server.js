@@ -22,6 +22,7 @@ const physicalRoomsRouter = require('./routes/physicalRooms');
 const investorAccountsRouter = require('./routes/investorAccounts');
 const venuesRouter = require('./routes/venues');
 const investorLeadsRouter = require('./routes/investorLeads');
+const reviewsRouter = require('./routes/reviews');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -47,6 +48,7 @@ app.use('/api/physical-rooms', physicalRoomsRouter);
 app.use('/api/investor-accounts', investorAccountsRouter);
 app.use('/api/venues', venuesRouter);
 app.use('/api/investor-leads', investorLeadsRouter);
+app.use('/api/reviews', reviewsRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

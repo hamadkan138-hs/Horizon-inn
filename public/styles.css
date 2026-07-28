@@ -2799,3 +2799,109 @@ table.admin-table th {
         grid-template-columns: 1fr;
     }
 }
+
+/* ---- Guest Reviews (public site) ---- */
+.reviews-section {
+    padding: 100px 0;
+    background: var(--cream);
+}
+
+.review-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin: 40px 0;
+}
+
+.review-card {
+    background: var(--white);
+    padding: 28px;
+    box-shadow: var(--shadow);
+    border-top: 3px solid var(--gold);
+}
+
+.review-card .review-stars {
+    color: var(--gold);
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+}
+
+.review-card .review-comment {
+    color: var(--text-dark);
+    font-size: 0.92rem;
+    line-height: 1.6;
+    margin-bottom: 16px;
+    font-style: italic;
+}
+
+.review-card .review-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+    color: var(--text-light);
+    border-top: 1px solid #eee;
+    padding-top: 12px;
+}
+
+.review-card .review-source {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.68rem;
+    background: #f4f1e8;
+    padding: 3px 9px;
+    border-radius: 999px;
+}
+
+.review-cta {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.review-form {
+    max-width: 520px;
+    margin: 30px auto 0;
+    background: var(--white);
+    padding: 32px;
+    box-shadow: var(--shadow);
+}
+
+.star-picker {
+    font-size: 1.6rem;
+    color: #d8d4c9;
+    display: flex;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.star-picker i.active {
+    color: var(--gold);
+}
+
+/* ---- Manage My Booking (guest self-service) ---- */
+.booking-result-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    background: var(--cream);
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.booking-result-summary div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.booking-result-summary .label {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-light);
+}
+
+.booking-result-summary strong {
+    font-size: 1.05rem;
+    color: var(--charcoal);
+}

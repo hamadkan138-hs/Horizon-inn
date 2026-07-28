@@ -112,6 +112,7 @@ document.querySelectorAll('.admin-tab').forEach((btn) => {
         if (btn.dataset.tab === 'investors') loadInvestorsPanel();
         if (btn.dataset.tab === 'venues') loadVenuesPanel();
         if (btn.dataset.tab === 'leads') loadLeadsPanel();
+        if (btn.dataset.tab === 'reviews') loadReviewsPanel();
         if (btn.dataset.tab === 'bookings') { localStorage.setItem('horizonLastSeen', new Date().toISOString()); updateNotifyBell(); }
     });
 });
@@ -153,7 +154,10 @@ function bookingRowHtml(b) {
     return `
         <tr>
             <td>${b.id}</td>
-            <td>${escapeHtml(b.name)}<br><small>${escapeHtml(b.email)} &middot; ${escapeHtml(b.phone)}</small></td>
+            <td>
+                ${escapeHtml(b.name)}<br><small>${escapeHtml(b.email)} &middot; ${escapeHtml(b.phone)}</small>
+                ${b.cancellation_requested_at ? '<br><span class="status-pill cancelled" style="margin-top: 4px; display: inline-block;">Cancellation Requested</span>' : ''}
+            </td>
             <td>${escapeHtml(b.room_name)}</td>
             <td>${b.checkin}</td>
             <td>${b.checkout}</td>
@@ -2077,3 +2081,79 @@ if (localStorage.getItem('horizonAdminAuth')) {
 } else {
     showLogin();
 }
+
+/* ---------------- Reviews moderation ---------------- */
+const REVIEW_SOURCE_LABELS_ADMIN = { site: 'Site', google: 'Google', tripadvisor: 'TripAdvisor' };
+
+async function loadReviewsPanel() {
+    try {
+        const all = await apiGet('/api/reviews');
+        document.getElementById('reviewsSummaryCards').innerHTML = `
+            <div class="summary-card"><span>Total Reviews</span><strong>${all.length}</strong></div>
+            <div class="summary-card"><span>Pending</span><strong>${all.filter((r) => r.status === 'pending').length}</strong></div>
+            <div class="summary-card"><span>Approved</span><strong>${all.filter((r) => r.status === 'approved').length}</strong></div>
+            <div class="summary-card"><span>Average Rating</span><strong>${all.length ? (all.reduce((s, r) => s + r.rating, 0) / all.length).toFixed(1) : '—'}</strong></div>
+        `;
+
+        const statusFilter = document.getElementById('reviewsFilterStatus').value;
+        const filtered = statusFilter ? all.filter((r) => r.status === statusFilter) : all;
+        document.getElementById('reviewsBody').innerHTML = filtered.length
+            ? filtered.map((r) => `
+                <tr>
+                    <td>${escapeHtml(r.guestName)}</td>
+                    <td>${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</td>
+                    <td style="max-width: 260px; white-space: normal;">${escapeHtml(r.comment)}</td>
+                    <td>${REVIEW_SOURCE_LABELS_ADMIN[r.source] || r.source}</td>
+                    <td>
+                        <select class="review-status-select" data-id="${r.id}">
+                            <option value="pending" ${r.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="approved" ${r.status === 'approved' ? 'selected' : ''}>Approved</option>
+                            <option value="rejected" ${r.status === 'rejected' ? 'selected' : ''}>Rejected</option>
+                        </select>
+                    </td>
+                    <td><button type="button" class="action-btn cancel review-delete-btn" data-id="${r.id}">Delete</button></td>
+                </tr>
+            `).join('')
+            : '<tr><td colspan="6" style="text-align: center; color: var(--text-light);">No reviews yet.</td></tr>';
+
+        document.querySelectorAll('.review-status-select').forEach((sel) => {
+            sel.addEventListener('change', async () => {
+                try {
+                    await apiSend('PATCH', `/api/reviews/${sel.dataset.id}`, { status: sel.value });
+                    loadReviewsPanel();
+                } catch (err) { alert(err.message); }
+            });
+        });
+        document.querySelectorAll('.review-delete-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('Delete this review?')) return;
+                try {
+                    await apiSend('DELETE', `/api/reviews/${btn.dataset.id}`, {});
+                    loadReviewsPanel();
+                } catch (err) { alert(err.message); }
+            });
+        });
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('reviewsFilterStatus').addEventListener('change', loadReviewsPanel);
+
+document.getElementById('externalReviewForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('externalReviewMessage');
+    try {
+        await apiSend('POST', '/api/reviews/admin', {
+            guestName: document.getElementById('extReviewName').value,
+            rating: Number(document.getElementById('extReviewRating').value),
+            source: document.getElementById('extReviewSource').value,
+            comment: document.getElementById('extReviewComment').value
+        });
+        msg.style.color = '#3d7a4f';
+        msg.textContent = 'Review added.';
+        document.getElementById('externalReviewForm').reset();
+        loadReviewsPanel();
+    } catch (err) {
+        msg.style.color = '#a5473c';
+        msg.textContent = err.message;
+    }
+});

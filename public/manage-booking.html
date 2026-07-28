@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage My Booking - Horizon Inn</title>
+    <meta name="robots" content="noindex, follow">
+    <link rel="icon" type="image/png" href="images/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar scrolled">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <img src="images/logo-mark.png" alt="Horizon Inn" class="nav-logo">
+                <span>Horizon Inn</span>
+            </div>
+            <ul class="nav-menu active" style="position: static; background: none; padding: 0; flex-direction: row;">
+                <li><a href="index.html">Back to Site</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div style="max-width: 560px; margin: 0 auto; padding: 140px 24px 100px;">
+        <h2 style="text-align: center;">Manage My Booking</h2>
+        <p style="text-align: center; color: var(--text-light); margin-bottom: 30px;">Enter the invoice number and phone number from your booking confirmation.</p>
+
+        <form id="lookupForm" class="booking-form-wrapper" style="background: var(--white); box-shadow: var(--shadow); padding: 32px;">
+            <div class="form-group">
+                <label>Invoice Number</label>
+                <input type="text" id="lookupInvoiceNumber" placeholder="e.g. INV-2026-0001" required>
+            </div>
+            <div class="form-group">
+                <label>Phone Number</label>
+                <input type="tel" id="lookupPhone" placeholder="The phone number used at booking" required>
+            </div>
+            <button type="submit" class="submit-btn">Find My Booking</button>
+            <p class="form-message" id="lookupMessage"></p>
+        </form>
+
+        <div id="bookingResult" style="display: none; background: var(--white); box-shadow: var(--shadow); padding: 32px; margin-top: 24px;">
+            <h3 id="resultRoomName" style="margin-bottom: 4px;"></h3>
+            <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 20px;" id="resultInvoiceNumber"></p>
+
+            <div class="booking-result-summary">
+                <div><span class="label">Check-In</span><strong id="resultCheckin"></strong></div>
+                <div><span class="label">Check-Out</span><strong id="resultCheckout"></strong></div>
+                <div><span class="label">Status</span><strong id="resultStatus"></strong></div>
+                <div><span class="label">Payment</span><strong id="resultPayment"></strong></div>
+            </div>
+            <p style="font-size: 1.1rem; margin: 16px 0;">Total: <strong id="resultTotal"></strong></p>
+
+            <div id="cancelSection">
+                <button type="button" class="submit-btn" id="requestCancelBtn" style="background: var(--charcoal);">Request Cancellation</button>
+                <p style="font-size: 0.8rem; color: var(--text-light); margin-top: 10px;">This sends a cancellation request to our front desk for review — it does not cancel the booking automatically. See our <a href="cancellation-policy.html">Cancellation Policy</a>.</p>
+            </div>
+            <div id="alreadyRequestedNote" style="display: none; color: #9a6c1f; font-size: 0.9rem;">
+                <i class="fas fa-circle-info"></i> A cancellation request was already submitted for this booking on <span id="requestedDate"></span>. Our team will be in touch.
+            </div>
+            <p class="form-message" id="cancelMessage"></p>
+        </div>
+    </div>
+
+    <script src="manage-booking.js"></script>
+</body>
+</html>

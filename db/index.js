@@ -324,6 +324,7 @@ function init() {
       // undifferentiated "extra charges" bucket. Existing rows default to
       // 'other' rather than guessing a category for historical data.
       await addColumnsIfMissing('booking_charges', ["category TEXT NOT NULL DEFAULT 'other'"]);
+      await addColumnsIfMissing('bookings', ['cancellation_requested_at TEXT']);
 
       const DEFAULT_SETTINGS = {
         hero_eyebrow: 'Est. 2026 · Boutique Hospitality',
@@ -494,6 +495,23 @@ function init() {
         )
       `);
       await addColumnsIfMissing('investor_leads', ['converted_investor_id INTEGER']);
+
+      // Guest reviews — 'site' reviews are guest-submitted and start 'pending'
+      // until an admin approves them; 'google'/'tripadvisor' entries are
+      // manually added by an admin from real external reviews and are
+      // inserted already 'approved', since they were already public elsewhere.
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS reviews (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          guest_name TEXT NOT NULL,
+          rating INTEGER NOT NULL,
+          comment TEXT NOT NULL DEFAULT '',
+          source TEXT NOT NULL DEFAULT 'site',
+          status TEXT NOT NULL DEFAULT 'pending',
+          booking_id INTEGER REFERENCES bookings(id),
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
 
       await db.execute(`
         CREATE TABLE IF NOT EXISTS venue_bookings (

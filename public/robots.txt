@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /frontdesk.html
+Disallow: /room-management.html
+Disallow: /investor.html
+Disallow: /invoice.html
+Disallow: /venue-invoice.html
+Disallow: /api/
+
+Sitemap: https://horizon-inn.onrender.com/sitemap.xml

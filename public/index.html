@@ -3,7 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Horizon Inn - Luxury Guest House</title>
+    <title>Horizon Inn - Luxury Guest House &amp; Event Complex in Peshawar</title>
+    <meta name="description" content="Horizon Inn is a boutique guest house in Peshawar offering luxury rooms, a courtyard fire pit, and the Crescent Grove Event &amp; Hospitality Complex for meetings, celebrations, and private events. Book direct for the best rates.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://horizon-inn.onrender.com/">
+
+    <meta property="og:type" content="lodging">
+    <meta property="og:site_name" content="Horizon Inn">
+    <meta property="og:title" content="Horizon Inn - Luxury Guest House &amp; Event Complex in Peshawar">
+    <meta property="og:description" content="Boutique rooms, a courtyard fire pit, and the Crescent Grove Event &amp; Hospitality Complex — book direct in Peshawar.">
+    <meta property="og:image" content="https://horizon-inn.onrender.com/images/gallery/courtyard-lounge.jpg">
+    <meta property="og:url" content="https://horizon-inn.onrender.com/">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Horizon Inn - Luxury Guest House &amp; Event Complex in Peshawar">
+    <meta name="twitter:description" content="Boutique rooms, a courtyard fire pit, and the Crescent Grove Event &amp; Hospitality Complex — book direct in Peshawar.">
+    <meta name="twitter:image" content="https://horizon-inn.onrender.com/images/gallery/courtyard-lounge.jpg">
+
+    <script type="application/ld+json" id="structuredData">{}</script>
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,6 +46,7 @@
                 <li><a href="#home">Home</a></li>
                 <li><a href="#rooms">Rooms</a></li>
                 <li><a href="#gallery">Gallery</a></li>
+                <li><a href="#reviews">Reviews</a></li>
                 <li><a href="#upcoming-projects">Upcoming</a></li>
                 <li><a href="#invest-with-us">Invest With Us</a></li>
                 <li><a href="#booking">Booking</a></li>
@@ -125,6 +143,43 @@
                     <span class="gallery-caption">The Patio</span>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <!-- Guest Reviews -->
+    <section id="reviews" class="reviews-section">
+        <div class="container">
+            <h2>What Our Guests Say</h2>
+            <p class="gallery-intro">Real feedback from real stays.</p>
+            <div class="review-grid" id="reviewGrid">
+                <p style="text-align: center; grid-column: 1 / -1; color: var(--text-light);">Loading reviews&hellip;</p>
+            </div>
+            <div class="review-cta">
+                <button type="button" class="cta-button" id="openReviewFormBtn">Leave a Review</button>
+            </div>
+            <form id="reviewForm" class="review-form" style="display: none;">
+                <div class="form-group">
+                    <label>Your Name</label>
+                    <input type="text" id="reviewGuestName" required>
+                </div>
+                <div class="form-group">
+                    <label>Rating</label>
+                    <div class="star-picker" id="starPicker">
+                        <i class="fas fa-star" data-value="1"></i>
+                        <i class="fas fa-star" data-value="2"></i>
+                        <i class="fas fa-star" data-value="3"></i>
+                        <i class="fas fa-star" data-value="4"></i>
+                        <i class="fas fa-star" data-value="5"></i>
+                    </div>
+                    <input type="hidden" id="reviewRating" value="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Your Review</label>
+                    <textarea id="reviewComment" rows="4" placeholder="Tell us about your stay&hellip;"></textarea>
+                </div>
+                <button type="submit" class="submit-btn">Submit Review</button>
+                <p class="form-message" id="reviewFormMessage"></p>
+            </form>
         </div>
     </section>
 
@@ -435,6 +490,15 @@
                         <li><a href="#rooms">Rooms</a></li>
                         <li><a href="#booking">Booking</a></li>
                         <li><a href="#contact">Contact</a></li>
+                        <li><a href="manage-booking.html">Manage My Booking</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="privacy.html">Privacy Policy</a></li>
+                        <li><a href="terms.html">Terms of Service</a></li>
+                        <li><a href="cancellation-policy.html">Cancellation &amp; Refunds</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
