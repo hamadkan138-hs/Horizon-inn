@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,25 +7,32 @@
 <link rel="icon" type="image/png" href="images/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
+  // Always dark — matches the obsidian glassmorphism theme shared with
+  // investor.html/admin.html (see dark-theme.css). This page still uses
+  // Tailwind's `dark:` utility variants throughout its markup rather than
+  // that shared stylesheet (different architecture, no shared classes to
+  // hook into), so forcing `darkMode: 'class'` + always-on `.dark` on
+  // <html> is what keeps every `dark:` variant permanently active instead
+  // of touching every individual class list.
   tailwind.config = {
     darkMode: 'class',
     theme: {
       extend: {
         fontFamily: {
-          sans: ['Manrope', 'sans-serif'],
-          display: ['Playfair Display', 'serif']
+          sans: ['Inter', 'sans-serif'],
+          display: ['Inter', 'sans-serif']
         },
         colors: {
-          gold: { DEFAULT: '#c6a15b', soft: '#e0c48a' },
-          ink: '#0b0d14'
+          gold: { DEFAULT: '#d4af37', soft: '#e8c874' },
+          ink: '#0a0b0e'
         },
         boxShadow: {
-          glass: '0 8px 32px rgba(0,0,0,0.18)',
-          'glass-dark': '0 8px 32px rgba(0,0,0,0.5)'
+          glass: '0 8px 32px rgba(0,0,0,0.37)',
+          'glass-dark': '0 8px 32px rgba(0,0,0,0.37)'
         }
       }
     }
@@ -33,26 +40,26 @@
 </script>
 <style>
   html { scroll-behavior: smooth; }
-  body { font-family: 'Manrope', sans-serif; }
-  .font-display { font-family: 'Playfair Display', serif; }
+  body { font-family: 'Inter', sans-serif; }
+  .font-display { font-family: 'Inter', sans-serif; }
 
   .glass {
-    background: rgba(255,255,255,0.65);
+    background: rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255,255,255,0.4);
-  }
-  .dark .glass {
-    background: rgba(30,32,44,0.55);
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid rgba(255, 255, 255, 0.07);
   }
 
-  .bg-app {
-    background: radial-gradient(circle at 15% 0%, #f3ecd8 0%, #f8f6f1 45%, #f1eee6 100%);
-  }
-  .dark .bg-app {
-    background: radial-gradient(circle at 15% 0%, #1b2438 0%, #0b0d14 45%, #0b0d14 100%);
-  }
+  .bg-app { background: #0a0b0e; }
+
+  /* Animated mesh-gradient background blobs, matching investor.html/admin.html */
+  .mesh-blob { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0; }
+  .mesh-blob.gold { width: 520px; height: 520px; top: -160px; left: -140px; background: rgba(212, 175, 55, 0.22); animation: driftGold 24s ease-in-out infinite alternate; }
+  .mesh-blob.emerald { width: 560px; height: 560px; bottom: -180px; right: -140px; background: rgba(5, 150, 105, 0.20); animation: driftEmerald 28s ease-in-out infinite alternate; }
+  @keyframes driftGold { from { transform: translate(0, 0) scale(1); } to { transform: translate(70px, 50px) scale(1.08); } }
+  @keyframes driftEmerald { from { transform: translate(0, 0) scale(1); } to { transform: translate(-60px, -40px) scale(1.06); } }
+  @media (prefers-reduced-motion: reduce) { .mesh-blob { animation: none !important; } }
+  header, #dashboard > main, #dashboard > div { position: relative; z-index: 1; }
 
   .card-enter { animation: cardEnter 0.35s ease both; }
   @keyframes cardEnter {
@@ -68,10 +75,12 @@
   .modal-fade { transition: opacity 0.25s ease; }
 
   ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-thumb { background: rgba(198,161,91,0.5); border-radius: 8px; }
+  ::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.5); border-radius: 8px; }
 </style>
 </head>
-<body class="bg-app text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-300">
+<body class="bg-app text-slate-100 min-h-screen transition-colors duration-300">
+<div class="mesh-blob gold"></div>
+<div class="mesh-blob emerald"></div>
 
 <!-- Login gate -->
 <div id="loginPanel" class="min-h-screen flex items-center justify-center px-4">
@@ -132,10 +141,6 @@
           <i class="fa-solid fa-warehouse"></i>
         </button>
         <span id="lastUpdated" class="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline"></span>
-        <button id="themeToggle" title="Toggle theme" class="w-10 h-10 rounded-xl glass flex items-center justify-center hover:scale-105 transition">
-          <i class="fa-solid fa-moon dark:hidden"></i>
-          <i class="fa-solid fa-sun hidden dark:inline text-gold"></i>
-        </button>
         <div class="text-right hidden md:block">
           <p class="text-sm font-semibold" id="whoami"></p>
           <a href="#" id="logoutLink" class="text-xs text-slate-500 dark:text-slate-400 hover:text-gold">Sign out</a>

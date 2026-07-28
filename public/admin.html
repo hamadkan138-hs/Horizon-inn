@@ -7,12 +7,30 @@
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="dark-theme.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <style>
+        /* Admin Dashboard — page-specific rules only. The shared obsidian
+           glassmorphism theme lives in dark-theme.css (see investor.html,
+           which uses the same file) so both dashboards stay visually
+           identical from one source of truth.
+
+           Unlike investor.html (4 tabs), this dashboard has 14 — too many
+           for a fixed bottom-nav bar on mobile, so it keeps the default
+           horizontally-scrolling pill row there instead, and only switches
+           to the fixed left sidebar at desktop widths (handled already by
+           dark-theme.css's shared .admin-tabs rules). */
+        @media (max-width: 1023px) {
+            #dashboard { padding-bottom: 24px; }
+        }
+    </style>
 </head>
 <body>
+    <div class="mesh-blob gold"></div>
+    <div class="mesh-blob emerald"></div>
     <nav class="navbar scrolled">
         <div class="nav-container">
             <div class="nav-brand">
@@ -58,20 +76,20 @@
             </div>
 
             <div class="admin-tabs" id="adminTabs">
-                <button class="admin-tab active" data-tab="bookings">Bookings</button>
-                <button class="admin-tab" data-tab="payments">Payments</button>
-                <button class="admin-tab" data-tab="daily">Daily Summary</button>
-                <button class="admin-tab" data-tab="handover">Cash &amp; Handover</button>
-                <button class="admin-tab" data-tab="availability">Availability</button>
-                <button class="admin-tab" data-tab="guests">Guests</button>
-                <button class="admin-tab" data-tab="rooms">Rooms &amp; Pricing</button>
-                <button class="admin-tab" data-tab="expenses">Expenses</button>
-                <button class="admin-tab" data-tab="reports">Reports</button>
-                <button class="admin-tab" data-tab="media" id="mediaTabBtn" style="display: none;">Media Library</button>
-                <button class="admin-tab" data-tab="content" id="contentTabBtn" style="display: none;">Site Content</button>
-                <button class="admin-tab" data-tab="staff" id="staffTabBtn" style="display: none;">Staff</button>
-                <button class="admin-tab" data-tab="investors" id="investorsTabBtn" style="display: none;">Investor Accounts</button>
-                <button class="admin-tab" data-tab="messages">Messages</button>
+                <button class="admin-tab active" data-tab="bookings"><i class="fas fa-calendar-check"></i> Bookings</button>
+                <button class="admin-tab" data-tab="payments"><i class="fas fa-money-bill-wave"></i> Payments</button>
+                <button class="admin-tab" data-tab="daily"><i class="fas fa-chart-line"></i> Daily Summary</button>
+                <button class="admin-tab" data-tab="handover"><i class="fas fa-hand-holding-dollar"></i> Cash &amp; Handover</button>
+                <button class="admin-tab" data-tab="availability"><i class="fas fa-calendar-days"></i> Availability</button>
+                <button class="admin-tab" data-tab="guests"><i class="fas fa-users"></i> Guests</button>
+                <button class="admin-tab" data-tab="rooms"><i class="fas fa-bed"></i> Rooms &amp; Pricing</button>
+                <button class="admin-tab" data-tab="expenses"><i class="fas fa-receipt"></i> Expenses</button>
+                <button class="admin-tab" data-tab="reports"><i class="fas fa-chart-pie"></i> Reports</button>
+                <button class="admin-tab" data-tab="media" id="mediaTabBtn" style="display: none;"><i class="fas fa-images"></i> Media Library</button>
+                <button class="admin-tab" data-tab="content" id="contentTabBtn" style="display: none;"><i class="fas fa-pen-to-square"></i> Site Content</button>
+                <button class="admin-tab" data-tab="staff" id="staffTabBtn" style="display: none;"><i class="fas fa-user-tie"></i> Staff</button>
+                <button class="admin-tab" data-tab="investors" id="investorsTabBtn" style="display: none;"><i class="fas fa-briefcase"></i> Investor Accounts</button>
+                <button class="admin-tab" data-tab="messages"><i class="fas fa-envelope"></i> Messages</button>
             </div>
 
             <!-- Bookings -->
