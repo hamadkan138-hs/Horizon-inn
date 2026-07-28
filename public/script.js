@@ -111,6 +111,12 @@ function money(n) {
     return `Rs. ${num.toLocaleString('en-US')}`;
 }
 
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str == null ? '' : str;
+    return div.innerHTML;
+}
+
 const AMENITY_ICONS = [
     { match: /breakfast/i, icon: 'fa-mug-hot' },
     { match: /\bac\b|air.?con/i, icon: 'fa-snowflake' },
@@ -500,3 +506,267 @@ contactForm.addEventListener('submit', async (e) => {
         submitBtn.disabled = false;
     }
 });
+
+/* ==================================================================
+   Crescent Grove: Facility Showcase, Become-a-Partner lead capture,
+   and the public Investment Yield Calculator.
+   ================================================================== */
+const CATERING_CATEGORY_LABELS = {
+    platters: 'Platters', high_tea: 'High Tea', espresso_bar: 'Espresso Bar', live_bbq: 'Live BBQ'
+};
+
+let allFacilities = [];
+let allCateringItems = [];
+let facilityGalleryState = { images: [], index: 0 };
+
+function facilityCardHtml(f, i) {
+    const image = f.images && f.images[0] ? f.images[0] : '';
+    return `
+        <div class="facility-card" data-id="${f.id}" style="animation-delay: ${i * 0.1}s">
+            <div class="facility-media" style="${image ? `background-image: url('${image}');` : ''}">
+                ${f.isBuyout ? '<span class="facility-buyout-chip">Full Buyout</span>' : ''}
+            </div>
+            <div class="facility-body">
+                <h3>${escapeHtml(f.name)}</h3>
+                <div class="facility-meta">
+                    <span><i class="fas fa-ruler-combined"></i>${f.sizeSqft.toLocaleString()} sq ft</span>
+                    <span><i class="fas fa-users"></i>Up to ${f.capacity} guests</span>
+                </div>
+                <p>${escapeHtml(f.description)}</p>
+                <div class="facility-rate-row">
+                    <div class="facility-rate">${money(f.baseDayRate)}<span>per day</span></div>
+                    <button type="button" class="facility-view-btn">View Details</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function loadFacilities() {
+    const grid = document.getElementById('facilityGrid');
+    if (!grid) return;
+    try {
+        const [facilities, catering] = await Promise.all([
+            fetch('/api/venues/public').then((r) => r.json()),
+            fetch('/api/venues/public/catering-menu').then((r) => r.json())
+        ]);
+        allFacilities = facilities;
+        allCateringItems = catering;
+        grid.innerHTML = facilities.map(facilityCardHtml).join('');
+        grid.querySelectorAll('.facility-card').forEach((card) => {
+            card.addEventListener('click', () => openFacilityModal(Number(card.dataset.id)));
+        });
+    } catch (err) {
+        grid.innerHTML = '<p style="color: #9ca3af; text-align: center; grid-column: 1 / -1;">Could not load facilities right now.</p>';
+    }
+}
+
+function renderFacilityGallery(images) {
+    facilityGalleryState = { images: images.length ? images : [''], index: 0 };
+    const wrap = document.getElementById('facilityModalGallery');
+    if (!images.length) {
+        wrap.innerHTML = '<div class="fm-slide active" style="background: linear-gradient(135deg, #14151a, rgba(212,175,55,0.18)); display: flex; align-items: center; justify-content: center; color: #e8c874; font-size: 2rem;"><i class="fas fa-image"></i></div>';
+        return;
+    }
+    wrap.innerHTML = `
+        ${images.map((src, i) => `<div class="fm-slide ${i === 0 ? 'active' : ''}" style="background-image: url('${src}')"></div>`).join('')}
+        ${images.length > 1 ? `
+            <button type="button" class="fm-nav prev"><i class="fas fa-chevron-left"></i></button>
+            <button type="button" class="fm-nav next"><i class="fas fa-chevron-right"></i></button>
+            <div class="fm-dots">${images.map((_, i) => `<span class="${i === 0 ? 'active' : ''}"></span>`).join('')}</div>
+        ` : ''}
+    `;
+    if (images.length > 1) {
+        const show = (i) => {
+            facilityGalleryState.index = (i + images.length) % images.length;
+            wrap.querySelectorAll('.fm-slide').forEach((s, idx) => s.classList.toggle('active', idx === facilityGalleryState.index));
+            wrap.querySelectorAll('.fm-dots span').forEach((d, idx) => d.classList.toggle('active', idx === facilityGalleryState.index));
+        };
+        wrap.querySelector('.fm-nav.prev').addEventListener('click', () => show(facilityGalleryState.index - 1));
+        wrap.querySelector('.fm-nav.next').addEventListener('click', () => show(facilityGalleryState.index + 1));
+    }
+}
+
+function renderCateringTabs() {
+    const categories = Array.from(new Set(allCateringItems.map((c) => c.category)));
+    const tabsEl = document.getElementById('cateringTabs');
+    tabsEl.innerHTML = categories.map((cat, i) => `<button type="button" class="catering-tab ${i === 0 ? 'active' : ''}" data-cat="${cat}">${CATERING_CATEGORY_LABELS[cat] || cat}</button>`).join('');
+    const renderList = (cat) => {
+        const items = allCateringItems.filter((c) => c.category === cat);
+        document.getElementById('cateringItemsList').innerHTML = items.map((c) => `
+            <div class="catering-item-row">
+                <div><div class="ci-name">${escapeHtml(c.name)}</div><div class="ci-desc">${escapeHtml(c.description)}</div></div>
+                <div class="ci-price">${money(c.price)}</div>
+            </div>
+        `).join('');
+    };
+    tabsEl.querySelectorAll('.catering-tab').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            tabsEl.querySelectorAll('.catering-tab').forEach((b) => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderList(btn.dataset.cat);
+        });
+    });
+    if (categories.length) renderList(categories[0]);
+}
+
+function openFacilityModal(id) {
+    const f = allFacilities.find((x) => x.id === id);
+    if (!f) return;
+    document.getElementById('facilityModalName').textContent = f.name;
+    document.getElementById('facilityModalSize').textContent = `${f.sizeSqft.toLocaleString()} sq ft`;
+    document.getElementById('facilityModalCapacity').textContent = `Up to ${f.capacity} guests`;
+    document.getElementById('facilityModalRate').textContent = `${money(f.baseDayRate)}/day`;
+    document.getElementById('facilityModalDescription').textContent = f.description;
+    document.getElementById('facilityModalAmenities').innerHTML = f.amenities.map((a) => `<span class="amenity-tag">${escapeHtml(a)}</span>`).join('');
+    renderFacilityGallery(f.images || []);
+    renderCateringTabs();
+    document.getElementById('facilityModalOverlay').style.display = 'flex';
+}
+
+document.getElementById('facilityModalCloseBtn')?.addEventListener('click', () => {
+    document.getElementById('facilityModalOverlay').style.display = 'none';
+});
+document.getElementById('facilityModalOverlay')?.addEventListener('click', (e) => {
+    if (e.target.id === 'facilityModalOverlay') e.target.style.display = 'none';
+});
+
+/* ---- Become a Partner: multi-step lead capture ---- */
+let partnerSelection = { tier: '', type: '' };
+
+function showPartnerStep(step) {
+    document.querySelectorAll('.partner-step').forEach((el) => el.classList.toggle('active', el.dataset.step === String(step)));
+    const totalSteps = 3;
+    document.querySelectorAll('#partnerStepIndicator span').forEach((el, i) => {
+        el.classList.toggle('done', step === 'success' || i < Number(step));
+    });
+}
+
+document.getElementById('openPartnerModalBtn')?.addEventListener('click', () => {
+    document.getElementById('partnerModalOverlay').style.display = 'flex';
+    showPartnerStep(1);
+});
+document.getElementById('partnerModalCloseBtn')?.addEventListener('click', () => {
+    document.getElementById('partnerModalOverlay').style.display = 'none';
+});
+document.getElementById('partnerModalOverlay')?.addEventListener('click', (e) => {
+    if (e.target.id === 'partnerModalOverlay') e.target.style.display = 'none';
+});
+
+document.querySelectorAll('#partnerForm [data-next]').forEach((btn) => {
+    btn.addEventListener('click', () => showPartnerStep(btn.dataset.next));
+});
+document.querySelectorAll('#partnerForm [data-back]').forEach((btn) => {
+    btn.addEventListener('click', () => showPartnerStep(btn.dataset.back));
+});
+
+document.querySelectorAll('#partnerTierOptions .tier-option').forEach((el) => {
+    el.addEventListener('click', () => {
+        document.querySelectorAll('#partnerTierOptions .tier-option').forEach((o) => o.classList.remove('selected'));
+        el.classList.add('selected');
+        partnerSelection.tier = el.dataset.value;
+    });
+});
+document.querySelectorAll('#partnerTypeOptions .tier-option').forEach((el) => {
+    el.addEventListener('click', () => {
+        document.querySelectorAll('#partnerTypeOptions .tier-option').forEach((o) => o.classList.remove('selected'));
+        el.classList.add('selected');
+        partnerSelection.type = el.dataset.value;
+    });
+});
+
+document.getElementById('partnerForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('partnerFormMessage');
+    try {
+        const res = await fetch('/api/investor-leads', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fullName: document.getElementById('partnerFullName').value,
+                phone: document.getElementById('partnerPhone').value,
+                email: document.getElementById('partnerEmail').value,
+                location: document.getElementById('partnerLocation').value,
+                investmentTier: partnerSelection.tier,
+                investmentType: partnerSelection.type,
+                notes: document.getElementById('partnerNotes').value
+            })
+        });
+        if (!res.ok) throw new Error((await res.json()).error || 'Something went wrong');
+        showPartnerStep('success');
+        document.getElementById('partnerForm').reset();
+        partnerSelection = { tier: '', type: '' };
+        document.querySelectorAll('.tier-option').forEach((o) => o.classList.remove('selected'));
+    } catch (err) {
+        msg.style.color = '#e0685a';
+        msg.textContent = err.message;
+    }
+});
+
+/* ---- Public Investment Yield Calculator ---- */
+let roiCalcChartInstance = null;
+const WORKING_VALUATION = 20000000;
+
+function renderRoiCalculator() {
+    const investment = Number(document.getElementById('roiCalcInvestment').value);
+    const occupancy = Number(document.getElementById('roiCalcOccupancy').value);
+    const rate = Number(document.getElementById('roiCalcRate').value);
+
+    document.getElementById('roiCalcInvestmentLabel').textContent = money(investment);
+    document.getElementById('roiCalcOccupancyLabel').textContent = `${occupancy}%`;
+    document.getElementById('roiCalcRateLabel').textContent = `${money(rate)}`;
+
+    const grossAnnualRevenue = rate * 365 * (occupancy / 100);
+    const marginPct = 25 + ((occupancy - 30) / (90 - 30)) * 15;
+    const netProfit = grossAnnualRevenue * (marginPct / 100);
+    const ownershipShare = Math.min(investment / WORKING_VALUATION, 1);
+    const investorPayoutYear1 = netProfit * ownershipShare;
+    const roiPct = investment > 0 ? (investorPayoutYear1 / investment) * 100 : 0;
+    const paybackMonths = investorPayoutYear1 > 0 ? (investment / (investorPayoutYear1 / 12)) : Infinity;
+    const paybackText = !isFinite(paybackMonths) ? '—'
+        : paybackMonths < 24 ? `${Math.round(paybackMonths)} months`
+        : `${(paybackMonths / 12).toFixed(1)} years`;
+
+    document.getElementById('roiCalcGrossRevenue').textContent = money(grossAnnualRevenue);
+    document.getElementById('roiCalcNetPayout').textContent = money(investorPayoutYear1);
+    document.getElementById('roiCalcRoiPct').textContent = `${roiPct.toFixed(1)}%`;
+    document.getElementById('roiCalcPayback').textContent = paybackText;
+
+    const year2 = investorPayoutYear1 * 1.08;
+    const year3 = year2 * 1.08;
+    const cumulativeYear1 = investorPayoutYear1;
+    const cumulativeYear3 = investorPayoutYear1 + year2 + year3;
+
+    const canvas = document.getElementById('roiCalcChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+    if (roiCalcChartInstance) roiCalcChartInstance.destroy();
+    roiCalcChartInstance = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: ['Year 1 (cumulative)', 'Year 3 (cumulative)'],
+            datasets: [{
+                label: 'Investor Payout (Rs.)',
+                data: [cumulativeYear1, cumulativeYear3],
+                backgroundColor: ['#d4af37', '#10b981'],
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: '#9ca3af' }, grid: { display: false } },
+                y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.06)' } }
+            }
+        }
+    });
+}
+
+['roiCalcInvestment', 'roiCalcOccupancy', 'roiCalcRate'].forEach((id) => {
+    document.getElementById(id)?.addEventListener('input', renderRoiCalculator);
+});
+
+if (document.getElementById('facilityGrid')) {
+    loadFacilities();
+    renderRoiCalculator();
+}

@@ -6,6 +6,31 @@ const { requireRole } = adminAuth;
 
 const router = express.Router();
 
+// Public, unauthenticated: the client-facing Facilities Showcase needs the venue
+// list, amenities, and catering menu without requiring a login. Everything below
+// this point still requires admin/staff/investor auth.
+router.get('/public', async (req, res) => {
+  try {
+    const result = await db.execute('SELECT * FROM venues WHERE active = 1 ORDER BY id ASC');
+    res.json(result.rows.map(parseVenue));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load venues' });
+  }
+});
+
+router.get('/public/catering-menu', async (req, res) => {
+  try {
+    const result = await db.execute('SELECT * FROM catering_items WHERE active = 1 ORDER BY category ASC, price ASC');
+    res.json(result.rows.map((r) => ({
+      id: Number(r.id), category: r.category, name: r.name, description: r.description, price: Number(r.price)
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load catering menu' });
+  }
+});
+
 // Investors get read-only access (venue list + analytics); booking management
 // (creating, verifying, invoicing) is admin/staff only, enforced per-route below.
 router.use(adminAuth, requireRole('admin', 'staff', 'investor'));
@@ -14,7 +39,10 @@ function parseVenue(row) {
   return {
     id: Number(row.id), slug: row.slug, name: row.name, description: row.description,
     sizeSqft: Number(row.size_sqft), baseDayRate: Number(row.base_day_rate),
-    isBuyout: !!row.is_buyout, active: !!row.active
+    isBuyout: !!row.is_buyout, active: !!row.active,
+    capacity: Number(row.capacity || 0),
+    amenities: JSON.parse(row.amenities || '[]'),
+    images: JSON.parse(row.images || '[]')
   };
 }
 

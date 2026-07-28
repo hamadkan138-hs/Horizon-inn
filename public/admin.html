@@ -86,6 +86,7 @@
                 <button class="admin-tab" data-tab="expenses"><i class="fas fa-receipt"></i> Expenses</button>
                 <button class="admin-tab" data-tab="reports"><i class="fas fa-chart-pie"></i> Reports</button>
                 <button class="admin-tab" data-tab="venues"><i class="fas fa-cash-register"></i> Cash &amp; Financial Controls</button>
+                <button class="admin-tab" data-tab="leads"><i class="fas fa-user-tie"></i> Investor Leads</button>
                 <button class="admin-tab" data-tab="media" id="mediaTabBtn" style="display: none;"><i class="fas fa-images"></i> Media Library</button>
                 <button class="admin-tab" data-tab="content" id="contentTabBtn" style="display: none;"><i class="fas fa-pen-to-square"></i> Site Content</button>
                 <button class="admin-tab" data-tab="staff" id="staffTabBtn" style="display: none;"><i class="fas fa-user-tie"></i> Staff</button>
@@ -597,6 +598,31 @@
                 <div class="chart-card">
                     <h3>Space Occupancy Breakdown</h3>
                     <canvas id="venueOccupancyChart" height="90"></canvas>
+                </div>
+            </section>
+
+            <!-- Investor Leads (from public site "Become a Partner" CTA) -->
+            <section class="admin-panel" id="panel-leads" style="display: none;">
+                <div class="summary-cards" id="leadsSummaryCards"></div>
+                <div class="panel-toolbar">
+                    <select id="leadsFilterStatus">
+                        <option value="">All statuses</option>
+                        <option value="new_lead">New Lead</option>
+                        <option value="contacted">Contacted</option>
+                        <option value="meeting_scheduled">Meeting Scheduled</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="leadsTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th><th>Contact</th><th>Location</th><th>Interest</th>
+                                <th>Type</th><th>Notes</th><th>Status</th><th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="leadsBody"></tbody>
+                    </table>
                 </div>
             </section>
 
