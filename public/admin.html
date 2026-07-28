@@ -87,6 +87,7 @@
                 <button class="admin-tab" data-tab="reports"><i class="fas fa-chart-pie"></i> Reports</button>
                 <button class="admin-tab" data-tab="venues"><i class="fas fa-cash-register"></i> Cash &amp; Financial Controls</button>
                 <button class="admin-tab" data-tab="leads"><i class="fas fa-user-tie"></i> Investor Leads</button>
+                <button class="admin-tab" data-tab="reviews"><i class="fas fa-star"></i> Reviews</button>
                 <button class="admin-tab" data-tab="media" id="mediaTabBtn" style="display: none;"><i class="fas fa-images"></i> Media Library</button>
                 <button class="admin-tab" data-tab="content" id="contentTabBtn" style="display: none;"><i class="fas fa-pen-to-square"></i> Site Content</button>
                 <button class="admin-tab" data-tab="staff" id="staffTabBtn" style="display: none;"><i class="fas fa-user-tie"></i> Staff</button>
@@ -622,6 +623,48 @@
                             </tr>
                         </thead>
                         <tbody id="leadsBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Reviews -->
+            <section class="admin-panel" id="panel-reviews" style="display: none;">
+                <div class="summary-cards" id="reviewsSummaryCards"></div>
+
+                <h3 style="margin-top: 24px;">Add External Review (Google / TripAdvisor)</h3>
+                <form id="externalReviewForm" class="inline-form">
+                    <input type="text" id="extReviewName" placeholder="Guest name" required>
+                    <select id="extReviewRating" required>
+                        <option value="">Rating</option>
+                        <option value="5">5 stars</option>
+                        <option value="4">4 stars</option>
+                        <option value="3">3 stars</option>
+                        <option value="2">2 stars</option>
+                        <option value="1">1 star</option>
+                    </select>
+                    <select id="extReviewSource" required>
+                        <option value="google">Google</option>
+                        <option value="tripadvisor">TripAdvisor</option>
+                    </select>
+                    <input type="text" id="extReviewComment" placeholder="Review text (optional)" style="flex: 1;">
+                    <button type="submit" class="action-btn confirm">Add Review</button>
+                </form>
+                <p class="form-message" id="externalReviewMessage"></p>
+
+                <div class="panel-toolbar" style="margin-top: 24px;">
+                    <select id="reviewsFilterStatus">
+                        <option value="">All statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="reviewsTable">
+                        <thead>
+                            <tr><th>Guest</th><th>Rating</th><th>Comment</th><th>Source</th><th>Status</th><th></th></tr>
+                        </thead>
+                        <tbody id="reviewsBody"></tbody>
                     </table>
                 </div>
             </section>

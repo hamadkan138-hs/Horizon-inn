@@ -97,6 +97,71 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Guest self-service: look up your own booking with invoice number + phone
+// (both of which only the guest and the property have — no login needed,
+// but also nothing sensitive like CNIC or address is returned here).
+router.get('/public-lookup', async (req, res) => {
+  try {
+    const { invoiceNumber, phone } = req.query;
+    if (!invoiceNumber || !phone) {
+      return res.status(400).json({ error: 'Invoice number and phone number are required' });
+    }
+    const result = await db.execute({
+      sql: `
+        SELECT bookings.*, rooms.name AS room_name
+        FROM bookings JOIN rooms ON rooms.id = bookings.room_id
+        WHERE bookings.invoice_number = ? AND bookings.phone = ?
+      `,
+      args: [invoiceNumber.trim(), phone.trim()]
+    });
+    const booking = result.rows[0];
+    if (!booking) {
+      return res.status(404).json({ error: 'No booking found matching that invoice number and phone number' });
+    }
+    res.json({
+      id: booking.id, invoiceNumber: booking.invoice_number, guestName: booking.name,
+      roomName: booking.room_name, checkin: booking.checkin, checkout: booking.checkout,
+      status: booking.status, paymentStatus: booking.payment_status, totalAmount: booking.total_amount,
+      cancellationRequestedAt: booking.cancellation_requested_at
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to look up booking' });
+  }
+});
+
+// Guest self-service cancellation request — this does NOT cancel the booking
+// outright (that stays a staff decision, e.g. to check refund eligibility
+// against the cancellation policy); it just flags it for staff to action,
+// the same trust boundary as a phone call asking to cancel.
+router.post('/public-lookup/request-cancellation', async (req, res) => {
+  try {
+    const { invoiceNumber, phone } = req.body;
+    if (!invoiceNumber || !phone) {
+      return res.status(400).json({ error: 'Invoice number and phone number are required' });
+    }
+    const result = await db.execute({
+      sql: 'SELECT * FROM bookings WHERE invoice_number = ? AND phone = ?',
+      args: [invoiceNumber.trim(), phone.trim()]
+    });
+    const booking = result.rows[0];
+    if (!booking) {
+      return res.status(404).json({ error: 'No booking found matching that invoice number and phone number' });
+    }
+    if (!['pending', 'confirmed'].includes(booking.status)) {
+      return res.status(400).json({ error: `A ${booking.status} booking can't be cancelled this way — please contact us directly.` });
+    }
+    await db.execute({
+      sql: "UPDATE bookings SET cancellation_requested_at = datetime('now') WHERE id = ?",
+      args: [booking.id]
+    });
+    res.json({ requested: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to request cancellation' });
+  }
+});
+
 // Quick advance booking (admin/staff) — for a guest who calls or walks in and
 // pays an advance to lock a room before the full guest-registration paperwork
 // is filled in (that happens later at actual check-in via /:id/details).

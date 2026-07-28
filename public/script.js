@@ -32,6 +32,22 @@ async function loadSiteSettings() {
         PAYMENT_INSTRUCTIONS = buildPaymentInstructions(settings);
         updatePaymentMethodUI();
 
+        const structuredDataEl = document.getElementById('structuredData');
+        if (structuredDataEl) {
+            structuredDataEl.textContent = JSON.stringify({
+                '@context': 'https://schema.org',
+                '@type': 'LodgingBusiness',
+                name: 'Horizon Inn',
+                description: 'Boutique guest house and event complex offering luxury rooms and the Crescent Grove Event & Hospitality Complex.',
+                address: settings.contact_address || undefined,
+                telephone: settings.contact_phone || undefined,
+                email: settings.contact_email || undefined,
+                url: 'https://horizon-inn.onrender.com/',
+                image: 'https://horizon-inn.onrender.com/images/gallery/courtyard-lounge.jpg',
+                priceRange: 'PKR'
+            });
+        }
+
         if (settings.policies_text) {
             const termsBox = document.getElementById('termsBox');
             termsBox.innerHTML = settings.policies_text.split(/\n\s*\n/).map((para) => {
@@ -770,3 +786,88 @@ if (document.getElementById('facilityGrid')) {
     loadFacilities();
     renderRoiCalculator();
 }
+
+/* ==================================================================
+   Guest Reviews — public display + submission form
+   ================================================================== */
+const REVIEW_SOURCE_LABELS = { site: 'Horizon Inn', google: 'Google', tripadvisor: 'TripAdvisor' };
+
+function starsHtml(rating) {
+    return Array.from({ length: 5 }, (_, i) => `<i class="fas fa-star" style="${i < rating ? '' : 'opacity: 0.25;'}"></i>`).join('');
+}
+
+function reviewCardHtml(r) {
+    return `
+        <div class="review-card">
+            <div class="review-stars">${starsHtml(r.rating)}</div>
+            ${r.comment ? `<p class="review-comment">&ldquo;${escapeHtml(r.comment)}&rdquo;</p>` : ''}
+            <div class="review-meta">
+                <strong>${escapeHtml(r.guestName)}</strong>
+                <span class="review-source">${REVIEW_SOURCE_LABELS[r.source] || r.source}</span>
+            </div>
+        </div>
+    `;
+}
+
+async function loadReviews() {
+    const grid = document.getElementById('reviewGrid');
+    if (!grid) return;
+    try {
+        const res = await fetch('/api/reviews/public');
+        if (!res.ok) throw new Error('Failed to load reviews');
+        const reviews = await res.json();
+        grid.innerHTML = reviews.length
+            ? reviews.map(reviewCardHtml).join('')
+            : '<p style="text-align: center; grid-column: 1 / -1; color: var(--text-light);">No reviews yet — be the first to share your stay.</p>';
+    } catch (err) {
+        grid.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--text-light);">Could not load reviews right now.</p>';
+    }
+}
+
+document.getElementById('openReviewFormBtn')?.addEventListener('click', () => {
+    const form = document.getElementById('reviewForm');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+});
+
+document.querySelectorAll('#starPicker i').forEach((star) => {
+    star.addEventListener('click', () => {
+        const value = Number(star.dataset.value);
+        document.getElementById('reviewRating').value = value;
+        document.querySelectorAll('#starPicker i').forEach((s) => {
+            s.classList.toggle('active', Number(s.dataset.value) <= value);
+        });
+    });
+});
+
+document.getElementById('reviewForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('reviewFormMessage');
+    const rating = Number(document.getElementById('reviewRating').value);
+    if (!rating) {
+        msg.style.color = '#a5473c';
+        msg.textContent = 'Please select a star rating.';
+        return;
+    }
+    try {
+        const res = await fetch('/api/reviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                guestName: document.getElementById('reviewGuestName').value,
+                rating,
+                comment: document.getElementById('reviewComment').value
+            })
+        });
+        if (!res.ok) throw new Error((await res.json()).error || 'Something went wrong');
+        msg.style.color = '#3d7a4f';
+        msg.textContent = 'Thank you! Your review will appear once approved.';
+        document.getElementById('reviewForm').reset();
+        document.querySelectorAll('#starPicker i').forEach((s) => s.classList.remove('active'));
+        document.getElementById('reviewRating').value = 0;
+    } catch (err) {
+        msg.style.color = '#a5473c';
+        msg.textContent = err.message;
+    }
+});
+
+loadReviews();
