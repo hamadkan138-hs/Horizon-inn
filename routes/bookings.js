@@ -7,7 +7,7 @@ const { isRoomAvailable } = require('../lib/availability');
 const { computeTotalAmount } = require('../lib/pricing');
 const { recomputeBookingTotal } = require('../lib/billing');
 const { assertBookingUnlocked, BookingLockedError } = require('../lib/lock');
-const { sendBookingConfirmationEmail } = require('../lib/mailer');
+const { sendBookingConfirmationEmail, sendInvoiceEmail, invoiceLink } = require('../lib/mailer');
 
 const router = express.Router();
 
@@ -507,6 +507,54 @@ router.get('/:id', adminAuth, requireRole('admin', 'staff'), async (req, res) =>
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to load booking' });
+  }
+});
+
+// One place both front desk and admin pull "how do I reach this guest with
+// their invoice" — the link is invoice_token-authenticated, so it's safe to
+// text or email straight to the guest with no login required on their end.
+router.get('/:id/invoice-link', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
+  try {
+    const result = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
+    const booking = result.rows[0];
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+    res.json({
+      name: booking.name, phone: booking.phone, email: booking.email,
+      invoiceNumber: booking.invoice_number, link: invoiceLink(booking)
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to build invoice link' });
+  }
+});
+
+// Sends the invoice to the guest's email right now — a real send via the
+// server's own mail account, not a mailto: draft the staff has to send
+// themselves.
+router.post('/:id/send-invoice-email', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
+  try {
+    const result = await db.execute({
+      sql: `
+        SELECT bookings.*, rooms.name AS room_name
+        FROM bookings JOIN rooms ON rooms.id = bookings.room_id
+        WHERE bookings.id = ?
+      `,
+      args: [req.params.id]
+    });
+    const booking = result.rows[0];
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+    const sendResult = await sendInvoiceEmail(booking, { name: booking.room_name });
+    if (!sendResult.sent) {
+      return res.status(400).json({ error: sendResult.reason });
+    }
+    res.json({ sent: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to send invoice email' });
   }
 });
 
