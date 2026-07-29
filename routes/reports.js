@@ -222,7 +222,7 @@ router.get('/overview', async (req, res) => {
   try {
     const daily = await getDailySummary();
 
-    const [cancellations, pendingVouchers, openRecovery, pendingReviews, newLeads] = await Promise.all([
+    const [cancellations, pendingVouchers, openRecovery, pendingReviews, newLeads, lowStockMinibar] = await Promise.all([
       db.execute(`
         SELECT bookings.id, bookings.name, bookings.invoice_number, bookings.cancellation_requested_at
         FROM bookings
@@ -242,6 +242,10 @@ router.get('/overview', async (req, res) => {
       `),
       db.execute(`
         SELECT id, full_name, phone FROM investor_leads WHERE status = 'new_lead' ORDER BY created_at DESC
+      `),
+      db.execute(`
+        SELECT id, name, stock_quantity, low_stock_threshold FROM minibar_items
+        WHERE active = 1 AND stock_quantity <= low_stock_threshold ORDER BY stock_quantity ASC
       `)
     ]);
 
@@ -255,7 +259,8 @@ router.get('/overview', async (req, res) => {
       pendingVouchers: pendingVouchers.rows,
       openRecovery: openRecovery.rows,
       pendingReviews: pendingReviews.rows,
-      newLeads: newLeads.rows
+      newLeads: newLeads.rows,
+      lowStockMinibar: lowStockMinibar.rows
     });
   } catch (err) {
     console.error(err);

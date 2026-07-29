@@ -108,6 +108,7 @@ document.querySelectorAll('.admin-tab').forEach((btn) => {
         if (btn.dataset.tab === 'guests') loadGuests();
         if (btn.dataset.tab === 'rooms') loadRoomsPanel();
         if (btn.dataset.tab === 'expenses') loadExpenses();
+        if (btn.dataset.tab === 'minibar') loadMinibarPanel();
         if (btn.dataset.tab === 'reports') loadReports();
         if (btn.dataset.tab === 'staff') loadStaff();
         if (btn.dataset.tab === 'media') loadMediaLibrary();
@@ -180,7 +181,8 @@ async function loadOverview() {
             { label: 'Vouchers to Verify', value: data.pendingVouchers.length, tab: 'promotions', attention: data.pendingVouchers.length > 0 },
             { label: 'Recovery Leads', value: data.openRecovery.length, tab: 'recovery', attention: data.openRecovery.length > 0 },
             { label: 'Reviews to Moderate', value: data.pendingReviews.length, tab: 'reviews', attention: data.pendingReviews.length > 0 },
-            { label: 'New Investor Leads', value: data.newLeads.length, tab: 'leads', attention: data.newLeads.length > 0 }
+            { label: 'New Investor Leads', value: data.newLeads.length, tab: 'leads', attention: data.newLeads.length > 0 },
+            { label: 'Mini Bar Low Stock', value: data.lowStockMinibar.length, tab: 'minibar', attention: data.lowStockMinibar.length > 0 }
         ];
         document.getElementById('overviewStatCards').innerHTML = cards.map(overviewStatCardHtml).join('');
         document.querySelectorAll('#overviewStatCards [data-jump-tab]').forEach((btn) => {
@@ -255,7 +257,10 @@ function bookingRowHtml(b) {
 async function renderBookingDetail(id) {
     const cell = document.querySelector(`#details-${id} td`);
     try {
-        const b = await apiGet(`/api/bookings/${id}`);
+        const [b, minibarItems] = await Promise.all([
+            apiGet(`/api/bookings/${id}`),
+            apiGet('/api/minibar')
+        ]);
         const paidTotal = b.payments.reduce((sum, p) => sum + Number(p.amount), 0);
         const balance = Math.max(0, Number(b.total_amount) - paidTotal);
         const chargesTotal = b.charges.reduce((sum, c) => sum + Number(c.amount), 0);
@@ -327,6 +332,19 @@ async function renderBookingDetail(id) {
                     <input type="number" name="taxPercent" value="${b.tax_percent}" min="0" max="100" step="0.1" style="max-width: 100px;">
                     <button type="submit" class="action-btn confirm">Update Tax %</button>
                 </form>
+            </div>
+
+            <div class="detail-subsection">
+                <h4>Mini Bar</h4>
+                <form class="inline-form minibar-charge-form" data-id="${id}">
+                    <select name="itemId" required>
+                        <option value="">Select an item&hellip;</option>
+                        ${minibarItems.filter((i) => i.active).map((i) => `<option value="${i.id}" ${i.stockQuantity <= 0 ? 'disabled' : ''}>${escapeHtml(i.name)} &mdash; ${money(i.price)} (${i.stockQuantity} left)</option>`).join('')}
+                    </select>
+                    <input type="number" name="quantity" value="1" min="1" step="1" style="max-width: 90px;">
+                    <button type="submit" class="action-btn confirm">Charge Guest</button>
+                </form>
+                <p class="form-message" id="minibarChargeMessage-${id}"></p>
             </div>
 
             <div class="detail-subsection">
@@ -450,6 +468,22 @@ async function renderBookingDetail(id) {
                 loadBookings(true, id);
             } catch (err) {
                 alert(err.message);
+            }
+        });
+
+        cell.querySelector('.minibar-charge-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const msg = document.getElementById(`minibarChargeMessage-${id}`);
+            if (!form.itemId.value) return;
+            try {
+                await apiSend('POST', `/api/minibar/${form.itemId.value}/consume`, {
+                    bookingId: id, quantity: Number(form.quantity.value)
+                });
+                msg.textContent = 'Charged to the guest\'s bill.'; msg.className = 'form-message success';
+                loadBookings(true, id);
+            } catch (err) {
+                msg.textContent = err.message; msg.className = 'form-message error';
             }
         });
 
@@ -1333,6 +1367,69 @@ document.getElementById('expenseForm').addEventListener('submit', async (e) => {
         msg.textContent = 'Expense added.'; msg.className = 'form-message success';
         e.target.reset();
         loadExpenses();
+    } catch (err) { msg.textContent = err.message; msg.className = 'form-message error'; }
+});
+
+/* ---------------- Mini Bar Stock ---------------- */
+let allMinibarItems = [];
+
+function minibarStatusPill(item) {
+    if (item.stockQuantity <= 0) return '<span class="status-pill cancelled">Out of Stock</span>';
+    if (item.stockQuantity <= item.lowStockThreshold) return '<span class="status-pill unpaid">Low Stock</span>';
+    return '<span class="status-pill paid">In Stock</span>';
+}
+
+async function loadMinibarPanel() {
+    try {
+        allMinibarItems = await apiGet('/api/minibar');
+        document.getElementById('minibarBody').innerHTML = allMinibarItems.map((item) => `
+            <tr>
+                <td>${escapeHtml(item.name)}</td>
+                <td>${money(item.price)}</td>
+                <td>${item.stockQuantity}</td>
+                <td>${minibarStatusPill(item)}</td>
+                <td>
+                    <button class="action-btn confirm minibar-restock-btn" data-id="${item.id}" data-name="${escapeHtml(item.name)}">Restock</button>
+                    <button class="action-btn cancel minibar-delete-btn" data-id="${item.id}" data-name="${escapeHtml(item.name)}">Delete</button>
+                </td>
+            </tr>
+        `).join('') || '<tr><td colspan="5">No mini bar items yet.</td></tr>';
+
+        document.querySelectorAll('.minibar-restock-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const qty = Number(prompt(`How many ${btn.dataset.name} are you adding to stock?`, '10'));
+                if (!qty || qty <= 0) return;
+                try {
+                    await apiSend('POST', `/api/minibar/${btn.dataset.id}/restock`, { quantity: qty });
+                    loadMinibarPanel();
+                } catch (err) { alert(err.message); }
+            });
+        });
+        document.querySelectorAll('.minibar-delete-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (!confirm(`Remove ${btn.dataset.name} from the mini bar catalog?`)) return;
+                try {
+                    await apiSend('DELETE', `/api/minibar/${btn.dataset.id}`, {});
+                    loadMinibarPanel();
+                } catch (err) { alert(err.message); }
+            });
+        });
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('minibarForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('minibarMessage');
+    try {
+        await apiSend('POST', '/api/minibar', {
+            name: document.getElementById('minibarName').value,
+            price: Number(document.getElementById('minibarPrice').value),
+            stockQuantity: Number(document.getElementById('minibarStock').value) || 0,
+            lowStockThreshold: Number(document.getElementById('minibarThreshold').value) || 5
+        });
+        msg.textContent = 'Item added.'; msg.className = 'form-message success';
+        e.target.reset();
+        loadMinibarPanel();
     } catch (err) { msg.textContent = err.message; msg.className = 'form-message error'; }
 });
 

@@ -85,6 +85,7 @@
                 <button class="admin-tab" data-tab="guests"><i class="fas fa-users"></i> Guests</button>
                 <button class="admin-tab" data-tab="rooms"><i class="fas fa-bed"></i> Rooms &amp; Pricing</button>
                 <button class="admin-tab" data-tab="expenses"><i class="fas fa-receipt"></i> Expenses</button>
+                <button class="admin-tab" data-tab="minibar"><i class="fas fa-martini-glass"></i> Mini Bar</button>
                 <button class="admin-tab" data-tab="reports"><i class="fas fa-chart-pie"></i> Reports</button>
                 <button class="admin-tab" data-tab="venues"><i class="fas fa-cash-register"></i> Cash &amp; Financial Controls</button>
                 <button class="admin-tab" data-tab="leads"><i class="fas fa-user-tie"></i> Investor Leads</button>
@@ -502,6 +503,34 @@
                             </tr>
                         </thead>
                         <tbody id="expensesBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Mini Bar Stock -->
+            <section class="admin-panel" id="panel-minibar" style="display: none;">
+                <h3>Mini Bar Stock</h3>
+                <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 14px;">Charging a guest for a mini bar item here decrements stock and adds it to their bill automatically.</p>
+                <form id="minibarForm" class="inline-form">
+                    <input type="text" id="minibarName" placeholder="Item name (e.g. Coca-Cola)" required>
+                    <input type="number" id="minibarPrice" placeholder="Price (Rs.)" min="0.01" step="0.01" required>
+                    <input type="number" id="minibarStock" placeholder="Starting stock" min="0" step="1">
+                    <input type="number" id="minibarThreshold" placeholder="Low-stock alert at" min="0" step="1">
+                    <button type="submit" class="action-btn confirm">Add Item</button>
+                </form>
+                <p class="form-message" id="minibarMessage"></p>
+                <div style="overflow-x: auto; margin-top: 16px;">
+                    <table class="admin-table" id="minibarTable">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Price</th>
+                                <th>Stock</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="minibarBody"></tbody>
                     </table>
                 </div>
             </section>
