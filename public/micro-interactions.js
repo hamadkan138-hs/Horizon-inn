@@ -292,6 +292,34 @@ const MicroInteractions = {
   },
 
   /**
+   * Cursor glow tracking (subtle glow follows cursor on hover)
+   * @param {string|Element} selector - Card element(s)
+   */
+  cursorGlowTracking(selector) {
+    const elements = typeof selector === 'string'
+      ? document.querySelectorAll(selector)
+      : [selector];
+
+    if (this.prefersReducedMotion) return;
+
+    elements.forEach(el => {
+      el.addEventListener('mousemove', (e) => {
+        const rect = el.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        el.style.setProperty('--cursor-x', `${x}px`);
+        el.style.setProperty('--cursor-y', `${y}px`);
+      });
+
+      el.addEventListener('mouseleave', () => {
+        el.style.setProperty('--cursor-x', '50%');
+        el.style.setProperty('--cursor-y', '50%');
+      });
+    });
+  },
+
+  /**
    * Ripple effect on click (material-like)
    * @param {string|Element} selector - Clickable element
    */
@@ -335,6 +363,77 @@ const MicroInteractions = {
   },
 
   /**
+   * Underline gradient animation on form input focus
+   * @param {string|Element} selector - Input element(s)
+   */
+  formUnderlineAnimation(selector) {
+    const inputs = typeof selector === 'string'
+      ? document.querySelectorAll(selector)
+      : [selector];
+
+    inputs.forEach(input => {
+      input.addEventListener('focus', () => {
+        if (!this.prefersReducedMotion) {
+          anime({
+            targets: input,
+            borderBottomColor: ['rgba(255, 255, 255, 0.1)', 'rgba(59, 130, 246, 0.6)'],
+            duration: 300,
+            easing: 'easeOutQuad'
+          });
+        }
+      });
+
+      input.addEventListener('blur', () => {
+        if (!this.prefersReducedMotion) {
+          anime({
+            targets: input,
+            borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+            duration: 300,
+            easing: 'easeOutQuad'
+          });
+        }
+      });
+    });
+  },
+
+  /**
+   * Page transition fade + slide
+   * @param {Element} exitElement - Element to fade out
+   * @param {Element} enterElement - Element to fade in
+   */
+  pageTransition(exitElement, enterElement, duration = 400) {
+    if (!exitElement || !enterElement) return;
+
+    if (this.prefersReducedMotion) {
+      if (exitElement) exitElement.style.opacity = '0';
+      if (enterElement) {
+        enterElement.style.opacity = '1';
+        enterElement.style.transform = 'translateY(0)';
+      }
+      return;
+    }
+
+    const timeline = anime.timeline();
+
+    timeline.add({
+      targets: exitElement,
+      opacity: [1, 0],
+      duration: duration * 0.6,
+      easing: 'easeInQuad'
+    }, 0);
+
+    timeline.add({
+      targets: enterElement,
+      opacity: [0, 1],
+      translateY: [20, 0],
+      duration: duration,
+      easing: 'easeOutQuad'
+    }, duration * 0.4);
+
+    return timeline;
+  },
+
+  /**
    * Initialize all global micro-interactions
    */
   initGlobalInteractions() {
@@ -343,6 +442,9 @@ const MicroInteractions = {
 
     // Toggle animations on checkboxes
     this.toggleAnimation('input[type="checkbox"], input[type="radio"]');
+
+    // Form underline animations
+    this.formUnderlineAnimation('input[type="text"], input[type="email"], input[type="number"], input[type="tel"], input[type="date"], textarea, select');
 
     // Floating cards (optional Tier 2)
     // this.floatingAnimation('.dashboard-card');

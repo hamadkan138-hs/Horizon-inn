@@ -93,13 +93,30 @@ async function showDashboard() {
     updateNotifyBell();
 }
 
-/* ---------------- Tabs ---------------- */
+/* ---------------- Tabs with Fade Transition -------- */
 document.querySelectorAll('.admin-tab').forEach((btn) => {
     btn.addEventListener('click', () => {
+        // Update active tab
         document.querySelectorAll('.admin-tab').forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
-        document.querySelectorAll('.admin-panel').forEach((p) => { p.style.display = 'none'; });
-        document.getElementById(`panel-${btn.dataset.tab}`).style.display = 'block';
+
+        // Fade out all panels
+        const allPanels = document.querySelectorAll('.admin-panel');
+        allPanels.forEach((p) => { p.style.display = 'none'; });
+
+        // Show new panel with fade animation
+        const newPanel = document.getElementById(`panel-${btn.dataset.tab}`);
+        newPanel.style.display = 'block';
+        if (typeof AnimationEngine !== 'undefined' && !AnimationEngine.prefersReducedMotion) {
+            anime({
+              targets: newPanel,
+              opacity: [0, 1],
+              duration: 300,
+              easing: 'easeOutQuad'
+            });
+        } else {
+            newPanel.style.opacity = '1';
+        }
 
         if (btn.dataset.tab === 'payments') loadTransactionsPanel();
         if (btn.dataset.tab === 'daily') loadDailySummary();

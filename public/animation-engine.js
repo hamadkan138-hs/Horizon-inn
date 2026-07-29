@@ -385,6 +385,45 @@ const AnimationEngine = {
   },
 
   /**
+   * Page transition fade + slide (tab/section change)
+   * @param {string|Element} exitSelector - Element to fade out
+   * @param {string|Element} enterSelector - Element to fade in
+   * @param {number} duration - Total animation duration (ms)
+   * @returns {anime.AnimeInstance}
+   */
+  pageTransition(exitSelector, enterSelector, duration = 400) {
+    if (this.prefersReducedMotion) {
+      const exitEl = typeof exitSelector === 'string' ? document.querySelector(exitSelector) : exitSelector;
+      const enterEl = typeof enterSelector === 'string' ? document.querySelector(enterSelector) : enterSelector;
+      if (exitEl) exitEl.style.opacity = '0';
+      if (enterEl) {
+        enterEl.style.opacity = '1';
+        enterEl.style.transform = 'translateY(0)';
+      }
+      return null;
+    }
+
+    const timeline = anime.timeline();
+
+    timeline.add({
+      targets: exitSelector,
+      opacity: [1, 0],
+      duration: duration * 0.5,
+      easing: 'easeInQuad'
+    }, 0);
+
+    timeline.add({
+      targets: enterSelector,
+      opacity: [0, 1],
+      translateY: [20, 0],
+      duration: duration,
+      easing: 'easeOutQuad'
+    }, duration * 0.3);
+
+    return timeline;
+  },
+
+  /**
    * Animate modal summary breakdown items (stagger fade + slide)
    * @param {string|Element} summarySelector - Modal summary container
    */
