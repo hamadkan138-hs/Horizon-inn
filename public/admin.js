@@ -718,7 +718,7 @@ function openCheckoutModal(booking) {
     document.getElementById('checkoutModalSummary').innerHTML = `
         <div><span>Total Charges</span><span>${money(booking.total_amount)}</span></div>
         <div><span>Already Paid</span><span>${money(paidTotal)}</span></div>
-        <div class="grand"><span>Balance Due</span><span>${money(balance)}</span></div>
+        <div class="grand"><span>Balance Due</span><span id="balanceDueValue">${money(balance)}</span></div>
     `;
     document.getElementById('checkoutAmount').value = balance > 0 ? balance.toFixed(2) : 0;
     document.getElementById('checkoutMethod').value = knownMethods.includes(booking.payment_method) ? booking.payment_method : 'cash';
@@ -726,14 +726,35 @@ function openCheckoutModal(booking) {
     document.getElementById('checkoutMessage').textContent = '';
     document.getElementById('checkoutMessage').className = 'form-message';
     document.getElementById('checkoutForm').dataset.id = booking.id;
-    document.getElementById('checkoutModalOverlay').style.display = 'flex';
+
+    // Show modal with slide-up animation
+    const overlay = document.getElementById('checkoutModalOverlay');
+    overlay.classList.add('active');
+
+    // Animate breakdown items with stagger
+    setTimeout(() => {
+        if (typeof AnimationEngine !== 'undefined') {
+            AnimationEngine.animateModalSummary('#checkoutModalSummary', 100);
+            // Count up the balance due amount
+            if (balance > 0) {
+                AnimationEngine.countUp('#balanceDueValue', balance, 800);
+            }
+        }
+    }, 100);
 }
 
 document.getElementById('closeCheckoutModalBtn').addEventListener('click', () => {
-    document.getElementById('checkoutModalOverlay').style.display = 'none';
+    const overlay = document.getElementById('checkoutModalOverlay');
+    overlay.classList.remove('active');
+    setTimeout(() => {
+        overlay.classList.remove('active');
+    }, 300);
 });
 document.getElementById('checkoutModalOverlay').addEventListener('click', (e) => {
-    if (e.target.id === 'checkoutModalOverlay') document.getElementById('checkoutModalOverlay').style.display = 'none';
+    if (e.target.id === 'checkoutModalOverlay') {
+        const overlay = document.getElementById('checkoutModalOverlay');
+        overlay.classList.remove('active');
+    }
 });
 
 document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
@@ -753,13 +774,30 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
             method: document.getElementById('checkoutMethod').value,
             transactionId: document.getElementById('checkoutTransactionId').value
         });
-        document.getElementById('checkoutModalOverlay').style.display = 'none';
+
+        // Close modal with animation
+        const overlay = document.getElementById('checkoutModalOverlay');
+        overlay.classList.remove('active');
+        setTimeout(() => {
+            overlay.classList.remove('active');
+        }, 300);
+
+        // Show success toast
         const when = formatPKT(result.booking.checked_out_at);
-        alert(amount > 0 ? `Payment recorded successfully at ${when}` : `Checkout completed at ${when}`);
+        const toastMsg = amount > 0 ? `Payment recorded at ${when}` : `Checkout completed at ${when}`;
+        if (typeof AnimationEngine !== 'undefined') {
+            AnimationEngine.showToast(toastMsg, 'success', 4000);
+        } else {
+            alert(toastMsg);
+        }
+
+        // Reload bookings
         loadBookings();
     } catch (err) {
-        // Nothing was changed server-side on failure — the form stays open
-        // with everything the user entered so they can just retry.
+        // Show error toast instead of alert
+        if (typeof AnimationEngine !== 'undefined') {
+            AnimationEngine.showToast(err.message, 'error', 4000);
+        }
         msg.textContent = err.message;
         msg.className = 'form-message error';
     } finally {
@@ -842,11 +880,33 @@ async function loadHandoverPanel() {
         ]);
 
         document.getElementById('handoverSummaryCards').innerHTML = `
-            <div class="summary-card"><span>Total Cash Collected</span><strong>${money(preview.cashTotal)}</strong></div>
-            <div class="summary-card"><span>Total Bank Transfers</span><strong>${money(preview.bankTotal)}</strong></div>
-            <div class="summary-card"><span>Total Online Payments</span><strong>${money(preview.onlineTotal)}</strong></div>
-            <div class="summary-card"><span>Grand Total (Pending Handover)</span><strong>${money(preview.cashTotal + preview.bankTotal + preview.onlineTotal)}</strong></div>
+            <div class="cash-summary-card animate-row">
+                <div class="cash-summary-label">Total Cash Collected</div>
+                <div class="cash-summary-value" id="handoverCashValue">${money(preview.cashTotal)}</div>
+            </div>
+            <div class="cash-summary-card animate-row">
+                <div class="cash-summary-label">Total Bank Transfers</div>
+                <div class="cash-summary-value" id="handoverBankValue">${money(preview.bankTotal)}</div>
+            </div>
+            <div class="cash-summary-card animate-row">
+                <div class="cash-summary-label">Total Online Payments</div>
+                <div class="cash-summary-value" id="handoverOnlineValue">${money(preview.onlineTotal)}</div>
+            </div>
+            <div class="cash-summary-card animate-row">
+                <div class="cash-summary-label">Grand Total (Pending Handover)</div>
+                <div class="cash-summary-value" id="handoverGrandValue">${money(preview.cashTotal + preview.bankTotal + preview.onlineTotal)}</div>
+            </div>
         `;
+
+        // Animate handover summary cards
+        if (typeof AnimationEngine !== 'undefined') {
+            AnimationEngine.staggerFadeSlideUp('.cash-summary-card', 100, 500);
+            // Count up the values
+            AnimationEngine.countUp('#handoverCashValue', preview.cashTotal, 1000);
+            AnimationEngine.countUp('#handoverBankValue', preview.bankTotal, 1000);
+            AnimationEngine.countUp('#handoverOnlineValue', preview.onlineTotal, 1000);
+            AnimationEngine.countUp('#handoverGrandValue', preview.cashTotal + preview.bankTotal + preview.onlineTotal, 1000);
+        }
 
         document.getElementById('handoverSimpleList').innerHTML = preview.bookings.map((b) => `
             <li>
@@ -910,11 +970,11 @@ async function openHandoverModal() {
     try {
         const preview = await apiGet('/api/handovers/preview');
         document.getElementById('handoverModalSummary').innerHTML = `
-            <div><span>Cash Collected</span><span>${money(preview.cashTotal)}</span></div>
-            <div><span>Bank Transfers</span><span>${money(preview.bankTotal)}</span></div>
-            <div><span>Online Payments</span><span>${money(preview.onlineTotal)}</span></div>
-            <div><span>Expenses Paid Out (cash)</span><span>-${money(preview.expensesTotal)}</span></div>
-            <div class="grand"><span>Total Cash in Hand</span><span>${money(preview.netCashHanded)}</span></div>
+            <div><span>Cash Collected</span><span id="handoverModalCash">${money(preview.cashTotal)}</span></div>
+            <div><span>Bank Transfers</span><span id="handoverModalBank">${money(preview.bankTotal)}</span></div>
+            <div><span>Online Payments</span><span id="handoverModalOnline">${money(preview.onlineTotal)}</span></div>
+            <div><span>Expenses Paid Out (cash)</span><span id="handoverModalExpenses">-${money(preview.expensesTotal)}</span></div>
+            <div class="grand"><span>Total Cash in Hand</span><span id="handoverModalTotal">${money(preview.netCashHanded)}</span></div>
         `;
         document.getElementById('handoverStaffName').value = currentUser.username;
         document.getElementById('handoverDateTime').value = new Date().toLocaleString('en-US', {
@@ -924,18 +984,41 @@ async function openHandoverModal() {
         document.getElementById('handoverReceiverNameLabel').textContent = RECEIVER_LABELS.owner;
         document.getElementById('handoverReceiverName').value = '';
         document.getElementById('handoverNote').value = '';
-        document.getElementById('handoverModalOverlay').style.display = 'flex';
+
+        // Show modal with slide-up animation
+        const overlay = document.getElementById('handoverModalOverlay');
+        overlay.classList.add('active');
+
+        // Animate breakdown items
+        setTimeout(() => {
+            if (typeof AnimationEngine !== 'undefined') {
+                AnimationEngine.animateModalSummary('#handoverModalSummary', 100);
+                // Count up values
+                AnimationEngine.countUp('#handoverModalCash', preview.cashTotal, 800);
+                AnimationEngine.countUp('#handoverModalBank', preview.bankTotal, 800);
+                AnimationEngine.countUp('#handoverModalExpenses', preview.expensesTotal, 800);
+                AnimationEngine.countUp('#handoverModalTotal', preview.netCashHanded, 800);
+            }
+        }, 100);
     } catch (err) {
-        alert(err.message);
+        if (typeof AnimationEngine !== 'undefined') {
+            AnimationEngine.showToast(err.message, 'error', 4000);
+        } else {
+            alert(err.message);
+        }
     }
 }
 
 document.getElementById('openHandoverModalBtn').addEventListener('click', openHandoverModal);
 document.getElementById('closeHandoverModalBtn').addEventListener('click', () => {
-    document.getElementById('handoverModalOverlay').style.display = 'none';
+    const overlay = document.getElementById('handoverModalOverlay');
+    overlay.classList.remove('active');
 });
 document.getElementById('handoverModalOverlay').addEventListener('click', (e) => {
-    if (e.target.id === 'handoverModalOverlay') document.getElementById('handoverModalOverlay').style.display = 'none';
+    if (e.target.id === 'handoverModalOverlay') {
+        const overlay = document.getElementById('handoverModalOverlay');
+        overlay.classList.remove('active');
+    }
 });
 document.getElementById('handoverReceiverType').addEventListener('change', (e) => {
     document.getElementById('handoverReceiverNameLabel').textContent = RECEIVER_LABELS[e.target.value];
@@ -944,17 +1027,38 @@ document.getElementById('handoverReceiverType').addEventListener('change', (e) =
 document.getElementById('handoverForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const msg = document.getElementById('handoverMessage');
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+
+    msg.textContent = '';
+    msg.className = 'form-message';
+    submitBtn.disabled = true;
+
     try {
-        await apiSend('POST', '/api/handovers', {
+        const result = await apiSend('POST', '/api/handovers', {
             receiverType: document.getElementById('handoverReceiverType').value,
             receiverName: document.getElementById('handoverReceiverName').value,
             note: document.getElementById('handoverNote').value
         });
-        document.getElementById('handoverModalOverlay').style.display = 'none';
-        loadHandoverPanel();
+
+        // Close modal with animation
+        const overlay = document.getElementById('handoverModalOverlay');
+        overlay.classList.remove('active');
+
+        // Show success toast
+        if (typeof AnimationEngine !== 'undefined') {
+            AnimationEngine.showToast(`Handover recorded successfully`, 'success', 4000);
+        }
+
+        // Reload handover panel
+        await loadHandoverPanel();
     } catch (err) {
+        if (typeof AnimationEngine !== 'undefined') {
+            AnimationEngine.showToast(err.message, 'error', 4000);
+        }
         msg.textContent = err.message;
         msg.className = 'form-message error';
+    } finally {
+        submitBtn.disabled = false;
     }
 });
 

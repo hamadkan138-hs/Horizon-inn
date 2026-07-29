@@ -385,6 +385,83 @@ const AnimationEngine = {
   },
 
   /**
+   * Animate modal summary breakdown items (stagger fade + slide)
+   * @param {string|Element} summarySelector - Modal summary container
+   */
+  animateModalSummary(summarySelector, baseDelay = 100) {
+    if (this.prefersReducedMotion) {
+      const container = typeof summarySelector === 'string'
+        ? document.querySelector(summarySelector)
+        : summarySelector;
+      if (container) {
+        container.querySelectorAll('div').forEach(item => {
+          item.style.opacity = '1';
+          item.style.transform = 'translateX(0)';
+        });
+      }
+      return;
+    }
+
+    const container = typeof summarySelector === 'string'
+      ? document.querySelector(summarySelector)
+      : summarySelector;
+    if (!container) return;
+
+    const items = container.querySelectorAll('div');
+    items.forEach((item, index) => {
+      anime({
+        targets: item,
+        opacity: [0, 1],
+        translateX: [-12, 0],
+        easing: 'easeOutQuad',
+        duration: 400,
+        delay: index * baseDelay + 100
+      });
+    });
+  },
+
+  /**
+   * Show toast notification (success or error)
+   * @param {string} message - Toast message text
+   * @param {string} type - 'success' or 'error'
+   * @param {number} duration - Auto-dismiss duration (ms), 0 = manual
+   */
+  showToast(message, type = 'success', duration = 3000) {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification ${type}`;
+
+    const icon = type === 'success'
+      ? '<i class="fas fa-check-circle"></i>'
+      : '<i class="fas fa-exclamation-circle"></i>';
+
+    toast.innerHTML = `${icon} <span>${message}</span>`;
+    document.body.appendChild(toast);
+
+    // Animate in
+    this.toastSlideIn(toast, 300);
+
+    // Auto-dismiss if duration > 0
+    if (duration > 0) {
+      setTimeout(() => {
+        if (!this.prefersReducedMotion) {
+          anime({
+            targets: toast,
+            opacity: [1, 0],
+            translateY: [0, 40],
+            duration: 300,
+            easing: 'easeInQuad',
+            complete: () => toast.remove()
+          });
+        } else {
+          toast.remove();
+        }
+      }, duration);
+    }
+
+    return toast;
+  },
+
+  /**
    * Initialize all global interactions
    */
   initGlobalInteractions() {

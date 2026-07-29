@@ -540,6 +540,210 @@ a:hover {
   }
 }
 
+/* ===== BILLING & CHECKOUT MODAL (Slide-up Panel, Apple Wallet style) ===== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(0);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 200ms ease-in-out;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.modal-box {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(11, 15, 26, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px 24px 0 0;
+  padding: 32px 28px;
+  max-width: 600px;
+  width: 90%;
+  backdrop-filter: blur(20px);
+  animation: modal-slide-up 400ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  box-shadow: 0 -20px 60px rgba(59, 130, 246, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+@keyframes modal-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== MODAL SUMMARY (Breakdown items with stagger animation) ===== */
+.modal-summary {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 18px 16px;
+  margin-bottom: 20px;
+}
+
+.modal-summary div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  opacity: 0;
+  animation: breakdown-item-fade 400ms ease-in-out forwards;
+}
+
+.modal-summary div:last-child {
+  border-bottom: none;
+}
+
+.modal-summary div:nth-child(1) { animation-delay: 100ms; }
+.modal-summary div:nth-child(2) { animation-delay: 200ms; }
+.modal-summary div:nth-child(3) { animation-delay: 300ms; }
+.modal-summary div:nth-child(4) { animation-delay: 400ms; }
+.modal-summary div:nth-child(5) { animation-delay: 500ms; }
+.modal-summary div:nth-child(6) { animation-delay: 600ms; }
+.modal-summary div:nth-child(7) { animation-delay: 700ms; }
+.modal-summary div:nth-child(8) { animation-delay: 800ms; }
+.modal-summary div:nth-child(9) { animation-delay: 900ms; }
+.modal-summary div:nth-child(10) { animation-delay: 1000ms; }
+
+@keyframes breakdown-item-fade {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.modal-summary strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.modal-summary .total-amount {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 2px solid rgba(59, 130, 246, 0.3) !important;
+}
+
+/* ===== CASH SUMMARY CARDS (Minimal floating aesthetic) ===== */
+.cash-summary-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 24px;
+  backdrop-filter: blur(20px);
+  transition: all 300ms ease;
+}
+
+.cash-summary-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(59, 130, 246, 0.2);
+  box-shadow: 0 20px 60px rgba(59, 130, 246, 0.1);
+}
+
+.cash-summary-label {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.cash-summary-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+/* ===== FLOATING SUMMARY PANEL (Minimal cash handover) ===== */
+.floating-panel {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: rgba(11, 15, 26, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 20px 24px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 280px;
+  animation: panel-slide-up 400ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  z-index: 500;
+}
+
+@keyframes panel-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== SUCCESS TOAST (Slide-in notification) ===== */
+.toast-notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.08) 100%);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 12px;
+  padding: 16px 20px;
+  color: #fff;
+  font-size: 0.95rem;
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: toast-slide-up 300ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  z-index: 2000;
+}
+
+@keyframes toast-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100px) translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateX(0);
+  }
+}
+
+.toast-notification.error {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.08) 100%);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
 /* ===== ACCESSIBILITY ===== */
 @media (prefers-reduced-motion: reduce) {
   * {
@@ -554,5 +758,17 @@ a:hover {
 
   button:hover {
     transform: none;
+  }
+
+  @keyframes overlay-fade-in,
+  @keyframes modal-slide-up,
+  @keyframes breakdown-item-fade,
+  @keyframes panel-slide-up,
+  @keyframes toast-slide-up {
+    from, to {
+      opacity: 1;
+      transform: none;
+      backdrop-filter: none;
+    }
   }
 }
