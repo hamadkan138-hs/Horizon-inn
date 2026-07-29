@@ -1782,6 +1782,52 @@ table.admin-table th {
     color: #a5473c;
 }
 
+.quick-launch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.quick-launch-card {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    text-decoration: none;
+}
+
+.quick-launch-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gold);
+    color: #fff;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+
+.quick-launch-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.quick-launch-text strong {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: var(--charcoal);
+}
+
+.quick-launch-text span {
+    font-size: 0.75rem;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--text-light);
+}
+
 .overview-list {
     list-style: none;
     padding: 0;

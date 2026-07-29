@@ -105,6 +105,30 @@
                 <h2 id="overviewGreeting" style="margin-bottom: 4px;">Today at a Glance</h2>
                 <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 18px;">Everything that needs your attention right now, in one place.</p>
 
+                <h3 style="font-size: 0.95rem; margin-bottom: 10px;"><i class="fas fa-bolt"></i> Quick Launch</h3>
+                <div class="quick-launch-grid" id="overviewQuickLaunch">
+                    <a class="summary-card clickable quick-launch-card" href="frontdesk.html">
+                        <span class="quick-launch-icon"><i class="fas fa-bell-concierge"></i></span>
+                        <span class="quick-launch-text"><strong>Front Desk</strong><span>Check-in, checkout, mini bar, cash</span></span>
+                    </a>
+                    <a class="summary-card clickable quick-launch-card" href="room-management.html">
+                        <span class="quick-launch-icon"><i class="fas fa-bed"></i></span>
+                        <span class="quick-launch-text"><strong>Room Management</strong><span>Live room grid &amp; status</span></span>
+                    </a>
+                    <a class="summary-card clickable quick-launch-card" href="investor.html">
+                        <span class="quick-launch-icon"><i class="fas fa-briefcase"></i></span>
+                        <span class="quick-launch-text"><strong>Investor Dashboard</strong><span>ROI, ledger, valuation</span></span>
+                    </a>
+                    <a class="summary-card clickable quick-launch-card" href="index.html" target="_blank" rel="noopener">
+                        <span class="quick-launch-icon"><i class="fas fa-globe"></i></span>
+                        <span class="quick-launch-text"><strong>Public Website</strong><span>View the live site</span></span>
+                    </a>
+                </div>
+
+                <h3 style="font-size: 0.95rem; margin: 22px 0 10px;"><i class="fas fa-gauge-high"></i> Today's Pulse</h3>
+                <div class="summary-cards" id="overviewPulseCards"></div>
+
+                <h3 style="font-size: 0.95rem; margin: 22px 0 10px;"><i class="fas fa-triangle-exclamation"></i> Needs Your Attention</h3>
                 <div class="summary-cards" id="overviewStatCards"></div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 10px;">

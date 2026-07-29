@@ -4,6 +4,7 @@ const adminAuth = require('../middleware/adminAuth');
 const { requireRole } = adminAuth;
 const { getDailySummary } = require('../lib/dailySummary');
 const { sendDailySummaryEmail } = require('../lib/mailer');
+const { computeUnswept } = require('./handovers');
 
 const router = express.Router();
 
@@ -220,9 +221,13 @@ router.get('/daily-summary', async (req, res) => {
 // values each of those tabs already filters by.
 router.get('/overview', async (req, res) => {
   try {
+    const today = new Date().toISOString().slice(0, 10);
     const daily = await getDailySummary();
 
-    const [cancellations, pendingVouchers, openRecovery, pendingReviews, newLeads, lowStockMinibar] = await Promise.all([
+    const [
+      cancellations, pendingVouchers, openRecovery, pendingReviews, newLeads, lowStockMinibar,
+      pendingWithdrawals, occupancyRooms, occupiedBookings, minibarSalesToday, handoverPreview
+    ] = await Promise.all([
       db.execute(`
         SELECT bookings.id, bookings.name, bookings.invoice_number, bookings.cancellation_requested_at
         FROM bookings
@@ -246,7 +251,26 @@ router.get('/overview', async (req, res) => {
       db.execute(`
         SELECT id, name, stock_quantity, low_stock_threshold FROM minibar_items
         WHERE active = 1 AND stock_quantity <= low_stock_threshold ORDER BY stock_quantity ASC
-      `)
+      `),
+      db.execute(`
+        SELECT withdrawal_requests.id, withdrawal_requests.type, withdrawal_requests.amount,
+               withdrawal_requests.requested_at, investors.investor_code, users.username
+        FROM withdrawal_requests
+        JOIN investors ON investors.id = withdrawal_requests.investor_id
+        JOIN users ON users.id = investors.user_id
+        WHERE withdrawal_requests.status = 'pending'
+        ORDER BY withdrawal_requests.requested_at ASC
+      `),
+      db.execute(`SELECT COALESCE(SUM(total_units), 0) AS capacity FROM rooms WHERE active = 1`),
+      db.execute({
+        sql: `SELECT COUNT(*) AS occupied FROM bookings WHERE status = 'checked_in' AND checkin <= ? AND checkout > ?`,
+        args: [today, today]
+      }),
+      db.execute({
+        sql: `SELECT COALESCE(SUM(-quantity * unit_price), 0) AS revenue FROM minibar_room_log WHERE action = 'consume' AND date(created_at) = ?`,
+        args: [today]
+      }),
+      computeUnswept()
     ]);
 
     res.json({
@@ -255,12 +279,25 @@ router.get('/overview', async (req, res) => {
       departures: daily.checkouts,
       outstandingTotal: daily.outstandingTotal,
       outstandingCount: daily.outstandingBookings.length,
+      cashReceivedToday: daily.cashReceivedToday,
+      expensesTotalToday: daily.expensesTotalToday,
+      netCashToday: daily.netCashToday,
+      occupancy: {
+        occupied: Number(occupiedBookings.rows[0].occupied),
+        capacity: Number(occupancyRooms.rows[0].capacity),
+        rate: Number(occupancyRooms.rows[0].capacity)
+          ? Number(occupiedBookings.rows[0].occupied) / Number(occupancyRooms.rows[0].capacity)
+          : 0
+      },
+      minibarSalesToday: Number(minibarSalesToday.rows[0].revenue),
+      pendingHandoverTotal: handoverPreview.cashTotal + handoverPreview.bankTotal + handoverPreview.onlineTotal,
       cancellationRequests: cancellations.rows,
       pendingVouchers: pendingVouchers.rows,
       openRecovery: openRecovery.rows,
       pendingReviews: pendingReviews.rows,
       newLeads: newLeads.rows,
-      lowStockMinibar: lowStockMinibar.rows
+      lowStockMinibar: lowStockMinibar.rows,
+      pendingWithdrawals: pendingWithdrawals.rows
     });
   } catch (err) {
     console.error(err);

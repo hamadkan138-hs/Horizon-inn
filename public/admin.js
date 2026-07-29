@@ -177,18 +177,32 @@ async function loadOverview() {
         const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
         document.getElementById('overviewGreeting').textContent = `${greeting} — Today at a Glance`;
 
-        const cards = [
+        const pulseCards = [
             { label: 'Arriving Today', value: data.arrivals.length, tab: 'bookings' },
             { label: 'Departing Today', value: data.departures.length, tab: 'bookings' },
+            { label: 'Occupancy Today', value: `${data.occupancy.occupied}/${data.occupancy.capacity} rooms (${Math.round(data.occupancy.rate * 100)}%)`, tab: 'availability' },
+            { label: 'Cash Received Today', value: money(data.cashReceivedToday), tab: 'daily' },
+            { label: 'Expenses Today', value: money(data.expensesTotalToday), tab: 'daily' },
+            { label: 'Net Cash Today', value: money(data.netCashToday), tab: 'daily' },
+            { label: 'Mini Bar Sales Today', value: money(data.minibarSalesToday), tab: 'minibar', subtab: 'analytics' },
+            { label: 'Pending Handover Amount', value: money(data.pendingHandoverTotal), tab: 'handover' }
+        ];
+        document.getElementById('overviewPulseCards').innerHTML = pulseCards.map(overviewStatCardHtml).join('');
+        document.querySelectorAll('#overviewPulseCards [data-jump-tab]').forEach((btn) => {
+            btn.addEventListener('click', () => jumpToTab(btn.dataset.jumpTab, btn.dataset.jumpSubtab));
+        });
+
+        const attentionCards = [
             { label: 'Unpaid Balance', value: money(data.outstandingTotal), tab: 'payments', attention: data.outstandingTotal > 0 },
             { label: 'Cancellation Requests', value: data.cancellationRequests.length, tab: 'bookings', attention: data.cancellationRequests.length > 0 },
             { label: 'Vouchers to Verify', value: data.pendingVouchers.length, tab: 'promotions', attention: data.pendingVouchers.length > 0 },
             { label: 'Recovery Leads', value: data.openRecovery.length, tab: 'recovery', attention: data.openRecovery.length > 0 },
             { label: 'Reviews to Moderate', value: data.pendingReviews.length, tab: 'reviews', attention: data.pendingReviews.length > 0 },
             { label: 'New Investor Leads', value: data.newLeads.length, tab: 'leads', attention: data.newLeads.length > 0 },
-            { label: 'Mini Bar Low Stock', value: data.lowStockMinibar.length, tab: 'minibar', subtab: 'store', attention: data.lowStockMinibar.length > 0 }
+            { label: 'Mini Bar Low Stock', value: data.lowStockMinibar.length, tab: 'minibar', subtab: 'store', attention: data.lowStockMinibar.length > 0 },
+            { label: 'Investor Withdrawal Requests', value: data.pendingWithdrawals.length, tab: 'investors', attention: data.pendingWithdrawals.length > 0 }
         ];
-        document.getElementById('overviewStatCards').innerHTML = cards.map(overviewStatCardHtml).join('');
+        document.getElementById('overviewStatCards').innerHTML = attentionCards.map(overviewStatCardHtml).join('');
         document.querySelectorAll('#overviewStatCards [data-jump-tab]').forEach((btn) => {
             btn.addEventListener('click', () => jumpToTab(btn.dataset.jumpTab, btn.dataset.jumpSubtab));
         });
