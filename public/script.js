@@ -96,18 +96,93 @@ if (navbar) {
     window.addEventListener('scroll', toggleNavbarBg, { passive: true });
 }
 
-// Fade-in sections as they scroll into view
-const revealTargets = document.querySelectorAll('.reveal');
-if (revealTargets.length) {
-    const revealObserver = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('is-visible');
-                revealObserver.unobserve(entry.target);
-            }
-        });
-    }, { threshold: 0.15 });
-    revealTargets.forEach((el) => revealObserver.observe(el));
+// Anyone who has asked their OS to reduce motion gets the finished state
+// immediately instead of any scroll-driven movement.
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// One observer drives every scroll-triggered reveal on the page. Elements
+// rendered later from data (rooms, facilities, projects) register themselves
+// via observeReveal() rather than needing their own observer each time.
+const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const el = entry.target;
+        el.classList.add('is-visible');
+        revealObserver.unobserve(el);
+
+        // A staggered card borrows `transition` and `transition-delay` to make
+        // its entrance. Once that has played, hand the element back to its own
+        // stylesheet — otherwise the reveal's timing would also govern hover,
+        // leaving a card that waits out its stagger delay before responding.
+        if (el.classList.contains('reveal-stagger')) {
+            const delayMs = (parseFloat(el.style.getPropertyValue('--stagger')) || 0) * 1000;
+            setTimeout(() => {
+                el.classList.remove('reveal-stagger');
+                el.style.removeProperty('--stagger');
+            }, delayMs + 800);
+        }
+    });
+}, { threshold: 0.15 });
+
+function observeReveal(el) {
+    if (!el) return;
+    if (prefersReducedMotion) { el.classList.add('is-visible'); return; }
+    revealObserver.observe(el);
+}
+
+document.querySelectorAll('.reveal').forEach(observeReveal);
+
+// Section headings animate in with their gold rule; tagged here rather than in
+// the markup so every current and future section picks it up automatically.
+document.querySelectorAll('section h2, .section-title').forEach((h) => {
+    h.classList.add('reveal-title');
+    observeReveal(h);
+});
+
+// Applies the staggered entrance to a freshly-rendered set of cards. The delay
+// is capped so a long list never leaves the last card waiting seconds to appear.
+function staggerReveal(container, selector = ':scope > *') {
+    if (!container) return;
+    container.querySelectorAll(selector).forEach((el, i) => {
+        el.classList.add('reveal-stagger');
+        el.style.setProperty('--stagger', `${Math.min(i * 0.08, 0.5)}s`);
+        observeReveal(el);
+    });
+}
+
+// Reading-progress rail across the top of the page.
+if (!prefersReducedMotion) {
+    const progress = document.createElement('div');
+    progress.className = 'scroll-progress';
+    document.body.appendChild(progress);
+    const updateProgress = () => {
+        const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+        const ratio = scrollable > 0 ? window.scrollY / scrollable : 0;
+        progress.style.transform = `scaleX(${Math.min(1, Math.max(0, ratio))})`;
+    };
+    updateProgress();
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    window.addEventListener('resize', updateProgress, { passive: true });
+}
+
+// Counts a number up to its final value once it scrolls into view. Used for the
+// social-proof stats so they land as an achievement rather than static text.
+function animateCount(el, target, suffix = '', duration = 1400) {
+    if (prefersReducedMotion || !Number.isFinite(target)) {
+        el.textContent = `${target}${suffix}`;
+        return;
+    }
+    const decimals = String(target).includes('.') ? 1 : 0;
+    const start = performance.now();
+    const step = (now) => {
+        const t = Math.min(1, (now - start) / duration);
+        // easeOutCubic — fast to begin, settling gently on the final figure.
+        const eased = 1 - Math.pow(1 - t, 3);
+        el.textContent = `${(target * eased).toFixed(decimals)}${suffix}`;
+        if (t < 1) requestAnimationFrame(step);
+        else el.textContent = `${target}${suffix}`;
+    };
+    requestAnimationFrame(step);
 }
 
 // Highlight the nav link for whichever section is in view
@@ -285,6 +360,7 @@ function renderRooms(rooms) {
             roomSelect.value = btn.dataset.roomId;
         });
     });
+    staggerReveal(roomsGrid, ':scope > .room-card');
     initGallerySliders();
 }
 
@@ -406,6 +482,7 @@ function renderProjects(projects) {
     }
     section.style.display = '';
     projectsGrid.innerHTML = projects.map(projectCardHtml).join('');
+    staggerReveal(projectsGrid, ':scope > *');
     initGallerySliders(projectsGrid);
 }
 
@@ -638,6 +715,7 @@ async function loadFacilities() {
         grid.querySelectorAll('.facility-card').forEach((card) => {
             card.addEventListener('click', () => openFacilityModal(Number(card.dataset.id)));
         });
+        staggerReveal(grid, ':scope > .facility-card');
     } catch (err) {
         grid.innerHTML = '<p style="color: #9ca3af; text-align: center; grid-column: 1 / -1;">Could not load facilities right now.</p>';
     }
@@ -956,10 +1034,25 @@ async function loadSocialProof() {
             { value: stats.averageRating || '—', label: 'Average Rating' }
         ].filter((item) => Number(item.value) > 0 || item.label === 'Average Rating' && stats.reviewCount > 0);
         if (!items.length) return;
-        document.getElementById('socialProofGrid').innerHTML = items.map((item) => `
-            <div><span class="stat-value">${item.value}${item.label === 'Average Rating' ? ' / 5' : '+'}</span><span class="stat-label">${item.label}</span></div>
+        const grid = document.getElementById('socialProofGrid');
+        grid.innerHTML = items.map((item) => `
+            <div><span class="stat-value" data-count="${item.value}" data-suffix="${item.label === 'Average Rating' ? ' / 5' : '+'}">0</span><span class="stat-label">${item.label}</span></div>
         `).join('');
         bar.style.display = 'block';
+
+        // Hold each figure at 0 until the bar is actually on screen, then count
+        // up — the numbers are the point of this section, so they should land
+        // as the guest arrives at them rather than having finished off-screen.
+        const statObserver = new IntersectionObserver((entries, obs) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                grid.querySelectorAll('.stat-value').forEach((el) => {
+                    animateCount(el, Number(el.dataset.count), el.dataset.suffix);
+                });
+                obs.disconnect();
+            });
+        }, { threshold: 0.4 });
+        statObserver.observe(bar);
     } catch (err) { /* fail silently — not critical */ }
 }
 loadSocialProof();
