@@ -91,6 +91,8 @@ body {
     padding: 10px 16px; font-size: 0.85rem; color: var(--text-2) !important; margin-bottom: 22px; border-radius: 0 10px 10px 0;
 }
 .investor-note i { color: var(--gold) !important; }
+.investor-note.danger-note { border-left-color: #a5473c !important; }
+.investor-note.danger-note i { color: #a5473c !important; }
 
 .date-presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; }
 input[type="date"], input[type="datetime-local"] { color-scheme: dark; }

@@ -3,6 +3,7 @@ const express = require('express');
 const cron = require('node-cron');
 const { init } = require('./db');
 const { sendDailySummaryEmail } = require('./lib/mailer');
+const { ALL_TABLES, emailBackup } = require('./lib/backup');
 
 const roomsRouter = require('./routes/rooms');
 const bookingsRouter = require('./routes/bookings');
@@ -29,6 +30,7 @@ const giftVouchersRouter = require('./routes/giftVouchers');
 const corporateAccountsRouter = require('./routes/corporateAccounts');
 const abandonedBookingsRouter = require('./routes/abandonedBookings');
 const minibarRouter = require('./routes/minibar');
+const adminDataRouter = require('./routes/adminData');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -61,6 +63,7 @@ app.use('/api/gift-vouchers', giftVouchersRouter);
 app.use('/api/corporate-accounts', corporateAccountsRouter);
 app.use('/api/abandoned-bookings', abandonedBookingsRouter);
 app.use('/api/minibar', minibarRouter);
+app.use('/api/admin', adminDataRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
@@ -81,6 +84,20 @@ init()
       console.log('Daily summary email scheduled for 8:00 AM PKT.');
     } else {
       console.log('Daily summary email disabled — set EMAIL_USER and EMAIL_APP_PASSWORD to enable it.');
+    }
+
+    // Full-site off-site backup — protects against data loss even if the
+    // Turso database were ever lost, corrupted, or accidentally reset.
+    // Emailed as a JSON attachment daily since the app already has a working
+    // mail channel and this needs no new infrastructure or credentials.
+    if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD) {
+      cron.schedule('30 2 * * *', () => {
+        emailBackup(ALL_TABLES, {
+          subject: `Horizon Inn — daily backup`,
+          note: 'Automated daily backup of the full Horizon Inn database (excluding media/photos). Keep this file somewhere safe.'
+        }).catch((err) => console.error('Daily backup email failed:', err));
+      }, { timezone: 'Asia/Karachi' });
+      console.log('Daily database backup email scheduled for 2:30 AM PKT.');
     }
   })
   .catch((err) => {
