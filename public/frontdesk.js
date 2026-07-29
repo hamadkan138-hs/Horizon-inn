@@ -460,7 +460,49 @@ async function showCheckedInState(booking, guestName) {
     document.getElementById('checkedInRoom').textContent = roomName || '—';
     document.getElementById('checkedInTime').textContent = formatPKT(booking.createdAt);
     document.getElementById('checkedInExpected').textContent = booking.checkout || '—';
+    document.getElementById('sendInvoiceMessage').textContent = '';
 }
+
+/* ---------------- Send invoice (email / WhatsApp) ---------------- */
+document.getElementById('sendInvoiceEmailBtn').addEventListener('click', async () => {
+    if (!activeBooking) return;
+    const btn = document.getElementById('sendInvoiceEmailBtn');
+    const msg = document.getElementById('sendInvoiceMessage');
+    btn.disabled = true;
+    msg.className = 'form-message';
+    msg.textContent = 'Sending…';
+    try {
+        await apiSend('POST', `/api/bookings/${activeBooking.id}/send-invoice-email`, {});
+        msg.className = 'form-message success';
+        msg.textContent = 'Invoice emailed to the guest.';
+    } catch (err) {
+        msg.className = 'form-message error';
+        msg.textContent = err.message;
+    } finally {
+        btn.disabled = false;
+    }
+});
+
+document.getElementById('sendInvoiceWhatsappBtn').addEventListener('click', async () => {
+    if (!activeBooking) return;
+    const btn = document.getElementById('sendInvoiceWhatsappBtn');
+    const msg = document.getElementById('sendInvoiceMessage');
+    btn.disabled = true;
+    try {
+        const info = await apiGet(`/api/bookings/${activeBooking.id}/invoice-link`);
+        let digits = (info.phone || '').replace(/\D/g, '');
+        if (digits.startsWith('0')) digits = `92${digits.slice(1)}`;
+        const text = `Hello ${info.name}, here's your Horizon Inn invoice (${info.invoiceNumber}): ${info.link}`;
+        window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+        msg.className = 'form-message success';
+        msg.textContent = 'WhatsApp opened with the invoice link ready to send.';
+    } catch (err) {
+        msg.className = 'form-message error';
+        msg.textContent = err.message;
+    } finally {
+        btn.disabled = false;
+    }
+});
 
 document.getElementById('openCheckoutBtn').addEventListener('click', () => {
     if (activeBooking) openFdCheckoutModal(activeBooking);

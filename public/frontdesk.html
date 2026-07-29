@@ -216,6 +216,11 @@
                     <div><span class="label">Checked In At</span><strong id="checkedInTime"></strong></div>
                     <div><span class="label">Expected Check-Out</span><strong id="checkedInExpected"></strong></div>
                 </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
+                    <button type="button" class="action-btn confirm" id="sendInvoiceEmailBtn"><i class="fas fa-envelope"></i> Email Invoice</button>
+                    <button type="button" class="action-btn confirm" id="sendInvoiceWhatsappBtn"><i class="fab fa-whatsapp"></i> WhatsApp Invoice</button>
+                </div>
+                <p class="form-message" id="sendInvoiceMessage"></p>
                 <button type="button" class="kiosk-btn-lg kiosk-btn-dark" id="openCheckoutBtn">Check-Out</button>
             </div>
         </div>
