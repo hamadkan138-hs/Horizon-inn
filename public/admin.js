@@ -2479,6 +2479,7 @@ async function loadValuationAdmin() {
         document.getElementById('currentOwnerEquityDisplay').textContent = data.ownerEquityPercent > 0
             ? `${data.ownerEquityPercent}% fixed — investors split the remaining ${(100 - data.ownerEquityPercent).toFixed(1)}% pool.`
             : 'Not set — investor ownership is calculated directly against valuation.';
+        document.getElementById('projectValuationRef').textContent = data.current ? money(data.current.amount) : 'not set yet';
     } catch (err) { /* handled */ }
 }
 
@@ -2663,6 +2664,9 @@ async function loadProjectsAdmin() {
                 <td>${escapeHtml(p.location)}</td>
                 <td>${money(p.targetCapital)}</td>
                 <td>${escapeHtml(p.timeline)}</td>
+                <td><input type="number" class="proj-valuation" value="${p.valuationAmount || ''}" min="0" step="1000" style="width: 130px;"></td>
+                <td><input type="number" class="proj-owner-equity" value="${p.ownerEquityPercent || ''}" min="0" max="100" step="0.1" style="width: 90px;"></td>
+                <td><input type="number" class="proj-projected-income" value="${p.projectedMonthlyIncome || ''}" min="0" step="1000" style="width: 130px;"></td>
                 <td>
                     <select class="proj-status">
                         <option value="planned" ${p.status === 'planned' ? 'selected' : ''}>Planned</option>
@@ -2675,13 +2679,18 @@ async function loadProjectsAdmin() {
                     <button class="action-btn cancel proj-delete-btn">Delete</button>
                 </td>
             </tr>
-        `).join('') || '<tr><td colspan="6">No projects listed yet.</td></tr>';
+        `).join('') || '<tr><td colspan="9">No projects listed yet.</td></tr>';
 
         document.querySelectorAll('.proj-save-btn').forEach((btn) => {
             btn.addEventListener('click', async () => {
                 const row = btn.closest('tr');
                 try {
-                    await apiSend('PATCH', `/api/investor-accounts/projects/${row.dataset.id}`, { status: row.querySelector('.proj-status').value });
+                    await apiSend('PATCH', `/api/investor-accounts/projects/${row.dataset.id}`, {
+                        status: row.querySelector('.proj-status').value,
+                        valuationAmount: Number(row.querySelector('.proj-valuation').value) || 0,
+                        ownerEquityPercent: Number(row.querySelector('.proj-owner-equity').value) || 0,
+                        projectedMonthlyIncome: Number(row.querySelector('.proj-projected-income').value) || 0
+                    });
                     loadProjectsAdmin();
                 } catch (err) { alert(err.message); }
             });
@@ -2707,12 +2716,16 @@ document.getElementById('addProjectBtn').addEventListener('click', async () => {
             targetCapital: Number(document.getElementById('projectCapital').value) || 0,
             timeline: document.getElementById('projectTimeline').value,
             description: document.getElementById('projectDescription').value,
-            growthPotential: document.getElementById('projectGrowth').value
+            growthPotential: document.getElementById('projectGrowth').value,
+            valuationAmount: Number(document.getElementById('projectValuation').value) || 0,
+            ownerEquityPercent: Number(document.getElementById('projectOwnerEquity').value) || 0,
+            projectedMonthlyIncome: Number(document.getElementById('projectProjectedIncome').value) || 0
         });
         msg.textContent = 'Project added.';
         msg.className = 'form-message success';
         document.getElementById('projectForm').reset();
         document.getElementById('projectForm2').reset();
+        document.getElementById('projectForm3').reset();
         loadProjectsAdmin();
     } catch (err) {
         msg.textContent = err.message;

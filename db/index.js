@@ -441,6 +441,25 @@ function init() {
         )
       `);
 
+      // Lets a project be simulated in the Share & ROI Calculator on its own
+      // terms instead of only against the whole-hotel valuation: an admin-set
+      // valuation (entered with the current total hotel valuation shown for
+      // reference, since a new project's worth is naturally judged against
+      // it), an optional fixed owner equity % for this project specifically
+      // (same "fix the owner's stake" mechanic as the hotel-wide
+      // owner_equity_percent setting, just scoped per project), and a
+      // projected monthly net income — a real trailing figure doesn't exist
+      // yet for a project that hasn't launched, so this is explicitly an
+      // admin estimate, consistent with the page's existing projections
+      // disclaimer. 0 on any of these means "not set" and the calculator
+      // falls back to the whole-hotel figures, exactly like the existing
+      // global owner-equity fallback behavior.
+      await addColumnsIfMissing('investment_projects', [
+        'valuation_amount REAL NOT NULL DEFAULT 0',
+        'owner_equity_percent REAL NOT NULL DEFAULT 0',
+        'projected_monthly_income REAL NOT NULL DEFAULT 0'
+      ]);
+
       // Crescent Grove Event & Hospitality Complex — bookable spaces (Lawn & Fire Pit,
       // Meeting Hall, Cafe & Lounge, Full Complex Buyout) are day-rate rentals, not
       // per-night room stays, so they get their own table rather than being forced

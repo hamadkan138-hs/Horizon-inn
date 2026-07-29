@@ -14,12 +14,18 @@ const WITHDRAWAL_STATUSES = ['pending', 'processing', 'completed', 'rejected'];
 // Public, unauthenticated: lets prospective investors browsing the main site see
 // upcoming expansion projects (name, renders, capital/timeline) without needing an
 // investor login — everything below this route still requires admin/investor auth.
+// Deliberately excludes valuationAmount/ownerEquityPercent/projectedMonthlyIncome:
+// those feed the authenticated Share & ROI Calculator and are more sensitive than
+// what this pitch page has ever shown a general, unauthenticated visitor.
 router.get('/public/projects', async (req, res) => {
   try {
     const result = await db.execute(
       "SELECT * FROM investment_projects WHERE status != 'archived' ORDER BY created_at DESC"
     );
-    res.json(result.rows.map(parseProject));
+    res.json(result.rows.map((row) => {
+      const { valuationAmount, ownerEquityPercent, projectedMonthlyIncome, ...publicFields } = parseProject(row);
+      return publicFields;
+    }));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to load projects' });
@@ -409,6 +415,9 @@ function parseProject(row) {
     growthPotential: row.growth_potential,
     images: JSON.parse(row.images || '[]'),
     status: row.status,
+    valuationAmount: Number(row.valuation_amount) || 0,
+    ownerEquityPercent: Number(row.owner_equity_percent) || 0,
+    projectedMonthlyIncome: Number(row.projected_monthly_income) || 0,
     createdAt: row.created_at
   };
 }
@@ -425,18 +434,25 @@ router.get('/projects', async (req, res) => {
 
 router.post('/projects', requireRole('admin'), async (req, res) => {
   try {
-    const { name, description, location, targetCapital, timeline, growthPotential, images, status } = req.body;
+    const {
+      name, description, location, targetCapital, timeline, growthPotential, images, status,
+      valuationAmount, ownerEquityPercent, projectedMonthlyIncome
+    } = req.body;
     if (!name) {
       return res.status(400).json({ error: 'Project name is required' });
     }
     const result = await db.execute({
       sql: `
-        INSERT INTO investment_projects (name, description, location, target_capital, timeline, growth_potential, images, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO investment_projects (
+          name, description, location, target_capital, timeline, growth_potential, images, status,
+          valuation_amount, owner_equity_percent, projected_monthly_income
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       args: [
         name, description || '', location || '', targetCapital || 0, timeline || '', growthPotential || '',
-        JSON.stringify(Array.isArray(images) ? images : []), status || 'planned'
+        JSON.stringify(Array.isArray(images) ? images : []), status || 'planned',
+        valuationAmount || 0, ownerEquityPercent || 0, projectedMonthlyIncome || 0
       ]
     });
     const created = await db.execute({ sql: 'SELECT * FROM investment_projects WHERE id = ?', args: [Number(result.lastInsertRowid)] });
@@ -449,7 +465,10 @@ router.post('/projects', requireRole('admin'), async (req, res) => {
 
 router.patch('/projects/:id', requireRole('admin'), async (req, res) => {
   try {
-    const { name, description, location, targetCapital, timeline, growthPotential, images, status } = req.body;
+    const {
+      name, description, location, targetCapital, timeline, growthPotential, images, status,
+      valuationAmount, ownerEquityPercent, projectedMonthlyIncome
+    } = req.body;
     const existing = await db.execute({ sql: 'SELECT id FROM investment_projects WHERE id = ?', args: [req.params.id] });
     if (!existing.rows[0]) {
       return res.status(404).json({ error: 'Project not found' });
@@ -464,6 +483,9 @@ router.patch('/projects/:id', requireRole('admin'), async (req, res) => {
     if (growthPotential !== undefined) { updates.push('growth_potential = ?'); args.push(growthPotential); }
     if (images !== undefined) { updates.push('images = ?'); args.push(JSON.stringify(images)); }
     if (status !== undefined) { updates.push('status = ?'); args.push(status); }
+    if (valuationAmount !== undefined) { updates.push('valuation_amount = ?'); args.push(valuationAmount); }
+    if (ownerEquityPercent !== undefined) { updates.push('owner_equity_percent = ?'); args.push(ownerEquityPercent); }
+    if (projectedMonthlyIncome !== undefined) { updates.push('projected_monthly_income = ?'); args.push(projectedMonthlyIncome); }
     if (!updates.length) {
       return res.status(400).json({ error: 'No fields to update' });
     }
