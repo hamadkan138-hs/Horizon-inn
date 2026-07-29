@@ -2240,7 +2240,12 @@ async function loadStaff() {
                 <td>${escapeHtml(u.username)}</td>
                 <td>${escapeHtml(u.role)}</td>
                 <td>${u.created_at}</td>
-                <td>${u.id === currentUser.id ? '' : u.role === 'investor' ? '<span style="color: var(--text-light); font-size: 0.78rem;">Manage in Investor Accounts</span>' : `<button class="action-btn cancel" data-id="${u.id}">Remove</button>`}</td>
+                <td>
+                    ${u.id === currentUser.id ? '' : u.role === 'investor'
+                        ? '<span style="color: var(--text-light); font-size: 0.78rem;">Manage in Investor Accounts</span>'
+                        : `<button class="action-btn details-toggle staff-reset-btn" data-id="${u.id}" data-username="${escapeHtml(u.username)}">Reset Password</button>
+                           <button class="action-btn cancel" data-id="${u.id}">Remove</button>`}
+                </td>
             </tr>
         `).join('');
 
@@ -2249,6 +2254,17 @@ async function loadStaff() {
                 if (!confirm('Remove this staff account?')) return;
                 try { await apiSend('DELETE', `/api/users/${btn.dataset.id}`, {}); loadStaff(); }
                 catch (err) { alert(err.message); }
+            });
+        });
+        document.querySelectorAll('.staff-reset-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (!confirm(`Reset the password for "${btn.dataset.username}"? Their current password will stop working immediately.`)) return;
+                try {
+                    const result = await apiSend('PATCH', `/api/users/${btn.dataset.id}/reset-password`, {});
+                    const msg = document.getElementById('staffMessage');
+                    msg.textContent = `New password for "${btn.dataset.username}": ${result.newPassword} — copy this now, it will not be shown again.`;
+                    msg.className = 'form-message success';
+                } catch (err) { alert(err.message); }
             });
         });
     } catch (err) { /* handled */ }
@@ -2540,6 +2556,7 @@ async function loadInvestorAccounts() {
                 <td><input type="number" class="inv-lockup" value="${inv.lockupMonths}" min="0" style="width: 70px;"> mo</td>
                 <td>
                     <button class="action-btn confirm inv-save-btn">Save</button>
+                    <button class="action-btn details-toggle inv-reset-btn" data-username="${escapeHtml(inv.username)}">Reset Password</button>
                     <button class="action-btn cancel inv-delete-btn">Delete</button>
                 </td>
             </tr>
@@ -2568,6 +2585,18 @@ async function loadInvestorAccounts() {
                 try {
                     await apiSend('DELETE', `/api/investor-accounts/${id}`, {});
                     loadInvestorAccounts();
+                } catch (err) { alert(err.message); }
+            });
+        });
+        document.querySelectorAll('.inv-reset-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const id = btn.closest('tr').dataset.id;
+                if (!confirm(`Reset the password for "${btn.dataset.username}"? Their current password will stop working immediately.`)) return;
+                try {
+                    const result = await apiSend('PATCH', `/api/investor-accounts/${id}/reset-password`, {});
+                    const msg = document.getElementById('investorAccountMessage');
+                    msg.textContent = `New password for "${btn.dataset.username}": ${result.newPassword} — copy this now, it will not be shown again.`;
+                    msg.className = 'form-message success';
                 } catch (err) { alert(err.message); }
             });
         });
