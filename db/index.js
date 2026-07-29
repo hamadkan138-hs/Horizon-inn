@@ -865,14 +865,26 @@ function init() {
       });
 
       // Retire the old generic placeholder rooms now that Horizon Inn has real room
-      // content. Delete them if nothing ever booked them; otherwise just hide them from
-      // the public listing (active = 0) so any historical booking still resolves fine.
+      // content. Delete them if nothing else references them; otherwise just hide them
+      // from the public listing (active = 0) so any historical booking, physical room,
+      // or rate rule still resolves fine. Checking bookings alone isn't enough — a
+      // deploy once crashed on this exact DELETE with a foreign key constraint error
+      // because a physical room had since been registered under one of these legacy
+      // categories (physical_rooms.room_type_id and rate_rules.room_id both reference
+      // rooms(id) too, and physical rooms/rate rules can exist with zero bookings).
       for (const slug of LEGACY_PLACEHOLDER_SLUGS) {
         const roomResult = await db.execute({ sql: 'SELECT id FROM rooms WHERE slug = ?', args: [slug] });
         const room = roomResult.rows[0];
         if (!room) continue;
-        const bookingCount = await db.execute({ sql: 'SELECT COUNT(*) AS n FROM bookings WHERE room_id = ?', args: [room.id] });
-        if (Number(bookingCount.rows[0].n) === 0) {
+        const [bookingCount, physicalRoomCount, rateRuleCount] = await Promise.all([
+          db.execute({ sql: 'SELECT COUNT(*) AS n FROM bookings WHERE room_id = ?', args: [room.id] }),
+          db.execute({ sql: 'SELECT COUNT(*) AS n FROM physical_rooms WHERE room_type_id = ?', args: [room.id] }),
+          db.execute({ sql: 'SELECT COUNT(*) AS n FROM rate_rules WHERE room_id = ?', args: [room.id] })
+        ]);
+        const referenced = Number(bookingCount.rows[0].n) > 0
+          || Number(physicalRoomCount.rows[0].n) > 0
+          || Number(rateRuleCount.rows[0].n) > 0;
+        if (!referenced) {
           await db.execute({ sql: 'DELETE FROM rooms WHERE id = ?', args: [room.id] });
         } else {
           await db.execute({ sql: 'UPDATE rooms SET active = 0 WHERE id = ?', args: [room.id] });
