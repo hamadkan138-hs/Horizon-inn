@@ -11,6 +11,7 @@ const states = {
 };
 
 let activeBooking = null; // currently checked-in booking shown in stateCheckedIn
+let currentFdUser = null; // username of the signed-in front-desk staff, used for handover records
 
 function getAuthHeader() {
     const token = localStorage.getItem('horizonAdminAuth');
@@ -84,6 +85,7 @@ function showLogin() {
 async function showKiosk() {
     try {
         const me = await apiGet('/api/auth/me');
+        currentFdUser = me.username;
         document.getElementById('whoami').textContent = me.username;
         loginPanel.style.display = 'none';
         kiosk.style.display = 'block';
@@ -420,6 +422,115 @@ document.getElementById('fdExpenseForm').addEventListener('submit', async (e) =>
         document.getElementById('fdExpenseForm').reset();
         loadFdExpenses();
     } catch (err) { msg.className = 'form-message error'; msg.textContent = err.message; }
+});
+
+/* ---------------- Cash Handover (locked ledger) ---------------- */
+const FD_RECEIVER_LABELS = { owner: 'Owner Name', bank: 'Bank Name', staff: 'Next Staff Name' };
+
+function fdPaymentMethodBucketLabel(method) {
+    if (method === 'bank_transfer') return 'Bank';
+    if (method === 'easypaisa') return 'EasyPaisa';
+    if (method === 'jazzcash') return 'JazzCash';
+    return 'Cash';
+}
+
+async function loadFdHandoverPanel() {
+    try {
+        const [preview, history] = await Promise.all([
+            apiGet('/api/handovers/preview'),
+            apiGet('/api/handovers')
+        ]);
+
+        document.getElementById('fdHandoverSummaryCards').innerHTML = `
+            <div class="summary-card"><span>Cash Collected</span><strong>${money(preview.cashTotal)}</strong></div>
+            <div class="summary-card"><span>Bank Transfers</span><strong>${money(preview.bankTotal)}</strong></div>
+            <div class="summary-card"><span>Online Payments</span><strong>${money(preview.onlineTotal)}</strong></div>
+            <div class="summary-card"><span>Grand Total Pending</span><strong>${money(preview.cashTotal + preview.bankTotal + preview.onlineTotal)}</strong></div>
+        `;
+
+        document.getElementById('fdHandoverSimpleList').innerHTML = preview.bookings.map((b) => `
+            <li>
+                <span class="item-label">${escapeHtml(b.name)} <span class="item-meta">${escapeHtml(b.invoice_number)} &middot; ${fdPaymentMethodBucketLabel(b.payment_method)}</span></span>
+                <span class="item-amount">${money(b.total_amount)}</span>
+            </li>
+        `).join('') || '<li class="empty-row">No completed checkouts awaiting handover.</li>';
+
+        document.getElementById('fdHandoverSimpleTotal').innerHTML = `
+            <span class="label">Total Collection</span>
+            <span class="value">${money(preview.cashTotal + preview.bankTotal + preview.onlineTotal)}</span>
+        `;
+
+        document.getElementById('fdHandoverHistoryList').innerHTML = history.slice(0, 5).map((h) => `
+            <li>
+                <span class="item-label">
+                    ${formatPKT(h.created_at)}
+                    <span class="status-pill ${h.receiver_type === 'staff' ? 'active-pending' : 'handed-over'}" style="margin-left: 8px;">${h.receiver_type === 'staff' ? 'Custody Transfer' : 'Settled'}</span>
+                    <span class="item-meta">${h.booking_count} booking(s) &middot; By ${escapeHtml(h.staff_name)} &rarr; ${escapeHtml(h.receiver_type)}: ${escapeHtml(h.receiver_name)}</span>
+                </span>
+                <span class="item-amount">${money(h.net_cash_handed + h.bank_total + h.online_total)}</span>
+            </li>
+        `).join('') || '<li class="empty-row">No handovers recorded yet.</li>';
+    } catch (err) { /* best-effort */ }
+}
+
+document.getElementById('fdHandoverBtn').addEventListener('click', () => {
+    document.getElementById('fdHandoverModalOverlay').style.display = 'flex';
+    loadFdHandoverPanel();
+});
+document.getElementById('fdCloseHandoverModalBtn').addEventListener('click', () => {
+    document.getElementById('fdHandoverModalOverlay').style.display = 'none';
+});
+
+async function openFdHandoverConfirmModal() {
+    const msg = document.getElementById('fdHandoverMessage');
+    msg.textContent = '';
+    msg.className = 'form-message';
+    try {
+        const preview = await apiGet('/api/handovers/preview');
+        document.getElementById('fdHandoverModalSummary').innerHTML = `
+            <div><span>Cash Collected</span><span>${money(preview.cashTotal)}</span></div>
+            <div><span>Bank Transfers</span><span>${money(preview.bankTotal)}</span></div>
+            <div><span>Online Payments</span><span>${money(preview.onlineTotal)}</span></div>
+            <div><span>Expenses Paid Out (cash)</span><span>-${money(preview.expensesTotal)}</span></div>
+            <div class="grand"><span>Total Cash in Hand</span><span>${money(preview.netCashHanded)}</span></div>
+        `;
+        document.getElementById('fdHandoverStaffName').value = currentFdUser;
+        document.getElementById('fdHandoverDateTime').value = new Date().toLocaleString('en-US', {
+            timeZone: 'Asia/Karachi', dateStyle: 'medium', timeStyle: 'short'
+        }) + ' PKT';
+        document.getElementById('fdHandoverReceiverType').value = 'owner';
+        document.getElementById('fdHandoverReceiverNameLabel').textContent = FD_RECEIVER_LABELS.owner;
+        document.getElementById('fdHandoverReceiverName').value = '';
+        document.getElementById('fdHandoverNote').value = '';
+        document.getElementById('fdHandoverConfirmModalOverlay').style.display = 'flex';
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+document.getElementById('fdOpenHandoverConfirmBtn').addEventListener('click', openFdHandoverConfirmModal);
+document.getElementById('fdCloseHandoverConfirmModalBtn').addEventListener('click', () => {
+    document.getElementById('fdHandoverConfirmModalOverlay').style.display = 'none';
+});
+document.getElementById('fdHandoverReceiverType').addEventListener('change', (e) => {
+    document.getElementById('fdHandoverReceiverNameLabel').textContent = FD_RECEIVER_LABELS[e.target.value];
+});
+
+document.getElementById('fdHandoverForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('fdHandoverMessage');
+    try {
+        await apiSend('POST', '/api/handovers', {
+            receiverType: document.getElementById('fdHandoverReceiverType').value,
+            receiverName: document.getElementById('fdHandoverReceiverName').value,
+            note: document.getElementById('fdHandoverNote').value
+        });
+        document.getElementById('fdHandoverConfirmModalOverlay').style.display = 'none';
+        loadFdHandoverPanel();
+    } catch (err) {
+        msg.textContent = err.message;
+        msg.className = 'form-message error';
+    }
 });
 
 /* ---------------- State machine ---------------- */

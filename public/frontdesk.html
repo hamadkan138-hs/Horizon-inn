@@ -25,6 +25,7 @@
                 <li><button type="button" class="kiosk-nav-btn" id="fdAvailabilityBtn"><i class="fas fa-calendar-days"></i> Room Availability</button></li>
                 <li><button type="button" class="kiosk-nav-btn" id="fdMinibarBtn"><i class="fas fa-martini-glass"></i> Mini Bar</button></li>
                 <li><button type="button" class="kiosk-nav-btn" id="fdExpenseBtn"><i class="fas fa-money-bill-wave"></i> Expenses</button></li>
+                <li><button type="button" class="kiosk-nav-btn" id="fdHandoverBtn"><i class="fas fa-hand-holding-dollar"></i> Cash Handover</button></li>
                 <li>
                     <button type="button" class="bell-btn" id="fdRequestsBtn" title="New booking requests">
                         <i class="fas fa-bell"></i>
@@ -334,6 +335,68 @@
             </div>
 
             <button type="button" class="action-btn cancel" id="fdCloseExpenseModalBtn" style="margin-top: 16px;">Close</button>
+        </div>
+    </div>
+
+    <!-- Cash Handover modal -->
+    <div class="modal-overlay" id="fdHandoverModalOverlay" style="display: none;">
+        <div class="modal-box" style="max-width: 640px;">
+            <h3 style="margin-bottom: 4px;">Cash Handover</h3>
+            <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 18px;">Every checked-out stay and expense not yet handed over. Locked and permanent once confirmed.</p>
+
+            <div class="summary-cards" id="fdHandoverSummaryCards" style="margin-bottom: 16px;"></div>
+
+            <ul class="simple-list" id="fdHandoverSimpleList"></ul>
+            <div class="simple-total" id="fdHandoverSimpleTotal"></div>
+
+            <button type="button" class="action-btn confirm kiosk-btn-lg" id="fdOpenHandoverConfirmBtn" style="margin-top: 16px; width: 100%;">Handover Cash</button>
+
+            <h4 style="margin-top: 26px; margin-bottom: 6px; font-size: 1rem;">Recent Handovers</h4>
+            <ul class="simple-list" id="fdHandoverHistoryList" style="max-height: 25vh; overflow-y: auto;"></ul>
+
+            <button type="button" class="action-btn cancel" id="fdCloseHandoverModalBtn" style="margin-top: 16px;">Close</button>
+        </div>
+    </div>
+
+    <!-- Cash Handover confirm modal -->
+    <div class="modal-overlay" id="fdHandoverConfirmModalOverlay" style="display: none;">
+        <div class="modal-box">
+            <h3 style="margin-bottom: 4px;">Confirm Handover</h3>
+            <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 18px;">This will lock every unhanded-over checked-out booking and expense into a single, permanent handover record.</p>
+
+            <div class="modal-summary" id="fdHandoverModalSummary"></div>
+
+            <form id="fdHandoverForm">
+                <div class="form-group">
+                    <label>Staff Name</label>
+                    <input type="text" id="fdHandoverStaffName" disabled>
+                </div>
+                <div class="form-group">
+                    <label>Date &amp; Time</label>
+                    <input type="text" id="fdHandoverDateTime" disabled>
+                </div>
+                <div class="form-group">
+                    <label>Hand Over To</label>
+                    <select id="fdHandoverReceiverType" required>
+                        <option value="owner">Owner</option>
+                        <option value="bank">Deposit to Bank</option>
+                        <option value="staff">Next Staff on Duty (Shift Handover)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label id="fdHandoverReceiverNameLabel">Owner Name</label>
+                    <input type="text" id="fdHandoverReceiverName" required>
+                </div>
+                <div class="form-group">
+                    <label>Note (optional)</label>
+                    <input type="text" id="fdHandoverNote">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button type="submit" class="action-btn confirm">Confirm Handover</button>
+                    <button type="button" class="action-btn cancel" id="fdCloseHandoverConfirmModalBtn">Cancel</button>
+                </div>
+                <p class="form-message" id="fdHandoverMessage"></p>
+            </form>
         </div>
     </div>
 
