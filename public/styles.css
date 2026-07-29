@@ -96,6 +96,81 @@ h2::after {
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* Section headings rise in with their gold rule drawing outward from centre,
+   so a section announces itself as you reach it rather than being fully
+   painted before it enters view. */
+.reveal-title {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal-title.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+section h2::after,
+.section-title::after {
+    transition: width 0.7s ease 0.25s;
+}
+
+.reveal-title:not(.is-visible)::after { width: 0; }
+
+/* Cards rendered from data (rooms, facilities, projects) can't use the static
+   nth-child delays above, so they get their stagger from an inline custom
+   property set at render time. */
+.reveal-stagger {
+    opacity: 0;
+    transform: translateY(26px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+    transition-delay: var(--stagger, 0s);
+}
+
+.reveal-stagger.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Reading-progress rail — a thin, quiet indicator of how far through the
+   page you are. Fixed above the navbar so it stays visible over any section. */
+.scroll-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 2px;
+    width: 100%;
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+    background: linear-gradient(90deg, var(--gold), var(--gold-soft));
+    z-index: 1200;
+    pointer-events: none;
+}
+
+/* Motion here is decoration, never information — anyone who has asked their
+   system to reduce motion gets the same content with the movement removed
+   rather than a degraded page. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .reveal,
+    .reveal-title,
+    .reveal-stagger,
+    .hero-in {
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    .scroll-progress { display: none; }
+}
+
 /* Navbar */
 .navbar {
     position: fixed;
@@ -181,6 +256,25 @@ h2::after {
 .nav-menu a:hover::after,
 .nav-menu a.active::after {
     width: 100%;
+}
+
+/* The one nav item that should read as an action, not a destination. */
+.nav-menu a.nav-cta {
+    background: var(--gold);
+    color: var(--charcoal);
+    padding: 9px 20px;
+    border-radius: 3px;
+    font-weight: 600;
+    transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+
+.nav-menu a.nav-cta::after { display: none; }
+
+.nav-menu a.nav-cta:hover {
+    background: var(--gold-soft);
+    color: var(--charcoal);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(198, 161, 91, 0.35);
 }
 
 .kiosk-nav-btn {
@@ -297,6 +391,7 @@ body.has-offer .navbar {
 .hero-in-2 { animation-delay: 0.45s; }
 .hero-in-3 { animation-delay: 0.7s; }
 .hero-in-4 { animation-delay: 0.95s; }
+.hero-in-5 { animation-delay: 1.15s; }
 
 @keyframes heroFadeIn {
     from { opacity: 0; transform: translateY(22px); }
@@ -358,6 +453,111 @@ body.has-offer .navbar {
 .cta-button:hover::after {
     opacity: 1;
     transform: translateX(0);
+}
+
+/* ---------- Hero availability search ---------- */
+.hero-search {
+    display: flex;
+    align-items: flex-end;
+    gap: 0;
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(8px);
+    border-radius: 4px;
+    padding: 14px;
+    max-width: 780px;
+    margin: 0 auto;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+
+.hero-search-field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0 18px;
+    text-align: left;
+    border-right: 1px solid rgba(20, 22, 31, 0.12);
+}
+
+.hero-search-field:last-of-type { border-right: none; }
+
+/* Guests needs less room than a date — keep the three fields visually balanced. */
+.hero-search-field:has(select) { flex: 0.65; }
+
+.hero-search-field label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+.hero-search-field input,
+.hero-search-field select {
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--charcoal);
+    padding: 2px 0;
+    width: 100%;
+    cursor: pointer;
+}
+
+.hero-search-field input:focus,
+.hero-search-field select:focus {
+    outline: none;
+    color: var(--gold);
+}
+
+.hero-search-btn {
+    background: var(--charcoal);
+    color: var(--white);
+    border: none;
+    font-family: inherit;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 16px 30px;
+    margin-left: 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background var(--transition), transform var(--transition);
+}
+
+.hero-search-btn:hover {
+    background: var(--gold);
+    color: var(--charcoal);
+    transform: translateY(-1px);
+}
+
+.hero-secondary-link {
+    display: inline-block;
+    margin-top: 22px;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.9rem;
+    letter-spacing: 0.04em;
+    transition: color var(--transition);
+}
+
+.hero-secondary-link:hover { color: var(--gold-soft); }
+
+@media (max-width: 760px) {
+    .hero-search {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        padding: 18px;
+    }
+    .hero-search-field {
+        border-right: none;
+        border-bottom: 1px solid rgba(20, 22, 31, 0.12);
+        padding: 12px 4px;
+    }
+    .hero-search-field:last-of-type { border-bottom: none; }
+    .hero-search-btn { margin-left: 0; margin-top: 10px; width: 100%; }
 }
 
 .scroll-cue {
@@ -2428,6 +2628,10 @@ table.admin-table th {
     gap: 26px;
 }
 
+/* Entrance handled by the shared scroll-triggered .reveal-stagger system
+   (see script.js staggerReveal) rather than a load-time animation — this
+   section sits far down the page, so firing on load meant the cards had
+   finished animating long before a guest ever scrolled to them. */
 .facility-card {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -2435,14 +2639,7 @@ table.admin-table th {
     overflow: hidden;
     cursor: pointer;
     transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
-    opacity: 0;
-    animation: facilityRise 0.6s ease forwards;
 }
-.facility-card:nth-child(1) { animation-delay: 0.05s; }
-.facility-card:nth-child(2) { animation-delay: 0.15s; }
-.facility-card:nth-child(3) { animation-delay: 0.25s; }
-.facility-card:nth-child(4) { animation-delay: 0.35s; }
-@keyframes facilityRise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 
 .facility-card:hover {
     transform: translateY(-6px);
