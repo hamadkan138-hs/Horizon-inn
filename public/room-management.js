@@ -325,8 +325,12 @@ function slotCardHtml(slot, index) {
         ? `${escapeHtml(slot.roomName)}${slot.floor ? ` &middot; Floor ${escapeHtml(slot.floor)}` : ''}`
         : `Unit ${slot.unit} of ${slot.totalUnits}`;
 
+    const softColorClass = slot.status === 'available' ? 'room-card-available' :
+                           slot.status === 'occupied' ? 'room-card-occupied' :
+                           slot.status === 'reserved' ? 'room-card-reserved' : '';
+
     return `
-        <div class="card-enter glass rounded-2xl p-5 border-t-4 ${meta.border} flex flex-col justify-between cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-glass dark:hover:shadow-glass-dark"
+        <div class="card-enter glass rounded-2xl p-5 border-t-4 ${meta.border} ${softColorClass} flex flex-col justify-between cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-glass dark:hover:shadow-glass-dark"
              style="animation-delay:${Math.min(index * 25, 300)}ms"
              data-room-id="${slot.roomId}" data-unit="${slot.unit}" data-status="${slot.status}"
              data-booking-id="${b ? b.id : ''}" data-physical-room-id="${slot.physicalRoomId || ''}">
@@ -472,6 +476,15 @@ function closeManageDrawer() {
 }
 
 function openManageDrawer(room, slot) {
+    // Animate drawer slide from right with 300ms spring ease
+    manageOverlay.classList.remove('hidden');
+    setTimeout(() => {
+        manageDrawer.classList.remove('translate-x-full');
+        if (typeof AnimationEngine !== 'undefined') {
+            AnimationEngine.slidePanelFromRight('#manageDrawer', 300);
+        }
+    }, 50);
+
     const b = slot.booking;
     const meta = STATUS_META[slot.status];
     let actionsHtml = '';

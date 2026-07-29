@@ -359,6 +359,54 @@ a:hover {
   background: rgba(255, 255, 255, 0.25);
 }
 
+/* ===== ROOM MANAGEMENT CARDS ===== */
+/* Soft color states for room status */
+.room-card-available {
+  background: rgba(59, 130, 246, 0.08) !important;
+  border-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+.room-card-available:hover {
+  background: rgba(59, 130, 246, 0.15) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.1), 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+}
+
+.room-card-occupied {
+  background: rgba(248, 113, 113, 0.08) !important;
+  border-color: rgba(248, 113, 113, 0.2) !important;
+}
+
+.room-card-occupied:hover {
+  background: rgba(248, 113, 113, 0.15) !important;
+  border-color: rgba(248, 113, 113, 0.3) !important;
+  box-shadow: 0 0 0 8px rgba(248, 113, 113, 0.1), 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+}
+
+.room-card-reserved {
+  background: rgba(251, 191, 36, 0.08) !important;
+  border-color: rgba(251, 191, 36, 0.2) !important;
+}
+
+.room-card-reserved:hover {
+  background: rgba(251, 191, 36, 0.15) !important;
+  border-color: rgba(251, 191, 36, 0.3) !important;
+  box-shadow: 0 0 0 8px rgba(251, 191, 36, 0.1), 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+}
+
+.room-card-pulse {
+  animation: room-pulse 2s ease-in-out;
+}
+
+@keyframes room-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.1);
+  }
+}
+
 /* ===== FRONT DESK CARDS ===== */
 .kiosk-card {
   backdrop-filter: blur(20px);
