@@ -237,6 +237,144 @@ document.getElementById('fdCloseAvailabilityModalBtn').addEventListener('click',
     document.getElementById('fdAvailabilityModalOverlay').style.display = 'none';
 });
 
+/* ---------------- Mini Bar (POS, refill, damage) ---------------- */
+function fdMinibarIcon(name) {
+    const n = (name || '').toLowerCase();
+    if (n.includes('water')) return '💧';
+    if (n.includes('cola') || n.includes('sprite') || n.includes('soda') || n.includes('juice') || n.includes('drink')) return '🥤';
+    if (n.includes('chip') || n.includes('crisp')) return '🍟';
+    if (n.includes('chocolate') || n.includes('kit kat') || n.includes('kitkat')) return '🍫';
+    if (n.includes('beer') || n.includes('wine')) return '🍷';
+    if (n.includes('coffee') || n.includes('tea')) return '☕';
+    if (n.includes('nuts') || n.includes('almond')) return '🥜';
+    if (n.includes('candy') || n.includes('sweet')) return '🍬';
+    return '🛒';
+}
+
+async function loadFdMinibarRooms() {
+    try {
+        const rooms = await apiGet('/api/minibar/rooms');
+        const grid = document.getElementById('fdMinibarRoomGrid');
+        grid.innerHTML = rooms.map((r) => {
+            const dot = !r.initialized ? 'grey' : (r.lowStockCount > 0 ? 'orange' : (r.activeBooking ? 'green' : 'grey'));
+            return `
+                <div class="minibar-room-card" data-id="${r.id}">
+                    <div class="room-number"><span class="minibar-room-dot ${dot}"></span>Room ${escapeHtml(r.roomNumber)}</div>
+                    <div class="room-meta">${escapeHtml(r.roomTypeName)}${r.floor ? ` &middot; Floor ${escapeHtml(r.floor)}` : ''}</div>
+                    <div class="room-guest">${r.activeBooking ? `<strong>${escapeHtml(r.activeBooking.guestName)}</strong>` : '<span style="color: var(--text-light);">No guest checked in</span>'}</div>
+                </div>
+            `;
+        }).join('') || '<p style="color: var(--text-light);">No physical rooms registered yet.</p>';
+
+        grid.querySelectorAll('.minibar-room-card').forEach((card) => {
+            card.addEventListener('click', () => selectFdMinibarRoom(Number(card.dataset.id)));
+        });
+    } catch (err) { /* best-effort */ }
+}
+
+async function selectFdMinibarRoom(roomId) {
+    document.querySelectorAll('#fdMinibarRoomGrid .minibar-room-card').forEach((c) => c.classList.toggle('selected', Number(c.dataset.id) === roomId));
+    const detail = document.getElementById('fdMinibarRoomDetail');
+    detail.style.display = 'block';
+    document.getElementById('fdMinibarMessage').textContent = '';
+
+    try {
+        const room = await apiGet(`/api/minibar/rooms/${roomId}`);
+        document.getElementById('fdMinibarRoomTitle').textContent = `Room ${room.roomNumber}`;
+        document.getElementById('fdMinibarRoomGuest').textContent = room.activeBooking
+            ? `${room.activeBooking.guestName} — ${room.activeBooking.invoiceNumber}`
+            : 'No guest currently checked in — charges cannot be billed until someone is.';
+
+        document.getElementById('fdMinibarPosGrid').innerHTML = room.stock.map((s) => {
+            const statusClass = s.currentStock <= 0 ? 'red' : (s.currentStock < s.openingStock ? 'orange' : 'green');
+            const statusLabel = s.currentStock <= 0 ? 'Out of Stock' : (s.currentStock < s.openingStock ? 'Low Stock' : 'In Stock');
+            return `
+                <div class="minibar-pos-item">
+                    <div class="item-icon">${fdMinibarIcon(s.name)}</div>
+                    <div class="item-name">${escapeHtml(s.name)}</div>
+                    <div class="item-price">${money(s.price)}</div>
+                    <div class="item-stock ${statusClass}">${statusLabel} &middot; ${s.currentStock} left</div>
+                    <div class="item-controls">
+                        <input type="number" min="1" step="1" value="1" class="fd-minibar-qty" data-item="${s.minibarItemId}" style="max-width: 60px;" ${s.currentStock <= 0 ? 'disabled' : ''}>
+                        <button class="action-btn confirm fd-minibar-charge-btn" data-item="${s.minibarItemId}" data-name="${escapeHtml(s.name)}" ${s.currentStock <= 0 || !room.activeBooking ? 'disabled' : ''}>Charge</button>
+                        <button class="action-btn details-toggle fd-minibar-refill-btn" data-item="${s.minibarItemId}" data-name="${escapeHtml(s.name)}">Refill</button>
+                    </div>
+                </div>
+            `;
+        }).join('') || '<p style="color: var(--text-light);">This room has no stock tracked yet.</p>';
+
+        document.querySelectorAll('.fd-minibar-charge-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const qty = Number(document.querySelector(`.fd-minibar-qty[data-item="${btn.dataset.item}"]`).value) || 1;
+                const msg = document.getElementById('fdMinibarMessage');
+                try {
+                    await apiSend('POST', `/api/minibar/rooms/${roomId}/consume`, { itemId: btn.dataset.item, quantity: qty });
+                    msg.className = 'form-message success';
+                    msg.textContent = `Charged ${qty} x ${btn.dataset.name} to the guest's bill.`;
+                    selectFdMinibarRoom(roomId);
+                    loadFdMinibarRooms();
+                } catch (err) { msg.className = 'form-message error'; msg.textContent = err.message; }
+            });
+        });
+        document.querySelectorAll('.fd-minibar-refill-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const qty = Number(prompt(`How many ${btn.dataset.name} are you adding to this room?`, '5'));
+                if (!qty || qty <= 0) return;
+                const msg = document.getElementById('fdMinibarMessage');
+                try {
+                    await apiSend('POST', `/api/minibar/rooms/${roomId}/refill`, { itemId: btn.dataset.item, quantity: qty });
+                    msg.className = 'form-message success';
+                    msg.textContent = `Refilled ${qty} x ${btn.dataset.name}.`;
+                    selectFdMinibarRoom(roomId);
+                    loadFdMinibarRooms();
+                } catch (err) { msg.className = 'form-message error'; msg.textContent = err.message; }
+            });
+        });
+
+        document.getElementById('fdMinibarDamageBtn').onclick = () => {
+            document.getElementById('fdMinibarDamageSubtitle').textContent = `Room ${room.roomNumber}`;
+            document.getElementById('fdMinibarDamageItem').innerHTML = room.stock.map((s) => `<option value="${s.minibarItemId}">${escapeHtml(s.name)} (${s.currentStock} in room)</option>`).join('');
+            document.getElementById('fdMinibarDamageForm').reset();
+            document.getElementById('fdMinibarDamageMessage').textContent = '';
+            document.getElementById('fdMinibarDamageModalOverlay').dataset.roomId = roomId;
+            document.getElementById('fdMinibarDamageModalOverlay').style.display = 'flex';
+        };
+    } catch (err) { /* best-effort */ }
+}
+
+document.getElementById('fdMinibarBtn').addEventListener('click', () => {
+    document.getElementById('fdMinibarModalOverlay').style.display = 'flex';
+    document.getElementById('fdMinibarRoomDetail').style.display = 'none';
+    loadFdMinibarRooms();
+});
+document.getElementById('fdCloseMinibarModalBtn').addEventListener('click', () => {
+    document.getElementById('fdMinibarModalOverlay').style.display = 'none';
+});
+document.getElementById('fdCloseMinibarDamageModalBtn').addEventListener('click', () => {
+    document.getElementById('fdMinibarDamageModalOverlay').style.display = 'none';
+});
+document.getElementById('fdMinibarDamageForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('fdMinibarDamageMessage');
+    const roomId = document.getElementById('fdMinibarDamageModalOverlay').dataset.roomId;
+    try {
+        await apiSend('POST', `/api/minibar/rooms/${roomId}/damage`, {
+            itemId: document.getElementById('fdMinibarDamageItem').value,
+            quantity: Number(document.getElementById('fdMinibarDamageQty').value),
+            type: document.getElementById('fdMinibarDamageType').value,
+            reason: document.getElementById('fdMinibarDamageReason').value,
+            penaltyAmount: Number(document.getElementById('fdMinibarDamagePenalty').value) || 0
+        });
+        msg.className = 'form-message success';
+        msg.textContent = 'Reported.';
+        setTimeout(() => {
+            document.getElementById('fdMinibarDamageModalOverlay').style.display = 'none';
+            selectFdMinibarRoom(Number(roomId));
+            loadFdMinibarRooms();
+        }, 600);
+    } catch (err) { msg.className = 'form-message error'; msg.textContent = err.message; }
+});
+
 /* ---------------- State machine ---------------- */
 function showState(name) {
     Object.values(states).forEach((el) => { el.style.display = 'none'; });
