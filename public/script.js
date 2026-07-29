@@ -313,6 +313,45 @@ checkinInput.addEventListener('change', loadRooms);
 checkoutInput.addEventListener('change', loadRooms);
 loadRooms();
 
+/* ---------------- Hero availability search ----------------
+   Deliberately does not create a booking of its own — it copies the dates and
+   party size into the real booking form below and scrolls the guest there, so
+   a reservation always goes through the one validated form (and one set of
+   availability checks) rather than a second parallel path. */
+const heroSearchForm = document.getElementById('heroSearchForm');
+if (heroSearchForm) {
+    const heroCheckin = document.getElementById('heroCheckin');
+    const heroCheckout = document.getElementById('heroCheckout');
+    const heroGuests = document.getElementById('heroGuests');
+
+    // A guest can't book a past night, and check-out must follow check-in —
+    // enforce that in the picker itself instead of failing them on submit.
+    const today = new Date().toISOString().slice(0, 10);
+    heroCheckin.min = today;
+    heroCheckout.min = today;
+    heroCheckin.addEventListener('change', () => {
+        heroCheckout.min = heroCheckin.value || today;
+        if (heroCheckout.value && heroCheckout.value <= heroCheckin.value) {
+            const next = new Date(heroCheckin.value);
+            next.setDate(next.getDate() + 1);
+            heroCheckout.value = next.toISOString().slice(0, 10);
+        }
+    });
+
+    heroSearchForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (heroCheckin.value) checkinInput.value = heroCheckin.value;
+        if (heroCheckout.value) checkoutInput.value = heroCheckout.value;
+        const guestsInput = document.getElementById('guests');
+        if (guestsInput && heroGuests.value) guestsInput.value = heroGuests.value;
+
+        // Re-query availability for the dates the guest just picked, so the room
+        // list and dropdown they land on already reflect their search.
+        loadRooms();
+        document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
+    });
+}
+
 // Upcoming expansion projects — public read-only teaser so prospective
 // investors browsing the main site can see what's coming without logging in.
 const projectsGrid = document.getElementById('projectsGrid');
