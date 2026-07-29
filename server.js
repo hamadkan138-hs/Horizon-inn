@@ -28,6 +28,7 @@ const promoCodesRouter = require('./routes/promoCodes');
 const giftVouchersRouter = require('./routes/giftVouchers');
 const corporateAccountsRouter = require('./routes/corporateAccounts');
 const abandonedBookingsRouter = require('./routes/abandonedBookings');
+const minibarRouter = require('./routes/minibar');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -59,6 +60,7 @@ app.use('/api/promo-codes', promoCodesRouter);
 app.use('/api/gift-vouchers', giftVouchersRouter);
 app.use('/api/corporate-accounts', corporateAccountsRouter);
 app.use('/api/abandoned-bookings', abandonedBookingsRouter);
+app.use('/api/minibar', minibarRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

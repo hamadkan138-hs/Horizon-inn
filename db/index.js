@@ -707,6 +707,38 @@ function init() {
         args: ['WELCOME5', 5]
       });
 
+      // In-room mini bar inventory. Consuming an item both decrements stock
+      // and adds a billed charge to the guest's booking (see routes/minibar.js),
+      // so the count here stays a real reflection of what's left, not just a
+      // manual tally disconnected from what guests were actually charged for.
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS minibar_items (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          price REAL NOT NULL,
+          stock_quantity INTEGER NOT NULL DEFAULT 0,
+          low_stock_threshold INTEGER NOT NULL DEFAULT 5,
+          active INTEGER NOT NULL DEFAULT 1,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+      const minibarSeed = [
+        ['Mineral Water (500ml)', 100, 30],
+        ['Coca-Cola (Can)', 150, 24],
+        ['Sprite (Can)', 150, 24],
+        ["Lay's Chips", 200, 20],
+        ['Kit Kat', 180, 20]
+      ];
+      for (const [name, price, stock] of minibarSeed) {
+        const existing = await db.execute({ sql: 'SELECT id FROM minibar_items WHERE name = ?', args: [name] });
+        if (!existing.rows.length) {
+          await db.execute({
+            sql: 'INSERT INTO minibar_items (name, price, stock_quantity) VALUES (?, ?, ?)',
+            args: [name, price, stock]
+          });
+        }
+      }
+
       // Retire the old generic placeholder rooms now that Horizon Inn has real room
       // content. Delete them if nothing ever booked them; otherwise just hide them from
       // the public listing (active = 0) so any historical booking still resolves fine.
