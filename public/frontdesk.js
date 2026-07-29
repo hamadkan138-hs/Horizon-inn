@@ -41,6 +41,18 @@ function money(n) {
     return num < 0 ? `-Rs. ${Math.abs(num).toLocaleString('en-US')}` : `Rs. ${num.toLocaleString('en-US')}`;
 }
 
+function escapeHtml(str) {
+    return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function whatsappLink(booking) {
+    let digits = (booking.phone || '').replace(/\D/g, '');
+    if (digits.startsWith('0')) digits = `92${digits.slice(1)}`;
+    const text = `Hello ${booking.name}, this is Horizon Inn regarding your booking request for ${booking.room_name}, ${booking.checkin} to ${booking.checkout}. Total: ${money(booking.total_amount)}.`;
+    return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+}
+
 // Every timestamp is stored in UTC (SQLite's datetime('now')); Horizon Inn
 // runs on Pakistan time, so always render it explicitly in that zone.
 function formatPKT(sqlTimestamp) {
@@ -76,6 +88,7 @@ async function showKiosk() {
         loginPanel.style.display = 'none';
         kiosk.style.display = 'block';
         goToIdInput();
+        startRequestsPolling();
     } catch (err) {
         showLogin();
     }
@@ -106,6 +119,122 @@ document.getElementById('switchAccountLink').addEventListener('click', (e) => {
     e.preventDefault();
     localStorage.removeItem('horizonAdminAuth');
     showLogin();
+});
+
+/* ---------------- New booking requests (online bookings awaiting review) ---------------- */
+let requestsPollTimer = null;
+
+async function refreshRequestsBadge() {
+    try {
+        const data = await apiGet('/api/bookings?status=pending');
+        const badge = document.getElementById('fdRequestsBadge');
+        badge.textContent = data.total;
+        badge.style.display = data.total > 0 ? 'flex' : 'none';
+    } catch (err) { /* best-effort */ }
+}
+
+function startRequestsPolling() {
+    refreshRequestsBadge();
+    clearInterval(requestsPollTimer);
+    requestsPollTimer = setInterval(refreshRequestsBadge, 60000);
+}
+
+function requestRowHtml(b) {
+    return `
+        <div class="kiosk-request-card">
+            <div>
+                <strong>${escapeHtml(b.name)}</strong> &middot; ${escapeHtml(b.room_name)}<br>
+                <span style="color: var(--text-light); font-size: 0.85rem;">
+                    ${b.checkin} &rarr; ${b.checkout} &middot; ${b.guests} guest(s) &middot; ${money(b.total_amount)} &middot; ${escapeHtml(b.phone)}
+                </span>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <a class="action-btn confirm" href="${whatsappLink(b)}" target="_blank" rel="noopener">WhatsApp</a>
+                <button class="action-btn confirm fd-accept-btn" data-id="${b.id}">Accept</button>
+                <button class="action-btn cancel fd-reject-btn" data-id="${b.id}" data-name="${escapeHtml(b.name)}">Reject</button>
+            </div>
+        </div>
+    `;
+}
+
+async function loadRequestsModal() {
+    const list = document.getElementById('fdRequestsList');
+    list.innerHTML = '<p style="color: var(--text-light);">Loading&hellip;</p>';
+    try {
+        const data = await apiGet('/api/bookings?status=pending');
+        list.innerHTML = data.bookings.map(requestRowHtml).join('') || '<p style="color: var(--text-light);">No new booking requests right now.</p>';
+
+        list.querySelectorAll('.fd-accept-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                btn.disabled = true;
+                try {
+                    await apiSend('PATCH', `/api/bookings/${btn.dataset.id}`, { status: 'confirmed' });
+                    loadRequestsModal();
+                    refreshRequestsBadge();
+                } catch (err) { alert(err.message); btn.disabled = false; }
+            });
+        });
+        list.querySelectorAll('.fd-reject-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (!confirm(`Reject ${btn.dataset.name}'s booking request? This can't be undone from here.`)) return;
+                const reason = prompt('Reason for rejecting (optional):', '') || '';
+                btn.disabled = true;
+                try {
+                    await apiSend('PATCH', `/api/bookings/${btn.dataset.id}`, { status: 'cancelled', reason });
+                    loadRequestsModal();
+                    refreshRequestsBadge();
+                } catch (err) { alert(err.message); btn.disabled = false; }
+            });
+        });
+    } catch (err) {
+        list.innerHTML = `<p class="form-message error">${escapeHtml(err.message)}</p>`;
+    }
+}
+
+document.getElementById('fdRequestsBtn').addEventListener('click', () => {
+    document.getElementById('fdRequestsModalOverlay').style.display = 'flex';
+    loadRequestsModal();
+});
+document.getElementById('fdCloseRequestsModalBtn').addEventListener('click', () => {
+    document.getElementById('fdRequestsModalOverlay').style.display = 'none';
+});
+
+/* ---------------- Room availability board ---------------- */
+const FD_ROOM_STATUS_META = {
+    available: { label: 'Available', icon: 'fa-circle-check' },
+    occupied: { label: 'Occupied', icon: 'fa-bed' },
+    booked: { label: 'Booked (Locked)', icon: 'fa-lock' }
+};
+
+async function loadAvailabilityBoard() {
+    const board = document.getElementById('fdAvailabilityBoard');
+    board.innerHTML = '<p style="color: var(--text-light);">Loading&hellip;</p>';
+    try {
+        const rooms = await apiGet('/api/rooms/status-board');
+        board.innerHTML = rooms.map((r) => {
+            const meta = FD_ROOM_STATUS_META[r.status];
+            const dates = r.booking ? `${r.booking.checkin} &rarr; ${r.booking.checkout}` : 'No upcoming stay';
+            const guestLine = r.booking && r.status !== 'available' ? `<div class="room-status-dates">${escapeHtml(r.booking.guestName)}</div>` : '';
+            return `
+                <div class="room-status-card ${r.status}">
+                    <h4>${escapeHtml(r.name)}</h4>
+                    <span class="room-status-badge ${r.status}"><i class="fas ${meta.icon}"></i> ${meta.label}</span>
+                    <div class="room-status-dates">${dates}</div>
+                    ${guestLine}
+                </div>
+            `;
+        }).join('');
+    } catch (err) {
+        board.innerHTML = `<p class="form-message error">${escapeHtml(err.message)}</p>`;
+    }
+}
+
+document.getElementById('fdAvailabilityBtn').addEventListener('click', () => {
+    document.getElementById('fdAvailabilityModalOverlay').style.display = 'flex';
+    loadAvailabilityBoard();
+});
+document.getElementById('fdCloseAvailabilityModalBtn').addEventListener('click', () => {
+    document.getElementById('fdAvailabilityModalOverlay').style.display = 'none';
 });
 
 /* ---------------- State machine ---------------- */

@@ -499,7 +499,11 @@ router.get('/:id', adminAuth, requireRole('admin', 'staff'), async (req, res) =>
       sql: 'SELECT * FROM booking_charges WHERE booking_id = ? ORDER BY created_at ASC',
       args: [req.params.id]
     });
-    res.json({ ...booking, payments: paymentsResult.rows, charges: chargesResult.rows });
+    const historyResult = await db.execute({
+      sql: 'SELECT * FROM booking_status_log WHERE booking_id = ? ORDER BY changed_at ASC',
+      args: [req.params.id]
+    });
+    res.json({ ...booking, payments: paymentsResult.rows, charges: chargesResult.rows, statusHistory: historyResult.rows });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to load booking' });
@@ -577,7 +581,7 @@ router.patch('/:id/details', adminAuth, requireRole('admin', 'staff'), async (re
 // Update booking status and/or payment status (admin)
 router.patch('/:id', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
   try {
-    const { status, paymentStatus } = req.body;
+    const { status, paymentStatus, reason } = req.body;
 
     if (status === undefined && paymentStatus === undefined) {
       return res.status(400).json({ error: 'Provide status and/or paymentStatus to update' });
@@ -611,6 +615,14 @@ router.patch('/:id', adminAuth, requireRole('admin', 'staff'), async (req, res) 
     args.push(req.params.id);
 
     await db.execute({ sql: `UPDATE bookings SET ${updates.join(', ')} WHERE id = ?`, args });
+
+    if (status !== undefined && status !== booking.status) {
+      await db.execute({
+        sql: 'INSERT INTO booking_status_log (booking_id, from_status, to_status, changed_by, reason) VALUES (?, ?, ?, ?, ?)',
+        args: [req.params.id, booking.status, status, req.user.username, reason || '']
+      });
+    }
+
     const updatedResult = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
     res.json(updatedResult.rows[0]);
   } catch (err) {
