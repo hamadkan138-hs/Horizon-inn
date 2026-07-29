@@ -282,6 +282,29 @@ router.patch('/:id', requireRole('admin'), async (req, res) => {
   }
 });
 
+// Same "no saved password to look up, only a reset" reasoning as staff
+// accounts (routes/users.js) — bcrypt hashes are one-way, so this generates
+// a brand-new password rather than ever recovering the old one.
+router.patch('/:id/reset-password', requireRole('admin'), async (req, res) => {
+  try {
+    const existing = await db.execute({ sql: 'SELECT * FROM investors WHERE id = ?', args: [req.params.id] });
+    if (!existing.rows[0]) {
+      return res.status(404).json({ error: 'Investor not found' });
+    }
+    const requestedPassword = req.body.password;
+    if (requestedPassword && String(requestedPassword).length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+    const newPassword = requestedPassword ? String(requestedPassword) : generatePassword();
+    const hash = bcrypt.hashSync(newPassword, 10);
+    await db.execute({ sql: 'UPDATE users SET password_hash = ? WHERE id = ?', args: [hash, existing.rows[0].user_id] });
+    res.json({ reset: true, newPassword });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to reset password' });
+  }
+});
+
 router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const existing = await db.execute({ sql: 'SELECT * FROM investors WHERE id = ?', args: [req.params.id] });

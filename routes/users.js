@@ -54,6 +54,40 @@ router.post('/', async (req, res) => {
   }
 });
 
+function generatePassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  let pass = '';
+  for (let i = 0; i < 12; i++) pass += chars[Math.floor(Math.random() * chars.length)];
+  return pass;
+}
+
+// Passwords are one-way bcrypt hashes — there is no "saved password" to look
+// up or show an admin, by design, so the only way to help a locked-out staff
+// member is to set a brand-new one. Returned once in the response; never
+// stored anywhere in readable form.
+router.patch('/:id/reset-password', async (req, res) => {
+  try {
+    const existing = await db.execute({ sql: 'SELECT * FROM users WHERE id = ?', args: [req.params.id] });
+    if (!existing.rows[0]) {
+      return res.status(404).json({ error: 'Staff account not found' });
+    }
+    if (existing.rows[0].role === 'investor') {
+      return res.status(400).json({ error: 'Reset investor passwords from the Investor Accounts tab instead.' });
+    }
+    const requestedPassword = req.body.password;
+    if (requestedPassword && String(requestedPassword).length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+    const newPassword = requestedPassword ? String(requestedPassword) : generatePassword();
+    const hash = bcrypt.hashSync(newPassword, 10);
+    await db.execute({ sql: 'UPDATE users SET password_hash = ? WHERE id = ?', args: [hash, req.params.id] });
+    res.json({ reset: true, newPassword });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to reset password' });
+  }
+});
+
 router.delete('/:id', async (req, res) => {
   try {
     if (Number(req.params.id) === req.user.id) {
