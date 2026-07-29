@@ -1201,12 +1201,18 @@
                 <form id="projectForm2" class="inline-form" style="margin-top: -8px;">
                     <input type="text" id="projectDescription" placeholder="Short description" style="flex: 2;">
                     <input type="text" id="projectGrowth" placeholder="Growth potential (e.g. 18% yield uplift)" style="flex: 2;">
+                </form>
+                <p style="font-size: 0.82rem; color: var(--text-light); margin-top: 10px;">Sets what this project is worth on its own terms for the investor-facing Share &amp; ROI Calculator — for reference, the current total hotel valuation is <strong id="projectValuationRef">&mdash;</strong>. Leave any of these three at 0 to have the calculator fall back to the whole-hotel figures for this project.</p>
+                <form id="projectForm3" class="inline-form" style="margin-top: -8px;">
+                    <input type="number" id="projectValuation" placeholder="This project's valuation (Rs.)" min="0" step="1000">
+                    <input type="number" id="projectOwnerEquity" placeholder="Owner equity % (this project)" min="0" max="100" step="0.1">
+                    <input type="number" id="projectProjectedIncome" placeholder="Projected monthly net income (Rs.)" min="0" step="1000">
                     <button type="button" class="action-btn confirm" id="addProjectBtn">Add Project</button>
                 </form>
                 <p class="form-message" id="projectMessage"></p>
                 <div style="overflow-x: auto; margin-top: 16px;">
                     <table class="admin-table" id="projectsTable">
-                        <thead><tr><th>Name</th><th>Location</th><th>Capital Needed</th><th>Timeline</th><th>Status</th><th></th></tr></thead>
+                        <thead><tr><th>Name</th><th>Location</th><th>Capital Needed</th><th>Timeline</th><th>Valuation (Rs.)</th><th>Owner Equity %</th><th>Projected Monthly Income (Rs.)</th><th>Status</th><th></th></tr></thead>
                         <tbody id="projectsBody"></tbody>
                     </table>
                 </div>

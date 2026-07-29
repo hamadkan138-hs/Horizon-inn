@@ -185,7 +185,8 @@
             width: 150px; background: rgba(255,255,255,0.04); border: 1px solid var(--hair); color: var(--text-1);
             border-radius: 10px; padding: 8px 12px; font-size: 1.05rem;
         }
-        .roi-output { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .roi-output { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        @media (max-width: 500px) { .roi-output { grid-template-columns: 1fr; } }
         .roi-output .stat { background: rgba(255,255,255,0.03); border: 1px solid var(--hair); border-radius: 12px; padding: 16px; text-align: center; transition: transform 0.3s ease; }
         .roi-output .stat:hover { transform: translateY(-2px); }
         .roi-output .stat span { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-2); margin-bottom: 8px; }
@@ -470,7 +471,11 @@
 
                 <div class="glass-card">
                     <h2 style="text-align: left; font-size: 1.3rem; margin-bottom: 4px;"><i class="fas fa-calculator"></i> Share &amp; ROI Calculator</h2>
-                    <p style="color: var(--text-2); font-size: 0.88rem; margin-bottom: 20px;">Estimate what a hypothetical investment would mean today, based on the current valuation and trailing 90-day performance.</p>
+                    <p style="color: var(--text-2); font-size: 0.88rem; margin-bottom: 14px;">Estimate what a hypothetical investment would mean today.</p>
+                    <label style="font-size: 0.8rem; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em;">Calculate Against</label>
+                    <select id="roiScopeSelect" style="width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--hair); color: var(--text-1); border-radius: 6px; padding: 8px 12px; margin: 6px 0 18px; font-family: 'Playfair Display', serif;">
+                        <option value="hotel">Overall Hotel Valuation</option>
+                    </select>
                     <div class="roi-calc-grid">
                         <div>
                             <label style="font-size: 0.8rem; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em;">Hypothetical Investment (Rs.)</label>
@@ -478,12 +483,13 @@
                                 <input type="range" id="roiSlider" min="10000" max="2000000" step="10000" value="100000">
                                 <input type="number" id="roiAmount" min="0" step="1000" value="100000">
                             </div>
-                            <p style="font-size: 0.78rem; color: var(--text-2);">Based on current valuation of <strong id="roiValuationRef" style="color: var(--gold-light);">&mdash;</strong> and trailing 90-day net income.</p>
+                            <p style="font-size: 0.78rem; color: var(--text-2);">Based on <strong id="roiScopeLabel">hotel</strong> valuation of <strong id="roiValuationRef" style="color: var(--gold-light);">&mdash;</strong> and <strong id="roiIncomeBasisLabel">trailing 90-day net income</strong>.</p>
                         </div>
                         <div class="roi-output">
-                            <div class="stat"><span>Ownership Share</span><strong id="roiOwnership">0%</strong></div>
+                            <div class="stat"><span>Your Ownership Share</span><strong id="roiOwnership">0%</strong></div>
                             <div class="stat"><span>Est. Monthly Dividend</span><strong id="roiMonthly">Rs. 0</strong></div>
                             <div class="stat"><span>Est. Annual ROI</span><strong id="roiAnnual">0%</strong></div>
+                            <div class="stat"><span>Owner's Equity &amp; Share</span><strong id="roiOwnerEquity">&mdash;</strong></div>
                         </div>
                     </div>
                 </div>

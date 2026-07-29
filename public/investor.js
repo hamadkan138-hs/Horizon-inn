@@ -858,6 +858,38 @@ function ninetyDaysAgo() { const d = new Date(); d.setDate(d.getDate() - 90); re
    Upcoming Projects & ROI Calculator
 ================================================================ */
 let roiBaseline = { valuation: 0, monthlyNetIncome: 0, totalCapitalRaised: 0, ownerEquityPercent: 0 };
+let roiProjectScopes = []; // upcoming projects with their own valuation set — selectable calculator scopes
+
+// Which valuation/owner-equity/income baseline the calculator should use
+// right now: the whole hotel (existing behavior, untouched), or a specific
+// upcoming project's own figures (admin-set, since a project's valuation
+// and owner equity are independent of the hotel-wide settings).
+function currentRoiScope() {
+    const scopeId = document.getElementById('roiScopeSelect').value;
+    if (scopeId === 'hotel') {
+        return {
+            valuation: roiBaseline.valuation,
+            ownerEquityPercent: roiBaseline.ownerEquityPercent,
+            monthlyNetIncome: roiBaseline.monthlyNetIncome,
+            isProject: false
+        };
+    }
+    const project = roiProjectScopes.find((p) => String(p.id) === scopeId);
+    if (!project) {
+        return {
+            valuation: roiBaseline.valuation,
+            ownerEquityPercent: roiBaseline.ownerEquityPercent,
+            monthlyNetIncome: roiBaseline.monthlyNetIncome,
+            isProject: false
+        };
+    }
+    return {
+        valuation: project.valuationAmount,
+        ownerEquityPercent: project.ownerEquityPercent,
+        monthlyNetIncome: project.projectedMonthlyIncome,
+        isProject: true
+    };
+}
 
 let crescentGroveOccupancyChartInstance = null;
 
@@ -908,7 +940,16 @@ async function loadProjectsTab() {
         roiBaseline.monthlyNetIncome = summary90.netProfit / 3;
         roiBaseline.totalCapitalRaised = Number(valuation.totalCapitalRaised) || 0;
         roiBaseline.ownerEquityPercent = Number(valuation.ownerEquityPercent) || 0;
-        document.getElementById('roiValuationRef').textContent = money(roiBaseline.valuation);
+
+        // Only projects the admin has actually given a valuation to make sense
+        // as calculator scopes — an unpriced "planned" project has nothing to
+        // divide a hypothetical investment against.
+        roiProjectScopes = projects.filter((p) => p.valuationAmount > 0);
+        const scopeSelect = document.getElementById('roiScopeSelect');
+        const previousScope = scopeSelect.value;
+        scopeSelect.innerHTML = `<option value="hotel">Overall Hotel Valuation</option>` +
+            roiProjectScopes.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+        scopeSelect.value = roiProjectScopes.some((p) => String(p.id) === previousScope) ? previousScope : 'hotel';
 
         lightboxProjects = projects;
         const projectGrid = document.getElementById('projectGrid');
@@ -942,14 +983,36 @@ function escapeHtml(str) {
 
 function updateRoiCalculator() {
     const amount = Number(document.getElementById('roiAmount').value || 0);
-    const ownership = computeSimulatedOwnership(amount);
-    const monthlyDividend = Math.max(0, roiBaseline.monthlyNetIncome * (ownership / 100));
+    const scope = currentRoiScope();
+
+    // The hotel scope keeps the exact existing pool-split formula (mirrors
+    // the server's computeOwnershipPercent). A project scope has no
+    // capital-raised-so-far of its own to split a pool against yet, so a
+    // hypothetical investor's share there is the direct fraction of that
+    // project's own valuation instead.
+    const ownership = scope.isProject
+        ? (scope.valuation > 0 ? (amount / scope.valuation) * 100 : 0)
+        : computeSimulatedOwnership(amount);
+
+    const monthlyDividend = Math.max(0, scope.monthlyNetIncome * (ownership / 100));
     const annualRoi = amount > 0 ? ((monthlyDividend * 12) / amount) * 100 : 0;
 
     countUpTo(document.getElementById('roiOwnership'), ownership, (v) => `${v.toFixed(2)}%`, 350);
     countUpTo(document.getElementById('roiMonthly'), monthlyDividend, money, 350);
     countUpTo(document.getElementById('roiAnnual'), annualRoi, (v) => `${v.toFixed(1)}%`, 350);
+
+    document.getElementById('roiOwnerEquity').textContent = scope.ownerEquityPercent > 0
+        ? `${scope.ownerEquityPercent}% · ${money(scope.valuation * scope.ownerEquityPercent / 100)}`
+        : 'Not fixed';
+
+    document.getElementById('roiValuationRef').textContent = money(scope.valuation);
+    document.getElementById('roiScopeLabel').textContent = scope.isProject ? "this project's" : "the hotel's";
+    document.getElementById('roiIncomeBasisLabel').textContent = scope.isProject
+        ? 'its projected monthly net income'
+        : 'trailing 90-day net income';
 }
+
+document.getElementById('roiScopeSelect').addEventListener('change', updateRoiCalculator);
 
 document.getElementById('roiSlider').addEventListener('input', (e) => {
     document.getElementById('roiAmount').value = e.target.value;
