@@ -188,9 +188,9 @@ function overviewGuestRowHtml(b) {
 
 async function loadOverview() {
     try {
-        // Initialize LoadingStateManager for KPI cards
+        // Initialize LoadingStateManager for KPI cards (fast fade-out, no delay)
         const kpiManager = typeof LoadingStateManager !== 'undefined' ?
-            new LoadingStateManager('#kpiCardsContainer', '#kpiCardsContent') : null;
+            new LoadingStateManager('#kpiCardsContainer', '#kpiCardsContent', { delayBeforeHide: 0, duration: 300 }) : null;
 
         const data = await apiGet('/api/reports/overview');
 
@@ -216,24 +216,23 @@ async function loadOverview() {
         if (kpiManager) {
             // Show content and hide skeleton
             const contentEl = document.getElementById('kpiCardsContent');
-            if (contentEl) contentEl.style.display = 'grid';
+            if (contentEl) {
+                contentEl.style.display = 'grid';
+                contentEl.style.opacity = '1';
+            }
 
             kpiManager.hideSkeleton();
 
-            // Animate in with stagger and count-up
-            setTimeout(() => {
-                kpiManager.animateIn();
+            // Animate in with stagger and count-up (no artificial delays)
+            kpiManager.animateIn();
 
-                // Count-up animations for KPI values
-                if (typeof AnimationEngine !== 'undefined') {
-                    setTimeout(() => {
-                        AnimationEngine.countUp('#kpiOccupancyValue', occupancyPercent, 1200);
-                        AnimationEngine.countUp('#kpiRevenueValue', Math.round(data.cashReceivedToday), 1200);
-                        AnimationEngine.countUp('#kpiBookingsValue', data.arrivals.length + data.departures.length, 1200);
-                        AnimationEngine.countUp('#kpiExpensesValue', Math.round(data.expensesTotalToday), 1200);
-                    }, 100);
-                }
-            }, 100);
+            // Count-up animations for KPI values (start immediately)
+            if (typeof AnimationEngine !== 'undefined') {
+                AnimationEngine.countUp('#kpiOccupancyValue', occupancyPercent, 1200);
+                AnimationEngine.countUp('#kpiRevenueValue', Math.round(data.cashReceivedToday), 1200);
+                AnimationEngine.countUp('#kpiBookingsValue', data.arrivals.length + data.departures.length, 1200);
+                AnimationEngine.countUp('#kpiExpensesValue', Math.round(data.expensesTotalToday), 1200);
+            }
         }
 
         const pulseCards = [
