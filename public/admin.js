@@ -171,11 +171,53 @@ function overviewGuestRowHtml(b) {
 
 async function loadOverview() {
     try {
+        // Initialize LoadingStateManager for KPI cards
+        const kpiManager = typeof LoadingStateManager !== 'undefined' ?
+            new LoadingStateManager('#kpiCardsContainer', '#kpiCardsContent') : null;
+
         const data = await apiGet('/api/reports/overview');
 
         const hour = new Date().getHours();
         const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
         document.getElementById('overviewGreeting').textContent = `${greeting} — Today at a Glance`;
+
+        // Populate KPI cards
+        const occupancyPercent = Math.round(data.occupancy.rate * 100);
+        document.getElementById('kpiOccupancyValue').textContent = `${occupancyPercent}%`;
+        document.getElementById('kpiOccupancyMeta').textContent = `${data.occupancy.occupied} of ${data.occupancy.capacity} rooms`;
+
+        document.getElementById('kpiRevenueValue').textContent = `Rs. ${Math.round(data.cashReceivedToday).toLocaleString('en-PK')}`;
+        document.getElementById('kpiRevenueMeta').textContent = data.cashReceivedToday > 0 ? '↑ Growth' : 'No revenue yet';
+
+        document.getElementById('kpiBookingsValue').textContent = data.arrivals.length + data.departures.length;
+        document.getElementById('kpiBookingsMeta').textContent = `${data.arrivals.length} check-ins, ${data.departures.length} check-outs`;
+
+        document.getElementById('kpiExpensesValue').textContent = `Rs. ${Math.round(data.expensesTotalToday).toLocaleString('en-PK')}`;
+        document.getElementById('kpiExpensesMeta').textContent = data.netCashToday > 0 ? 'Net: +Rs. ' + Math.round(data.netCashToday).toLocaleString('en-PK') : 'Net negative';
+
+        // Animate KPI cards in with skeleton manager
+        if (kpiManager) {
+            // Show content and hide skeleton
+            const contentEl = document.getElementById('kpiCardsContent');
+            if (contentEl) contentEl.style.display = 'grid';
+
+            kpiManager.hideSkeleton();
+
+            // Animate in with stagger and count-up
+            setTimeout(() => {
+                kpiManager.animateIn();
+
+                // Count-up animations for KPI values
+                if (typeof AnimationEngine !== 'undefined') {
+                    setTimeout(() => {
+                        AnimationEngine.countUp('#kpiOccupancyValue', occupancyPercent, 1200);
+                        AnimationEngine.countUp('#kpiRevenueValue', Math.round(data.cashReceivedToday), 1200);
+                        AnimationEngine.countUp('#kpiBookingsValue', data.arrivals.length + data.departures.length, 1200);
+                        AnimationEngine.countUp('#kpiExpensesValue', Math.round(data.expensesTotalToday), 1200);
+                    }, 100);
+                }
+            }, 100);
+        }
 
         const pulseCards = [
             { label: 'Arriving Today', value: data.arrivals.length, tab: 'bookings' },

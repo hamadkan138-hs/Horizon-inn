@@ -54,7 +54,19 @@ const AnimationEngine = {
     const element = typeof selector === 'string' ? document.querySelector(selector) : selector;
     if (!element) return null;
 
-    const startValue = parseInt(element.textContent.replace(/,/g, '')) || 0;
+    // Extract prefix and suffix from existing text (e.g. "Rs. 500" or "85%")
+    const originalText = element.textContent;
+    const numberMatch = originalText.match(/\d+/);
+    let prefix = '';
+    let suffix = '';
+
+    if (numberMatch) {
+      const numberIndex = originalText.indexOf(numberMatch[0]);
+      prefix = originalText.substring(0, numberIndex);
+      suffix = originalText.substring(numberIndex + numberMatch[0].length);
+    }
+
+    const startValue = parseInt(originalText.replace(/\D/g, '')) || 0;
 
     return anime({
       targets: { value: startValue },
@@ -63,7 +75,7 @@ const AnimationEngine = {
       duration: duration,
       round: 1,
       update(anim) {
-        element.textContent = Math.round(anim.progress * targetValue).toLocaleString();
+        element.textContent = prefix + Math.round(anim.progress * targetValue).toLocaleString() + suffix;
       }
     });
   },

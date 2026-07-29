@@ -108,7 +108,63 @@
             <!-- Overview -->
             <section class="admin-panel" id="panel-overview">
                 <h2 id="overviewGreeting" style="margin-bottom: 4px;">Today at a Glance</h2>
-                <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 18px;">Everything that needs your attention right now, in one place.</p>
+                <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 20px;">Everything that needs your attention right now, in one place.</p>
+
+                <!-- KPI Cards Row (4-column grid on desktop, 2-column on tablet, stacked on mobile) -->
+                <div class="kpi-cards-container" id="kpiCardsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 28px;">
+                    <!-- Occupancy % -->
+                    <div class="kpi-card-skeleton" id="kpi-occupancy-skeleton">
+                        <div class="skeleton-text skeleton-title"></div>
+                        <div class="skeleton-text skeleton-value" style="height: 48px; margin-top: 12px;"></div>
+                        <div class="skeleton-text skeleton-small" style="margin-top: 8px;"></div>
+                    </div>
+                    <!-- Revenue -->
+                    <div class="kpi-card-skeleton" id="kpi-revenue-skeleton">
+                        <div class="skeleton-text skeleton-title"></div>
+                        <div class="skeleton-text skeleton-value" style="height: 48px; margin-top: 12px;"></div>
+                        <div class="skeleton-text skeleton-small" style="margin-top: 8px;"></div>
+                    </div>
+                    <!-- Bookings -->
+                    <div class="kpi-card-skeleton" id="kpi-bookings-skeleton">
+                        <div class="skeleton-text skeleton-title"></div>
+                        <div class="skeleton-text skeleton-value" style="height: 48px; margin-top: 12px;"></div>
+                        <div class="skeleton-text skeleton-small" style="margin-top: 8px;"></div>
+                    </div>
+                    <!-- Expenses -->
+                    <div class="kpi-card-skeleton" id="kpi-expenses-skeleton">
+                        <div class="skeleton-text skeleton-title"></div>
+                        <div class="skeleton-text skeleton-value" style="height: 48px; margin-top: 12px;"></div>
+                        <div class="skeleton-text skeleton-small" style="margin-top: 8px;"></div>
+                    </div>
+                </div>
+
+                <!-- KPI Cards Content (hidden initially, shown after skeleton is hidden) -->
+                <div class="kpi-cards-content" id="kpiCardsContent" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 28px; opacity: 0;">
+                    <!-- Occupancy % Card -->
+                    <div class="glass-card kpi-card animate-row">
+                        <div class="kpi-label">Occupancy Rate</div>
+                        <div class="kpi-value" id="kpiOccupancyValue">—</div>
+                        <div class="kpi-meta" id="kpiOccupancyMeta">Calculating…</div>
+                    </div>
+                    <!-- Revenue Card -->
+                    <div class="glass-card kpi-card animate-row">
+                        <div class="kpi-label">Today's Revenue</div>
+                        <div class="kpi-value" id="kpiRevenueValue">Rs. —</div>
+                        <div class="kpi-meta" id="kpiRevenueMeta">Calculating…</div>
+                    </div>
+                    <!-- Bookings Card -->
+                    <div class="glass-card kpi-card animate-row">
+                        <div class="kpi-label">Active Bookings</div>
+                        <div class="kpi-value" id="kpiBookingsValue">—</div>
+                        <div class="kpi-meta" id="kpiBookingsMeta">Calculating…</div>
+                    </div>
+                    <!-- Expenses Card -->
+                    <div class="glass-card kpi-card animate-row">
+                        <div class="kpi-label">Today's Expenses</div>
+                        <div class="kpi-value" id="kpiExpensesValue">Rs. —</div>
+                        <div class="kpi-meta" id="kpiExpensesMeta">Calculating…</div>
+                    </div>
+                </div>
 
                 <h3 style="font-size: 0.95rem; margin-bottom: 10px;"><i class="fas fa-bolt"></i> Quick Launch</h3>
                 <div class="quick-launch-grid" id="overviewQuickLaunch">

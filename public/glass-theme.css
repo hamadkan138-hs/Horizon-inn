@@ -359,6 +359,82 @@ a:hover {
   background: rgba(255, 255, 255, 0.25);
 }
 
+/* ===== KPI CARDS ===== */
+.kpi-card {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kpi-label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.kpi-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.kpi-meta {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ===== KPI CARD SKELETON ===== */
+.kpi-card-skeleton {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-radius: 16px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-soft), var(--shadow-inset);
+}
+
+.skeleton-title {
+  height: 14px;
+  width: 60%;
+  margin-bottom: 4px;
+}
+
+.skeleton-value {
+  height: 48px;
+  width: 100%;
+}
+
+.skeleton-small {
+  height: 12px;
+  width: 70%;
+}
+
+/* ===== SKELETON TEXT ELEMENTS ===== */
+.skeleton-text {
+  background: linear-gradient(
+    90deg,
+    rgba(59, 130, 246, 0.08) 0%,
+    rgba(59, 130, 246, 0.15) 50%,
+    rgba(59, 130, 246, 0.08) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: 8px;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-text {
+    animation: none;
+    background: rgba(59, 130, 246, 0.08);
+  }
+}
+
 /* ===== ACCESSIBILITY ===== */
 @media (prefers-reduced-motion: reduce) {
   * {
