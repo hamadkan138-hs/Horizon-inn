@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "build:room-management-css": "tailwindcss -c build-tailwind/tailwind.config.js -i build-tailwind/input.css -o public/room-management-compiled.css --minify"
   },
   "dependencies": {
     "@libsql/client": "^0.17.4",
@@ -14,5 +15,8 @@
     "multer": "^2.2.0",
     "node-cron": "^4.6.0",
     "nodemailer": "^9.0.3"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
   }
 }

@@ -9,35 +9,23 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-  // Always dark — matches the obsidian glassmorphism theme shared with
-  // investor.html/admin.html (see dark-theme.css). This page still uses
-  // Tailwind's `dark:` utility variants throughout its markup rather than
-  // that shared stylesheet (different architecture, no shared classes to
-  // hook into), so forcing `darkMode: 'class'` + always-on `.dark` on
-  // <html> is what keeps every `dark:` variant permanently active instead
-  // of touching every individual class list.
-  tailwind.config = {
-    darkMode: 'class',
-    theme: {
-      extend: {
-        fontFamily: {
-          sans: ['Inter', 'sans-serif'],
-          display: ['Inter', 'sans-serif']
-        },
-        colors: {
-          gold: { DEFAULT: '#d4af37', soft: '#e8c874' },
-          ink: '#0a0b0e'
-        },
-        boxShadow: {
-          glass: '0 8px 32px rgba(0,0,0,0.37)',
-          'glass-dark': '0 8px 32px rgba(0,0,0,0.37)'
-        }
-      }
-    }
-  };
-</script>
+<!--
+  Pre-compiled Tailwind output (see /build-tailwind in the repo root for the
+  source config + build command) instead of the cdn.tailwindcss.com Play CDN.
+  That script is explicitly documented by Tailwind as unsuitable for
+  production — it recompiles every utility class in the browser on every
+  page load, and if the CDN is ever unreachable (an outage, a firewall, an
+  ad-blocker, or the endpoint changing) this entire page rendered as
+  completely unstyled, unusable HTML. This file is the exact same output,
+  generated ahead of time and served from the app itself.
+  Always dark — matches the obsidian glassmorphism theme shared with
+  investor.html/admin.html (see dark-theme.css). This page still uses
+  Tailwind's `dark:` utility variants throughout its markup rather than
+  that shared stylesheet (different architecture, no shared classes to
+  hook into), so the compiled CSS's `dark:` variants target `.dark`,
+  which stays hardcoded on <html> below to keep them permanently active.
+-->
+<link rel="stylesheet" href="room-management-compiled.css">
 <style>
   html { scroll-behavior: smooth; }
   body { font-family: 'Inter', sans-serif; }
