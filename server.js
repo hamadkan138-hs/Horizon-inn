@@ -31,6 +31,7 @@ const corporateAccountsRouter = require('./routes/corporateAccounts');
 const abandonedBookingsRouter = require('./routes/abandonedBookings');
 const minibarRouter = require('./routes/minibar');
 const adminDataRouter = require('./routes/adminData');
+const kioskRouter = require('./routes/kiosk');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -64,6 +65,7 @@ app.use('/api/corporate-accounts', corporateAccountsRouter);
 app.use('/api/abandoned-bookings', abandonedBookingsRouter);
 app.use('/api/minibar', minibarRouter);
 app.use('/api/admin', adminDataRouter);
+app.use('/api/kiosk', kioskRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

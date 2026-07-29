@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- No user scaling: a guest pinch-zooming an unattended lobby screen leaves
+         it zoomed for whoever walks up next. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Horizon Inn &mdash; Self Check-In</title>
+    <link rel="icon" type="image/png" href="images/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="dark-theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="kiosk-body kiosk-selfservice">
+    <div class="mesh-blob gold"></div>
+    <div class="mesh-blob emerald"></div>
+
+    <!-- Device sign-in. Shown once when a manager sets the tablet up; after that
+         the session persists and guests only ever see the states below. -->
+    <div id="deviceLoginPanel" class="kiosk-page" style="display: none;">
+        <div class="kiosk-card" style="max-width: 420px; margin: 0 auto;">
+            <h1 style="font-size: 1.4rem; margin-bottom: 6px;">Kiosk Setup</h1>
+            <p class="kiosk-sub" style="margin-bottom: 20px;">Sign this device in once with its kiosk account. Guests will not see this screen.</p>
+            <form id="deviceLoginForm">
+                <div class="form-group">
+                    <label for="kioskUser">Username</label>
+                    <input type="text" id="kioskUser" autocomplete="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="kioskPass">Password</label>
+                    <input type="password" id="kioskPass" autocomplete="current-password" required>
+                </div>
+                <button type="submit" class="kiosk-btn-lg kiosk-btn-gold" style="width: 100%;">Activate Kiosk</button>
+                <p class="form-message error" id="deviceLoginMessage"></p>
+            </form>
+        </div>
+    </div>
+
+    <div id="kiosk" style="display: none;">
+
+        <!-- STATE: idle attract screen -->
+        <section id="stateIdle" class="ks-state ks-idle">
+            <img src="images/logo-mark.png" alt="" class="ks-idle-logo">
+            <h1 class="ks-idle-title">Welcome to Horizon Inn</h1>
+            <p class="ks-idle-sub">Check yourself in &mdash; it takes about a minute</p>
+            <button type="button" class="ks-touch-btn" id="startBtn">
+                <i class="fas fa-hand-pointer"></i> Touch to Check In
+            </button>
+            <p class="ks-idle-help">Need help? Our reception team is happy to assist.</p>
+        </section>
+
+        <!-- STATE: identify -->
+        <section id="stateIdentify" class="ks-state" style="display: none;">
+            <button type="button" class="ks-back" data-restart><i class="fas fa-arrow-left"></i> Start Over</button>
+            <div class="ks-panel">
+                <h2>Let's find your booking</h2>
+                <p class="ks-panel-sub">Enter the CNIC or passport number you booked with, and your surname.</p>
+                <form id="identifyForm">
+                    <div class="ks-field">
+                        <label for="ksCnic">CNIC / Passport Number</label>
+                        <input type="text" id="ksCnic" class="ks-input" inputmode="text"
+                               placeholder="e.g. 17301-1234567-1" autocomplete="off" required>
+                    </div>
+                    <div class="ks-field">
+                        <label for="ksSurname">Surname</label>
+                        <input type="text" id="ksSurname" class="ks-input" placeholder="e.g. Khan" autocomplete="off" required>
+                    </div>
+                    <button type="submit" class="ks-touch-btn" id="findBtn">Find My Booking</button>
+                    <p class="form-message error ks-msg" id="identifyMessage"></p>
+                </form>
+            </div>
+        </section>
+
+        <!-- STATE: confirm -->
+        <section id="stateConfirm" class="ks-state" style="display: none;">
+            <button type="button" class="ks-back" data-restart><i class="fas fa-arrow-left"></i> Start Over</button>
+            <div class="ks-panel">
+                <h2 id="confirmGreeting">Welcome back</h2>
+                <p class="ks-panel-sub">Please check these details are correct.</p>
+                <dl class="ks-details" id="confirmDetails"></dl>
+                <div class="ks-balance" id="confirmBalance" style="display: none;"></div>
+                <button type="button" class="ks-touch-btn" id="confirmBtn">Confirm &amp; Check In</button>
+                <p class="form-message error ks-msg" id="confirmMessage"></p>
+            </div>
+        </section>
+
+        <!-- STATE: done -->
+        <section id="stateDone" class="ks-state ks-idle" style="display: none;">
+            <div class="ks-tick"><i class="fas fa-check"></i></div>
+            <h1 class="ks-idle-title" id="doneTitle">You're checked in</h1>
+            <div class="ks-roomnum" id="doneRoom"></div>
+            <p class="ks-idle-sub" id="doneMeta"></p>
+            <div class="ks-nextsteps" id="doneNextSteps"></div>
+            <button type="button" class="ks-touch-btn ks-touch-btn--quiet" data-restart>Done</button>
+        </section>
+
+        <!-- STATE: hand off to a human -->
+        <section id="stateReception" class="ks-state ks-idle" style="display: none;">
+            <div class="ks-tick ks-tick--warn"><i class="fas fa-bell-concierge"></i></div>
+            <h1 class="ks-idle-title">Please see reception</h1>
+            <p class="ks-idle-sub" id="receptionReason"></p>
+            <p class="ks-idle-help">Our team at the front desk will take it from here.</p>
+            <button type="button" class="ks-touch-btn ks-touch-btn--quiet" data-restart>Start Over</button>
+        </section>
+    </div>
+
+    <script src="kiosk.js"></script>
+</body>
+</html>
