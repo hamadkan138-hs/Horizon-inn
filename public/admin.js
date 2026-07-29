@@ -87,6 +87,7 @@ async function showDashboard() {
         document.getElementById('investorsTabBtn').style.display = currentUser.role === 'admin' ? 'inline-block' : 'none';
     } catch (err) { return; }
 
+    loadOverview();
     loadBookings();
     loadMessages();
     updateNotifyBell();
@@ -118,6 +119,7 @@ document.querySelectorAll('.admin-tab').forEach((btn) => {
         if (btn.dataset.tab === 'promotions') loadPromotionsPanel();
         if (btn.dataset.tab === 'corporate') loadCorporatePanel();
         if (btn.dataset.tab === 'recovery') loadRecoveryPanel();
+        if (btn.dataset.tab === 'overview') loadOverview();
         if (btn.dataset.tab === 'bookings') { localStorage.setItem('horizonLastSeen', new Date().toISOString()); updateNotifyBell(); }
     });
 });
@@ -135,6 +137,66 @@ document.getElementById('notifyBell').addEventListener('click', () => {
     updateNotifyBell();
     document.querySelector('.admin-tab[data-tab="bookings"]').click();
 });
+
+/* ---------------- Overview ("Today at a Glance") ---------------- */
+function jumpToTab(tab) {
+    document.querySelector(`.admin-tab[data-tab="${tab}"]`).click();
+}
+
+function overviewStatCardHtml({ label, value, tab, attention }) {
+    return `
+        <button type="button" class="summary-card clickable ${attention ? 'attention' : ''}" data-jump-tab="${tab}">
+            <span>${escapeHtml(label)}</span>
+            <strong>${value}</strong>
+        </button>
+    `;
+}
+
+function overviewGuestRowHtml(b) {
+    return `
+        <li>
+            <span>${escapeHtml(b.name)} <span style="color: var(--text-light); font-size: 0.8rem;">&middot; ${escapeHtml(b.room_name)}</span></span>
+            <span style="display: flex; gap: 6px;">
+                <a class="action-btn confirm" href="${whatsappLink(b)}" target="_blank" rel="noopener">WhatsApp</a>
+                <button class="action-btn details-toggle overview-manage-btn" data-id="${b.id}">Manage</button>
+            </span>
+        </li>
+    `;
+}
+
+async function loadOverview() {
+    try {
+        const data = await apiGet('/api/reports/overview');
+
+        const hour = new Date().getHours();
+        const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+        document.getElementById('overviewGreeting').textContent = `${greeting} — Today at a Glance`;
+
+        const cards = [
+            { label: 'Arriving Today', value: data.arrivals.length, tab: 'bookings' },
+            { label: 'Departing Today', value: data.departures.length, tab: 'bookings' },
+            { label: 'Unpaid Balance', value: money(data.outstandingTotal), tab: 'payments', attention: data.outstandingTotal > 0 },
+            { label: 'Cancellation Requests', value: data.cancellationRequests.length, tab: 'bookings', attention: data.cancellationRequests.length > 0 },
+            { label: 'Vouchers to Verify', value: data.pendingVouchers.length, tab: 'promotions', attention: data.pendingVouchers.length > 0 },
+            { label: 'Recovery Leads', value: data.openRecovery.length, tab: 'recovery', attention: data.openRecovery.length > 0 },
+            { label: 'Reviews to Moderate', value: data.pendingReviews.length, tab: 'reviews', attention: data.pendingReviews.length > 0 },
+            { label: 'New Investor Leads', value: data.newLeads.length, tab: 'leads', attention: data.newLeads.length > 0 }
+        ];
+        document.getElementById('overviewStatCards').innerHTML = cards.map(overviewStatCardHtml).join('');
+        document.querySelectorAll('#overviewStatCards [data-jump-tab]').forEach((btn) => {
+            btn.addEventListener('click', () => jumpToTab(btn.dataset.jumpTab));
+        });
+
+        document.getElementById('overviewArrivals').innerHTML =
+            data.arrivals.map(overviewGuestRowHtml).join('') || '<li class="empty-row">No arrivals scheduled today.</li>';
+        document.getElementById('overviewDepartures').innerHTML =
+            data.departures.map(overviewGuestRowHtml).join('') || '<li class="empty-row">No departures scheduled today.</li>';
+
+        document.querySelectorAll('.overview-manage-btn').forEach((btn) => {
+            btn.addEventListener('click', () => jumpToBooking(btn.dataset.id));
+        });
+    } catch (err) { /* handled by apiGet */ }
+}
 
 /* ---------------- Bookings ---------------- */
 function whatsappLink(booking) {

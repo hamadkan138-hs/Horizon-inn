@@ -76,7 +76,8 @@
             </div>
 
             <div class="admin-tabs" id="adminTabs">
-                <button class="admin-tab active" data-tab="bookings"><i class="fas fa-calendar-check"></i> Bookings</button>
+                <button class="admin-tab active" data-tab="overview"><i class="fas fa-house"></i> Overview</button>
+                <button class="admin-tab" data-tab="bookings"><i class="fas fa-calendar-check"></i> Bookings</button>
                 <button class="admin-tab" data-tab="payments"><i class="fas fa-money-bill-wave"></i> Payments</button>
                 <button class="admin-tab" data-tab="daily"><i class="fas fa-chart-line"></i> Daily Summary</button>
                 <button class="admin-tab" data-tab="handover"><i class="fas fa-hand-holding-dollar"></i> Cash &amp; Handover</button>
@@ -98,8 +99,27 @@
                 <button class="admin-tab" data-tab="messages"><i class="fas fa-envelope"></i> Messages</button>
             </div>
 
+            <!-- Overview -->
+            <section class="admin-panel" id="panel-overview">
+                <h2 id="overviewGreeting" style="margin-bottom: 4px;">Today at a Glance</h2>
+                <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 18px;">Everything that needs your attention right now, in one place.</p>
+
+                <div class="summary-cards" id="overviewStatCards"></div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 10px;">
+                    <div>
+                        <h3 style="font-size: 1rem; margin-bottom: 10px;"><i class="fas fa-arrow-right-to-bracket"></i> Arriving Today</h3>
+                        <ul class="overview-list" id="overviewArrivals"></ul>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 1rem; margin-bottom: 10px;"><i class="fas fa-arrow-right-from-bracket"></i> Departing Today</h3>
+                        <ul class="overview-list" id="overviewDepartures"></ul>
+                    </div>
+                </div>
+            </section>
+
             <!-- Bookings -->
-            <section class="admin-panel" id="panel-bookings">
+            <section class="admin-panel" id="panel-bookings" style="display: none;">
                 <div class="panel-toolbar">
                     <input type="text" id="bookingSearch" placeholder="Search by name, email, phone, CNIC...">
                     <select id="bookingStatusFilter">

@@ -139,7 +139,7 @@ input[type="date"], input[type="datetime-local"] { color-scheme: dark; }
 }
 
 /* Glass panels */
-.glass-card, .chart-card, .summary-card, table.admin-table, .room-edit-card, .simple-list, .simple-total, .calendar-grid, .room-status-card, .media-item {
+.glass-card, .chart-card, .summary-card, table.admin-table, .room-edit-card, .simple-list, .simple-total, .calendar-grid, .room-status-card, .media-item, .overview-list li {
     background: var(--glass) !important;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -164,6 +164,7 @@ input[type="date"], input[type="datetime-local"] { color-scheme: dark; }
 }
 .summary-card span { color: var(--text-2) !important; }
 .summary-card strong { color: var(--text-1) !important; font-weight: 700; font-family: inherit !important; }
+.summary-card.attention strong { color: #e08a7a !important; }
 
 table.admin-table th { background: rgba(255,255,255,0.02) !important; color: var(--gold-light) !important; }
 table.admin-table th, table.admin-table td { border-bottom: 1px solid var(--hair) !important; color: var(--text-1); }
