@@ -63,26 +63,26 @@
             <p class="kiosk-signed-in">Signed in as <strong id="whoami"></strong> &middot; <a href="#" id="switchAccountLink">switch account</a></p>
 
             <!-- STATE 1: ID input -->
-            <div id="stateIdInput" class="kiosk-card kiosk-center">
-                <i class="fas fa-id-card kiosk-icon"></i>
-                <h1>Enter Guest ID Card Number</h1>
-                <p class="kiosk-sub">CNIC or passport number</p>
-                <form id="idForm" class="kiosk-id-form">
-                    <input type="text" id="idInput" class="kiosk-input" placeholder="e.g. 17301-1234567-1" autofocus required>
-                    <button type="submit" class="kiosk-btn-lg kiosk-btn-gold">Search / Continue</button>
+            <div id="stateIdInput" class="kiosk-card glass-card kiosk-center">
+                <i class="fas fa-id-card kiosk-icon" style="color: rgba(59, 130, 246, 0.6); margin-bottom: 16px;"></i>
+                <h1 style="font-size: 1.8rem; margin-bottom: 8px;">Find Guest</h1>
+                <p class="kiosk-sub" style="margin-bottom: 28px;">Enter CNIC or passport number</p>
+                <form id="idForm" class="kiosk-id-form" style="width: 100%;">
+                    <input type="text" id="idInput" class="kiosk-input" placeholder="17301-1234567-1" autofocus required style="width: 100%; margin-bottom: 16px;">
+                    <button type="submit" class="kiosk-btn-lg kiosk-btn-gold" style="width: 100%;">Search</button>
                 </form>
-                <p class="form-message error" id="idMessage"></p>
+                <p class="form-message error" id="idMessage" style="margin-top: 12px;"></p>
             </div>
 
             <!-- STATE 2a: Existing guest, not currently checked in -->
-            <div id="stateGuestFound" class="kiosk-card" style="display: none;">
+            <div id="stateGuestFound" class="kiosk-card glass-card" style="display: none;">
                 <button type="button" class="kiosk-back-btn" id="backFromFound"><i class="fas fa-arrow-left"></i> New Search</button>
-                <h2>Welcome Back</h2>
-                <div class="kiosk-guest-summary">
-                    <div><span class="label">Name</span><strong id="foundName"></strong></div>
-                    <div><span class="label">Phone</span><strong id="foundPhone"></strong></div>
-                    <div><span class="label">Previous Visits</span><strong id="foundVisits"></strong></div>
-                    <div><span class="label">Last Stay</span><strong id="foundLastStay"></strong></div>
+                <h2 style="margin-bottom: 20px;">Welcome Back</h2>
+                <div class="kiosk-guest-summary" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                    <div style="background: rgba(59, 130, 246, 0.08); padding: 12px; border-radius: 8px;"><span class="label">Name</span><strong id="foundName" style="display: block; margin-top: 4px; font-size: 1.1rem;"></strong></div>
+                    <div style="background: rgba(59, 130, 246, 0.08); padding: 12px; border-radius: 8px;"><span class="label">Phone</span><strong id="foundPhone" style="display: block; margin-top: 4px; font-size: 1rem;"></strong></div>
+                    <div style="background: rgba(59, 130, 246, 0.08); padding: 12px; border-radius: 8px;"><span class="label">Previous Visits</span><strong id="foundVisits" style="display: block; margin-top: 4px;"></strong></div>
+                    <div style="background: rgba(59, 130, 246, 0.08); padding: 12px; border-radius: 8px;"><span class="label">Last Stay</span><strong id="foundLastStay" style="display: block; margin-top: 4px;"></strong></div>
                 </div>
                 <form id="foundCheckinForm" class="kiosk-form">
                     <div class="form-group">
@@ -99,7 +99,7 @@
                             <input type="date" id="foundCheckout" required>
                         </div>
                     </div>
-                    <button type="submit" class="kiosk-btn-lg kiosk-btn-gold">Check-In</button>
+                    <button type="submit" class="kiosk-btn-lg kiosk-btn-gold" style="width: 100%; margin-top: 12px;">Check-In</button>
                     <p class="form-message error" id="foundMessage"></p>
                 </form>
             </div>

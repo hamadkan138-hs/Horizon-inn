@@ -604,6 +604,15 @@ function showGuestFoundState(cnic, info) {
     document.getElementById('foundLastStay').textContent = info.lastStay || '—';
     document.getElementById('foundMessage').textContent = '';
 
+    // Animate card expansion and content entrance
+    const card = document.getElementById('stateGuestFound');
+    if (card && typeof AnimationEngine !== 'undefined') {
+        card.classList.add('expanded');
+        setTimeout(() => {
+            AnimationEngine.staggerFadeSlideUp('.kiosk-guest-summary > div', 75, 400);
+        }, 100);
+    }
+
     const form = document.getElementById('foundCheckinForm');
     form.dataset.cnic = cnic;
     form.dataset.name = info.name || '';
