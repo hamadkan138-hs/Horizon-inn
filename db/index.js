@@ -738,6 +738,112 @@ function init() {
           });
         }
       }
+      // Cost price for margin reporting — a rough 55% of retail as a starting
+      // estimate; admin should correct these to actual supplier cost.
+      await addColumnsIfMissing('minibar_items', ['cost_price REAL NOT NULL DEFAULT 0']);
+      await db.execute("UPDATE minibar_items SET cost_price = ROUND(price * 0.55) WHERE cost_price = 0");
+
+      // Two-tier mini bar model: `minibar_items` above is now the CENTRAL
+      // STORE catalog (hotel-wide warehouse stock + retail price + cost).
+      // Each physical room additionally carries its own current stock
+      // (room_minibar_stock), refilled FROM the central store, consumed BY
+      // guests during their stay, and reset via a package template
+      // (minibar_packages) the first time a room is tracked.
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS minibar_packages (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          active INTEGER NOT NULL DEFAULT 1,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS minibar_package_items (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          package_id INTEGER NOT NULL REFERENCES minibar_packages(id),
+          minibar_item_id INTEGER NOT NULL REFERENCES minibar_items(id),
+          quantity INTEGER NOT NULL DEFAULT 1
+        )
+      `);
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS room_minibar_stock (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          physical_room_id INTEGER NOT NULL REFERENCES physical_rooms(id),
+          minibar_item_id INTEGER NOT NULL REFERENCES minibar_items(id),
+          opening_stock INTEGER NOT NULL DEFAULT 0,
+          current_stock INTEGER NOT NULL DEFAULT 0,
+          updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+          UNIQUE(physical_room_id, minibar_item_id)
+        )
+      `);
+      // Append-only. No route ever updates or deletes a row here — it's the
+      // permanent record of every stock movement (who, what, when, why),
+      // same "locked ledger" principle as the cash handover log.
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS minibar_room_log (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          physical_room_id INTEGER NOT NULL REFERENCES physical_rooms(id),
+          minibar_item_id INTEGER NOT NULL REFERENCES minibar_items(id),
+          booking_id INTEGER REFERENCES bookings(id),
+          action TEXT NOT NULL,
+          quantity INTEGER NOT NULL,
+          unit_price REAL NOT NULL DEFAULT 0,
+          penalty_amount REAL NOT NULL DEFAULT 0,
+          charged_booking_id INTEGER REFERENCES bookings(id),
+          staff_username TEXT NOT NULL DEFAULT '',
+          note TEXT NOT NULL DEFAULT '',
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS minibar_refill_requests (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          physical_room_id INTEGER NOT NULL REFERENCES physical_rooms(id),
+          requested_by TEXT NOT NULL DEFAULT '',
+          status TEXT NOT NULL DEFAULT 'pending',
+          note TEXT NOT NULL DEFAULT '',
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          fulfilled_at TEXT,
+          fulfilled_by TEXT
+        )
+      `);
+      await addColumnsIfMissing('physical_rooms', ['minibar_package_id INTEGER']);
+
+      // Seed two starter packages (Standard / Premium) built from the item
+      // catalog above, and assign every existing physical room to Standard
+      // by default — admin can change either from the Mini Bar tab.
+      const minibarItemRows = await db.execute('SELECT id, name FROM minibar_items');
+      const minibarIdByName = {};
+      minibarItemRows.rows.forEach((r) => { minibarIdByName[r.name] = Number(r.id); });
+
+      const packageSeed = {
+        Standard: { 'Mineral Water (500ml)': 2, 'Coca-Cola (Can)': 1, 'Sprite (Can)': 1 },
+        Premium: { 'Mineral Water (500ml)': 3, 'Coca-Cola (Can)': 2, 'Sprite (Can)': 2, "Lay's Chips": 1, 'Kit Kat': 1 }
+      };
+      const packageIdByName = {};
+      for (const pkgName of Object.keys(packageSeed)) {
+        const existing = await db.execute({ sql: 'SELECT id FROM minibar_packages WHERE name = ?', args: [pkgName] });
+        let pkgId;
+        if (existing.rows.length) {
+          pkgId = Number(existing.rows[0].id);
+        } else {
+          const created = await db.execute({ sql: 'INSERT INTO minibar_packages (name) VALUES (?)', args: [pkgName] });
+          pkgId = Number(created.lastInsertRowid);
+          for (const [itemName, qty] of Object.entries(packageSeed[pkgName])) {
+            if (minibarIdByName[itemName]) {
+              await db.execute({
+                sql: 'INSERT INTO minibar_package_items (package_id, minibar_item_id, quantity) VALUES (?, ?, ?)',
+                args: [pkgId, minibarIdByName[itemName], qty]
+              });
+            }
+          }
+        }
+        packageIdByName[pkgName] = pkgId;
+      }
+      await db.execute({
+        sql: 'UPDATE physical_rooms SET minibar_package_id = ? WHERE minibar_package_id IS NULL',
+        args: [packageIdByName.Standard]
+      });
 
       // Retire the old generic placeholder rooms now that Horizon Inn has real room
       // content. Delete them if nothing ever booked them; otherwise just hide them from

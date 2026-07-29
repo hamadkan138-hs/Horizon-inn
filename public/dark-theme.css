@@ -139,7 +139,7 @@ input[type="date"], input[type="datetime-local"] { color-scheme: dark; }
 }
 
 /* Glass panels */
-.glass-card, .chart-card, .summary-card, table.admin-table, .room-edit-card, .simple-list, .simple-total, .calendar-grid, .room-status-card, .media-item, .overview-list li {
+.glass-card, .chart-card, .summary-card, table.admin-table, .room-edit-card, .simple-list, .simple-total, .calendar-grid, .room-status-card, .media-item, .overview-list li, .minibar-room-card, .minibar-pos-item {
     background: var(--glass) !important;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
