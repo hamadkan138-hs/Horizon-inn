@@ -588,6 +588,21 @@ function init() {
         )
       `);
 
+      // Append-only trail of every booking status change — who changed it,
+      // from what, to what, and (for cancellations) why. Never updated or
+      // deleted, only inserted, same as the handover ledger.
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS booking_status_log (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          booking_id INTEGER NOT NULL REFERENCES bookings(id),
+          from_status TEXT NOT NULL,
+          to_status TEXT NOT NULL,
+          changed_by TEXT NOT NULL DEFAULT '',
+          reason TEXT NOT NULL DEFAULT '',
+          changed_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+
       await db.execute(`
         CREATE TABLE IF NOT EXISTS venue_bookings (
           id INTEGER PRIMARY KEY AUTOINCREMENT,

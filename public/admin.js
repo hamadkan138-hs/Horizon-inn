@@ -365,6 +365,25 @@ async function renderBookingDetail(id) {
                 </form>
                 <p class="form-message" id="editMessage-${id}"></p>
             </div>
+
+            ${b.statusHistory.length ? `
+            <div class="detail-subsection">
+                <h4>Status History</h4>
+                <table class="admin-table mini-table">
+                    <thead><tr><th>When</th><th>Change</th><th>By</th><th>Reason</th></tr></thead>
+                    <tbody>
+                        ${b.statusHistory.map((h) => `
+                            <tr>
+                                <td>${formatPKT(h.changed_at)}</td>
+                                <td>${STATUS_LABELS[h.from_status] || h.from_status} &rarr; ${STATUS_LABELS[h.to_status] || h.to_status}</td>
+                                <td>${escapeHtml(h.changed_by)}</td>
+                                <td>${escapeHtml(h.reason)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+            ` : ''}
         `;
 
         const paymentForm = cell.querySelector('.payment-form');
@@ -532,9 +551,22 @@ function applyBookingFilters() {
                 openCheckoutModal(booking);
                 return;
             }
+
+            let reason;
+            if (select.value === 'cancelled' && previousValue !== 'cancelled') {
+                const booking = allBookings.find((b) => String(b.id) === String(select.dataset.id));
+                if (!confirm(`Cancel ${booking ? booking.name + "'s" : "this"} booking? This can't be undone from here.`)) {
+                    select.value = previousValue;
+                    return;
+                }
+                reason = prompt('Reason for cancelling (optional, helps if anyone asks later):', '') || '';
+            }
+
             select.disabled = true;
-            try { await apiSend('PATCH', `/api/bookings/${select.dataset.id}`, { status: select.value }); loadBookings(); }
-            catch (err) { alert(err.message); select.disabled = false; }
+            try {
+                await apiSend('PATCH', `/api/bookings/${select.dataset.id}`, { status: select.value, reason });
+                loadBookings();
+            } catch (err) { alert(err.message); select.disabled = false; }
         });
     });
 

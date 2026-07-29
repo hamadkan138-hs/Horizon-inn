@@ -183,6 +183,26 @@ h2::after {
     width: 100%;
 }
 
+.kiosk-nav-btn {
+    background: none;
+    border: none;
+    color: var(--white);
+    font-weight: 400;
+    font-size: 0.92rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color var(--transition);
+}
+
+.kiosk-nav-btn:hover {
+    color: var(--gold-soft);
+}
+
 .nav-toggle {
     display: none;
     flex-direction: column;
@@ -2277,6 +2297,19 @@ table.admin-table th {
 
 .kiosk-guest-summary strong {
     font-size: 1.05rem;
+    color: #ffffff;
+}
+
+.kiosk-request-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 16px 20px;
     color: #ffffff;
 }
 

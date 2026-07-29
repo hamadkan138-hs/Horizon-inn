@@ -21,7 +21,14 @@
                 <img src="images/logo-mark.png" alt="Horizon Inn" class="nav-logo">
                 <span>Horizon Inn &middot; Front Desk</span>
             </div>
-            <ul class="nav-menu active" style="position: static; background: none; padding: 0; flex-direction: row;">
+            <ul class="nav-menu active" style="position: static; background: none; padding: 0; flex-direction: row; align-items: center; gap: 18px;">
+                <li><button type="button" class="kiosk-nav-btn" id="fdAvailabilityBtn"><i class="fas fa-calendar-days"></i> Room Availability</button></li>
+                <li>
+                    <button type="button" class="bell-btn" id="fdRequestsBtn" title="New booking requests">
+                        <i class="fas fa-bell"></i>
+                        <span class="bell-badge" id="fdRequestsBadge" style="display: none;">0</span>
+                    </button>
+                </li>
                 <li><a href="admin.html">Admin Dashboard</a></li>
             </ul>
         </div>
@@ -211,6 +218,26 @@
                 </div>
                 <button type="button" class="kiosk-btn-lg kiosk-btn-dark" id="openCheckoutBtn">Check-Out</button>
             </div>
+        </div>
+    </div>
+
+    <!-- New booking requests modal -->
+    <div class="modal-overlay" id="fdRequestsModalOverlay" style="display: none;">
+        <div class="modal-box" style="max-width: 640px;">
+            <h3 style="margin-bottom: 4px;">New Booking Requests</h3>
+            <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 18px;">Booked online, waiting for front desk to confirm or decline.</p>
+            <div id="fdRequestsList" style="display: flex; flex-direction: column; gap: 12px; max-height: 60vh; overflow-y: auto;"></div>
+            <button type="button" class="action-btn cancel" id="fdCloseRequestsModalBtn" style="margin-top: 16px;">Close</button>
+        </div>
+    </div>
+
+    <!-- Room availability modal -->
+    <div class="modal-overlay" id="fdAvailabilityModalOverlay" style="display: none;">
+        <div class="modal-box" style="max-width: 720px;">
+            <h3 style="margin-bottom: 4px;">Room Availability</h3>
+            <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 18px;">Check this before booking a walk-in guest so you never double-book a room.</p>
+            <div id="fdAvailabilityBoard" class="room-status-board" style="max-height: 60vh; overflow-y: auto;"></div>
+            <button type="button" class="action-btn cancel" id="fdCloseAvailabilityModalBtn" style="margin-top: 16px;">Close</button>
         </div>
     </div>
 
