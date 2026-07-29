@@ -188,6 +188,10 @@ async function loadOverview() {
             { label: 'Pending Handover Amount', value: money(data.pendingHandoverTotal), tab: 'handover' }
         ];
         document.getElementById('overviewPulseCards').innerHTML = pulseCards.map(overviewStatCardHtml).join('');
+        // Animate pulse cards in with stagger
+        if (typeof AnimationEngine !== 'undefined') {
+          AnimationEngine.staggerFadeSlideUp('#overviewPulseCards > div', 100, 500);
+        }
         document.querySelectorAll('#overviewPulseCards [data-jump-tab]').forEach((btn) => {
             btn.addEventListener('click', () => jumpToTab(btn.dataset.jumpTab, btn.dataset.jumpSubtab));
         });
@@ -203,6 +207,12 @@ async function loadOverview() {
             { label: 'Investor Withdrawal Requests', value: data.pendingWithdrawals.length, tab: 'investors', attention: data.pendingWithdrawals.length > 0 }
         ];
         document.getElementById('overviewStatCards').innerHTML = attentionCards.map(overviewStatCardHtml).join('');
+        // Animate stat cards in with stagger (with slight delay)
+        if (typeof AnimationEngine !== 'undefined') {
+          setTimeout(() => {
+            AnimationEngine.staggerFadeSlideUp('#overviewStatCards > div', 100, 500);
+          }, 200);
+        }
         document.querySelectorAll('#overviewStatCards [data-jump-tab]').forEach((btn) => {
             btn.addEventListener('click', () => jumpToTab(btn.dataset.jumpTab, btn.dataset.jumpSubtab));
         });
@@ -593,6 +603,17 @@ function applyBookingFilters() {
 
     const body = document.getElementById('bookingsBody');
     body.innerHTML = pageRows.map(bookingRowHtml).join('') || '<tr><td colspan="9">No bookings match.</td></tr>';
+
+    // Animate table rows in with stagger
+    if (typeof AnimationEngine !== 'undefined' && pageRows.length > 0) {
+      const rows = body.querySelectorAll('tr');
+      rows.forEach((row, idx) => {
+        row.classList.add('animate-row');
+        row.style.opacity = '0';
+        row.style.transform = 'translateY(8px)';
+      });
+      AnimationEngine.staggerFadeSlideUp('tbody tr.animate-row', 50, 400);
+    }
 
     body.querySelectorAll('.status-select').forEach((select) => {
         const previousValue = select.value;
