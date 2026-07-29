@@ -140,13 +140,17 @@ document.getElementById('notifyBell').addEventListener('click', () => {
 });
 
 /* ---------------- Overview ("Today at a Glance") ---------------- */
-function jumpToTab(tab) {
+function jumpToTab(tab, subtab) {
     document.querySelector(`.admin-tab[data-tab="${tab}"]`).click();
+    if (subtab) {
+        const subtabBtn = document.querySelector(`.minibar-subtab[data-subtab="${subtab}"]`);
+        if (subtabBtn) subtabBtn.click();
+    }
 }
 
-function overviewStatCardHtml({ label, value, tab, attention }) {
+function overviewStatCardHtml({ label, value, tab, subtab, attention }) {
     return `
-        <button type="button" class="summary-card clickable ${attention ? 'attention' : ''}" data-jump-tab="${tab}">
+        <button type="button" class="summary-card clickable ${attention ? 'attention' : ''}" data-jump-tab="${tab}" data-jump-subtab="${subtab || ''}">
             <span>${escapeHtml(label)}</span>
             <strong>${value}</strong>
         </button>
@@ -182,11 +186,11 @@ async function loadOverview() {
             { label: 'Recovery Leads', value: data.openRecovery.length, tab: 'recovery', attention: data.openRecovery.length > 0 },
             { label: 'Reviews to Moderate', value: data.pendingReviews.length, tab: 'reviews', attention: data.pendingReviews.length > 0 },
             { label: 'New Investor Leads', value: data.newLeads.length, tab: 'leads', attention: data.newLeads.length > 0 },
-            { label: 'Mini Bar Low Stock', value: data.lowStockMinibar.length, tab: 'minibar', attention: data.lowStockMinibar.length > 0 }
+            { label: 'Mini Bar Low Stock', value: data.lowStockMinibar.length, tab: 'minibar', subtab: 'store', attention: data.lowStockMinibar.length > 0 }
         ];
         document.getElementById('overviewStatCards').innerHTML = cards.map(overviewStatCardHtml).join('');
         document.querySelectorAll('#overviewStatCards [data-jump-tab]').forEach((btn) => {
-            btn.addEventListener('click', () => jumpToTab(btn.dataset.jumpTab));
+            btn.addEventListener('click', () => jumpToTab(btn.dataset.jumpTab, btn.dataset.jumpSubtab));
         });
 
         document.getElementById('overviewArrivals').innerHTML =
@@ -1370,8 +1374,10 @@ document.getElementById('expenseForm').addEventListener('submit', async (e) => {
     } catch (err) { msg.textContent = err.message; msg.className = 'form-message error'; }
 });
 
-/* ---------------- Mini Bar Stock ---------------- */
+/* ---------------- Mini Bar Stock Management ---------------- */
 let allMinibarItems = [];
+let allMinibarRooms = [];
+let selectedMinibarRoomId = null;
 
 function minibarStatusPill(item) {
     if (item.stockQuantity <= 0) return '<span class="status-pill cancelled">Out of Stock</span>';
@@ -1379,13 +1385,197 @@ function minibarStatusPill(item) {
     return '<span class="status-pill paid">In Stock</span>';
 }
 
+function minibarIcon(name) {
+    const n = (name || '').toLowerCase();
+    if (n.includes('water')) return '💧';
+    if (n.includes('cola') || n.includes('sprite') || n.includes('soda') || n.includes('juice') || n.includes('drink')) return '🥤';
+    if (n.includes('chip') || n.includes('crisp')) return '🍟';
+    if (n.includes('chocolate') || n.includes('kit kat') || n.includes('kitkat')) return '🍫';
+    if (n.includes('beer') || n.includes('wine')) return '🍷';
+    if (n.includes('coffee') || n.includes('tea')) return '☕';
+    if (n.includes('nuts') || n.includes('almond')) return '🥜';
+    if (n.includes('candy') || n.includes('sweet')) return '🍬';
+    return '🛒';
+}
+
+document.querySelectorAll('.minibar-subtab').forEach((btn) => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.minibar-subtab').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.minibar-subpanel').forEach((p) => { p.style.display = 'none'; });
+        document.getElementById(`minibar-sub-${btn.dataset.subtab}`).style.display = 'block';
+        if (btn.dataset.subtab === 'pos') loadMinibarRooms();
+        if (btn.dataset.subtab === 'store') loadMinibarStore();
+        if (btn.dataset.subtab === 'packages') loadMinibarPackages();
+        if (btn.dataset.subtab === 'refills') loadMinibarRefillRequests();
+        if (btn.dataset.subtab === 'analytics') loadMinibarAnalytics();
+    });
+});
+
 async function loadMinibarPanel() {
+    loadMinibarRooms();
+}
+
+/* ---- POS / Rooms ---- */
+function minibarRoomStatusDot(room) {
+    if (!room.initialized) return 'grey';
+    if (room.lowStockCount > 0) return 'orange';
+    if (room.activeBooking) return 'green';
+    return 'grey';
+}
+
+async function loadMinibarRooms() {
+    try {
+        allMinibarRooms = await apiGet('/api/minibar/rooms');
+        const grid = document.getElementById('minibarRoomGrid');
+        grid.innerHTML = allMinibarRooms.map((r) => `
+            <div class="minibar-room-card ${r.id === selectedMinibarRoomId ? 'selected' : ''}" data-id="${r.id}">
+                <div class="room-number"><span class="minibar-room-dot ${minibarRoomStatusDot(r)}"></span>Room ${escapeHtml(r.roomNumber)}</div>
+                <div class="room-meta">${escapeHtml(r.roomTypeName)}${r.floor ? ` &middot; Floor ${escapeHtml(r.floor)}` : ''}</div>
+                <div class="room-guest">${r.activeBooking ? `<strong>${escapeHtml(r.activeBooking.guestName)}</strong>` : '<span style="color: var(--text-light);">No guest checked in</span>'}</div>
+                ${r.initialized ? `<div style="font-size: 0.76rem; margin-top: 6px; color: var(--text-light);">${r.itemCount} items tracked${r.lowStockCount ? `, <span style="color: #c98a2c;">${r.lowStockCount} low</span>` : ''}</div>` : '<div style="font-size: 0.76rem; margin-top: 6px; color: var(--text-light);">Not yet stocked</div>'}
+            </div>
+        `).join('') || '<p style="color: var(--text-light);">No physical rooms registered yet — add rooms in Rooms &amp; Pricing first.</p>';
+
+        grid.querySelectorAll('.minibar-room-card').forEach((card) => {
+            card.addEventListener('click', () => selectMinibarRoom(Number(card.dataset.id)));
+        });
+
+        if (selectedMinibarRoomId) selectMinibarRoom(selectedMinibarRoomId);
+    } catch (err) { /* handled */ }
+}
+
+async function selectMinibarRoom(roomId) {
+    selectedMinibarRoomId = roomId;
+    document.querySelectorAll('.minibar-room-card').forEach((c) => c.classList.toggle('selected', Number(c.dataset.id) === roomId));
+    const detail = document.getElementById('minibarRoomDetail');
+    detail.style.display = 'block';
+    document.getElementById('minibarPosMessage').textContent = '';
+
+    try {
+        const room = await apiGet(`/api/minibar/rooms/${roomId}`);
+        document.getElementById('minibarRoomTitle').textContent = `Room ${room.roomNumber}`;
+        document.getElementById('minibarRoomGuest').textContent = room.activeBooking
+            ? `${room.activeBooking.guestName} — ${room.activeBooking.invoiceNumber}`
+            : 'No guest currently checked in — charges cannot be billed until someone is.';
+
+        document.getElementById('minibarPosGrid').innerHTML = room.stock.map((s) => {
+            const statusClass = s.currentStock <= 0 ? 'red' : (s.currentStock < s.openingStock ? 'orange' : 'green');
+            const statusLabel = s.currentStock <= 0 ? 'Out of Stock' : (s.currentStock < s.openingStock ? 'Low Stock' : 'In Stock');
+            return `
+                <div class="minibar-pos-item">
+                    <div class="item-icon">${minibarIcon(s.name)}</div>
+                    <div class="item-name">${escapeHtml(s.name)}</div>
+                    <div class="item-price">${money(s.price)}</div>
+                    <div class="item-stock ${statusClass}">${statusLabel} &middot; ${s.currentStock} left</div>
+                    <div class="item-controls">
+                        <input type="number" min="1" step="1" value="1" class="minibar-pos-qty" data-item="${s.minibarItemId}" style="max-width: 60px;" ${s.currentStock <= 0 ? 'disabled' : ''}>
+                        <button class="action-btn confirm minibar-pos-charge-btn" data-item="${s.minibarItemId}" data-name="${escapeHtml(s.name)}" ${s.currentStock <= 0 || !room.activeBooking ? 'disabled' : ''}>Charge</button>
+                    </div>
+                </div>
+            `;
+        }).join('') || '<p style="color: var(--text-light);">This room has no stock tracked yet. Use "Reset to Package" to initialize it.</p>';
+
+        document.querySelectorAll('.minibar-pos-charge-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const qtyInput = document.querySelector(`.minibar-pos-qty[data-item="${btn.dataset.item}"]`);
+                const qty = Number(qtyInput.value) || 1;
+                btn.disabled = true;
+                const msg = document.getElementById('minibarPosMessage');
+                try {
+                    await apiSend('POST', `/api/minibar/rooms/${roomId}/consume`, { itemId: btn.dataset.item, quantity: qty });
+                    msg.className = 'form-message success';
+                    msg.textContent = `Charged ${qty} x ${btn.dataset.name} to the guest's bill.`;
+                    selectMinibarRoom(roomId);
+                    loadMinibarRooms();
+                } catch (err) {
+                    msg.className = 'form-message error'; msg.textContent = err.message;
+                    btn.disabled = false;
+                }
+            });
+        });
+
+        document.getElementById('minibarRoomLogBody').innerHTML = room.log.map((l) => `
+            <tr>
+                <td>${formatPKT(l.createdAt)}</td>
+                <td>${escapeHtml(l.itemName)}</td>
+                <td style="text-transform: capitalize;">${l.action}</td>
+                <td>${l.quantity > 0 ? '+' : ''}${l.quantity}</td>
+                <td>${escapeHtml(l.staffUsername)}</td>
+                <td>${escapeHtml(l.note)}</td>
+            </tr>
+        `).join('') || '<tr><td colspan="6">No activity recorded yet.</td></tr>';
+
+        document.getElementById('minibarResetBtn').onclick = async () => {
+            if (!confirm(`Reset Room ${room.roomNumber}'s mini bar to its package levels? This overwrites current counts.`)) return;
+            try {
+                await apiSend('POST', `/api/minibar/rooms/${roomId}/init`, { force: true });
+                selectMinibarRoom(roomId);
+                loadMinibarRooms();
+            } catch (err) { alert(err.message); }
+        };
+
+        document.getElementById('minibarSuggestBtn').onclick = async () => {
+            try {
+                const suggestions = await apiGet(`/api/minibar/rooms/${roomId}/suggestions`);
+                if (!suggestions.length) { alert('No refills suggested right now — everything is at or above its usual level.'); return; }
+                const lines = suggestions.map((s) => `${s.name}: +${s.suggestedRefillQty} (currently ${s.currentStock}, avg ${s.avgDailyConsumption}/day)`);
+                if (!confirm(`Suggested refills:\n\n${lines.join('\n')}\n\nApply all of these now (drawn from central store)?`)) return;
+                for (const s of suggestions) {
+                    await apiSend('POST', `/api/minibar/rooms/${roomId}/refill`, { itemId: s.minibarItemId, quantity: s.suggestedRefillQty });
+                }
+                selectMinibarRoom(roomId);
+                loadMinibarRooms();
+            } catch (err) { alert(err.message); }
+        };
+
+        document.getElementById('minibarDamageBtn').onclick = () => openMinibarDamageModal(roomId, room.roomNumber, room.stock);
+    } catch (err) { /* handled */ }
+}
+
+/* ---- Damage / Missing modal ---- */
+function openMinibarDamageModal(roomId, roomNumber, stock) {
+    document.getElementById('minibarDamageSubtitle').textContent = `Room ${roomNumber}`;
+    document.getElementById('minibarDamageItem').innerHTML = stock.map((s) => `<option value="${s.minibarItemId}">${escapeHtml(s.name)} (${s.currentStock} in room)</option>`).join('');
+    document.getElementById('minibarDamageForm').reset();
+    document.getElementById('minibarDamageMessage').textContent = '';
+    document.getElementById('minibarDamageModalOverlay').dataset.roomId = roomId;
+    document.getElementById('minibarDamageModalOverlay').style.display = 'flex';
+}
+document.getElementById('minibarCloseDamageModalBtn').addEventListener('click', () => {
+    document.getElementById('minibarDamageModalOverlay').style.display = 'none';
+});
+document.getElementById('minibarDamageForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('minibarDamageMessage');
+    const roomId = document.getElementById('minibarDamageModalOverlay').dataset.roomId;
+    try {
+        await apiSend('POST', `/api/minibar/rooms/${roomId}/damage`, {
+            itemId: document.getElementById('minibarDamageItem').value,
+            quantity: Number(document.getElementById('minibarDamageQty').value),
+            type: document.getElementById('minibarDamageType').value,
+            reason: document.getElementById('minibarDamageReason').value,
+            penaltyAmount: Number(document.getElementById('minibarDamagePenalty').value) || 0
+        });
+        msg.className = 'form-message success';
+        msg.textContent = 'Reported.';
+        setTimeout(() => {
+            document.getElementById('minibarDamageModalOverlay').style.display = 'none';
+            selectMinibarRoom(Number(roomId));
+            loadMinibarRooms();
+        }, 600);
+    } catch (err) { msg.className = 'form-message error'; msg.textContent = err.message; }
+});
+
+/* ---- Central Store ---- */
+async function loadMinibarStore() {
     try {
         allMinibarItems = await apiGet('/api/minibar');
         document.getElementById('minibarBody').innerHTML = allMinibarItems.map((item) => `
             <tr>
                 <td>${escapeHtml(item.name)}</td>
                 <td>${money(item.price)}</td>
+                <td>${money(item.costPrice)}</td>
                 <td>${item.stockQuantity}</td>
                 <td>${minibarStatusPill(item)}</td>
                 <td>
@@ -1393,15 +1583,15 @@ async function loadMinibarPanel() {
                     <button class="action-btn cancel minibar-delete-btn" data-id="${item.id}" data-name="${escapeHtml(item.name)}">Delete</button>
                 </td>
             </tr>
-        `).join('') || '<tr><td colspan="5">No mini bar items yet.</td></tr>';
+        `).join('') || '<tr><td colspan="6">No mini bar items yet.</td></tr>';
 
         document.querySelectorAll('.minibar-restock-btn').forEach((btn) => {
             btn.addEventListener('click', async () => {
-                const qty = Number(prompt(`How many ${btn.dataset.name} are you adding to stock?`, '10'));
+                const qty = Number(prompt(`How many ${btn.dataset.name} are you adding to the central store?`, '10'));
                 if (!qty || qty <= 0) return;
                 try {
                     await apiSend('POST', `/api/minibar/${btn.dataset.id}/restock`, { quantity: qty });
-                    loadMinibarPanel();
+                    loadMinibarStore();
                 } catch (err) { alert(err.message); }
             });
         });
@@ -1410,7 +1600,7 @@ async function loadMinibarPanel() {
                 if (!confirm(`Remove ${btn.dataset.name} from the mini bar catalog?`)) return;
                 try {
                     await apiSend('DELETE', `/api/minibar/${btn.dataset.id}`, {});
-                    loadMinibarPanel();
+                    loadMinibarStore();
                 } catch (err) { alert(err.message); }
             });
         });
@@ -1424,14 +1614,182 @@ document.getElementById('minibarForm').addEventListener('submit', async (e) => {
         await apiSend('POST', '/api/minibar', {
             name: document.getElementById('minibarName').value,
             price: Number(document.getElementById('minibarPrice').value),
+            costPrice: Number(document.getElementById('minibarCostPrice').value) || 0,
             stockQuantity: Number(document.getElementById('minibarStock').value) || 0,
             lowStockThreshold: Number(document.getElementById('minibarThreshold').value) || 5
         });
         msg.textContent = 'Item added.'; msg.className = 'form-message success';
         e.target.reset();
-        loadMinibarPanel();
+        loadMinibarStore();
     } catch (err) { msg.textContent = err.message; msg.className = 'form-message error'; }
 });
+
+/* ---- Packages ---- */
+async function loadMinibarPackages() {
+    try {
+        if (!allMinibarItems.length) allMinibarItems = await apiGet('/api/minibar');
+        const packages = await apiGet('/api/minibar/packages');
+        document.getElementById('minibarPackagesList').innerHTML = packages.map((pkg) => `
+            <div class="detail-subsection" style="margin: 0;">
+                <h4>${escapeHtml(pkg.name)} ${pkg.active ? '' : '<span class="status-pill cancelled">Inactive</span>'}</h4>
+                <form class="inline-form minibar-package-items-form" data-id="${pkg.id}">
+                    ${allMinibarItems.map((item) => {
+                        const existing = pkg.items.find((i) => i.minibarItemId === item.id);
+                        return `
+                            <label style="display: flex; flex-direction: column; font-size: 0.78rem; gap: 4px;">
+                                ${escapeHtml(item.name)}
+                                <input type="number" min="0" step="1" value="${existing ? existing.quantity : 0}" data-item="${item.id}" style="max-width: 70px;">
+                            </label>
+                        `;
+                    }).join('')}
+                    <button type="submit" class="action-btn confirm">Save Package</button>
+                    <button type="button" class="action-btn cancel minibar-package-toggle-btn" data-id="${pkg.id}" data-active="${pkg.active}">${pkg.active ? 'Deactivate' : 'Activate'}</button>
+                </form>
+            </div>
+        `).join('') || '<p style="color: var(--text-light);">No packages yet.</p>';
+
+        document.querySelectorAll('.minibar-package-items-form').forEach((form) => {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const items = Array.from(form.querySelectorAll('input[data-item]'))
+                    .map((input) => ({ minibarItemId: Number(input.dataset.item), quantity: Number(input.value) }))
+                    .filter((i) => i.quantity > 0);
+                try {
+                    await apiSend('PATCH', `/api/minibar/packages/${form.dataset.id}`, { items });
+                    loadMinibarPackages();
+                } catch (err) { alert(err.message); }
+            });
+        });
+        document.querySelectorAll('.minibar-package-toggle-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                try {
+                    await apiSend('PATCH', `/api/minibar/packages/${btn.dataset.id}`, { active: btn.dataset.active !== 'true' });
+                    loadMinibarPackages();
+                } catch (err) { alert(err.message); }
+            });
+        });
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('minibarPackageForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('minibarPackageMessage');
+    try {
+        await apiSend('POST', '/api/minibar/packages', { name: document.getElementById('minibarPackageName').value, items: [] });
+        msg.className = 'form-message success'; msg.textContent = 'Package created — set its item quantities below.';
+        e.target.reset();
+        loadMinibarPackages();
+    } catch (err) { msg.className = 'form-message error'; msg.textContent = err.message; }
+});
+
+/* ---- Refill Requests ---- */
+async function loadMinibarRefillRequests() {
+    try {
+        if (!allMinibarRooms.length) allMinibarRooms = await apiGet('/api/minibar/rooms');
+        const roomSelect = document.getElementById('minibarRefillRoomSelect');
+        roomSelect.innerHTML = allMinibarRooms.map((r) => `<option value="${r.id}">Room ${escapeHtml(r.roomNumber)}</option>`).join('');
+
+        const status = document.getElementById('minibarRefillFilter').value;
+        const requests = await apiGet(`/api/minibar/refill-requests${status ? `?status=${status}` : ''}`);
+        document.getElementById('minibarRefillBody').innerHTML = requests.map((r) => `
+            <tr>
+                <td>Room ${escapeHtml(r.roomNumber)}</td>
+                <td>${escapeHtml(r.requestedBy)}</td>
+                <td>${escapeHtml(r.note)}</td>
+                <td><span class="status-pill ${r.status === 'fulfilled' ? 'paid' : (r.status === 'rejected' ? 'cancelled' : 'unpaid')}">${r.status}</span></td>
+                <td>${formatPKT(r.createdAt)}</td>
+                <td>
+                    ${r.status === 'pending' ? `
+                        <button class="action-btn confirm minibar-refill-fulfill-btn" data-id="${r.id}">Fulfill</button>
+                        <button class="action-btn cancel minibar-refill-reject-btn" data-id="${r.id}">Reject</button>
+                    ` : ''}
+                </td>
+            </tr>
+        `).join('') || '<tr><td colspan="6">No refill requests.</td></tr>';
+
+        document.querySelectorAll('.minibar-refill-fulfill-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('Mark this refill request as fulfilled? (Do the actual restock from the POS / Rooms tab first.)')) return;
+                try {
+                    await apiSend('PATCH', `/api/minibar/refill-requests/${btn.dataset.id}`, { status: 'fulfilled' });
+                    loadMinibarRefillRequests();
+                } catch (err) { alert(err.message); }
+            });
+        });
+        document.querySelectorAll('.minibar-refill-reject-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                try {
+                    await apiSend('PATCH', `/api/minibar/refill-requests/${btn.dataset.id}`, { status: 'rejected' });
+                    loadMinibarRefillRequests();
+                } catch (err) { alert(err.message); }
+            });
+        });
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('minibarRefillRequestForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('minibarRefillMessage');
+    try {
+        await apiSend('POST', '/api/minibar/refill-requests', {
+            physicalRoomId: Number(document.getElementById('minibarRefillRoomSelect').value),
+            note: document.getElementById('minibarRefillNote').value
+        });
+        msg.className = 'form-message success'; msg.textContent = 'Refill requested.';
+        document.getElementById('minibarRefillNote').value = '';
+        loadMinibarRefillRequests();
+    } catch (err) { msg.className = 'form-message error'; msg.textContent = err.message; }
+});
+document.getElementById('minibarRefillFilter').addEventListener('change', loadMinibarRefillRequests);
+
+/* ---- Analytics ---- */
+let minibarSalesChartInstance = null;
+
+async function loadMinibarAnalytics() {
+    try {
+        const from = document.getElementById('minibarAnalyticsFrom').value;
+        const to = document.getElementById('minibarAnalyticsTo').value;
+        const query = from && to ? `?from=${from}&to=${to}` : '';
+        const data = await apiGet(`/api/minibar/analytics${query}`);
+
+        if (!from) document.getElementById('minibarAnalyticsFrom').value = data.range.from;
+        if (!to) document.getElementById('minibarAnalyticsTo').value = data.range.to;
+
+        const totalRevenue = data.dailySales.reduce((sum, d) => sum + d.revenue, 0);
+        const totalUnits = data.mostSold.reduce((sum, m) => sum + m.quantity, 0);
+        const totalProfit = data.margins.reduce((sum, m) => sum + m.totalProfit, 0);
+        const totalPenalty = data.damage.reduce((sum, d) => sum + d.totalPenalty, 0);
+
+        document.getElementById('minibarAnalyticsCards').innerHTML = `
+            <div class="summary-card"><span>Revenue (range)</span><strong>${money(totalRevenue)}</strong></div>
+            <div class="summary-card"><span>Units Sold</span><strong>${totalUnits}</strong></div>
+            <div class="summary-card"><span>Est. Profit</span><strong>${money(totalProfit)}</strong></div>
+            <div class="summary-card"><span>Damage/Missing Penalties</span><strong>${money(totalPenalty)}</strong></div>
+        `;
+
+        try {
+            if (minibarSalesChartInstance) minibarSalesChartInstance.destroy();
+            minibarSalesChartInstance = new Chart(document.getElementById('minibarSalesChart'), {
+                type: 'bar',
+                data: {
+                    labels: data.dailySales.map((d) => d.day),
+                    datasets: [{ label: 'Revenue', data: data.dailySales.map((d) => d.revenue), backgroundColor: '#c6a15b' }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+        } catch (chartErr) { /* chart library unavailable — tables below still render */ }
+
+        document.getElementById('minibarMostSoldBody').innerHTML = data.mostSold.map((m) => `
+            <tr><td>${escapeHtml(m.name)}</td><td>${m.quantity}</td><td>${money(m.revenue)}</td></tr>
+        `).join('') || '<tr><td colspan="3">No sales in this range.</td></tr>';
+
+        document.getElementById('minibarMarginsBody').innerHTML = data.margins.map((m) => `
+            <tr><td>${escapeHtml(m.name)}</td><td>${m.quantitySold}</td><td>${money(m.totalProfit)}</td></tr>
+        `).join('') || '<tr><td colspan="3">No sales yet.</td></tr>';
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('minibarAnalyticsRefreshBtn').addEventListener('click', loadMinibarAnalytics);
 
 /* ---------------- Reports ---------------- */
 let revenueChartInstance = null;

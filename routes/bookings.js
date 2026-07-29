@@ -8,6 +8,7 @@ const { computeTotalAmount } = require('../lib/pricing');
 const { recomputeBookingTotal } = require('../lib/billing');
 const { assertBookingUnlocked, BookingLockedError } = require('../lib/lock');
 const { sendBookingConfirmationEmail, sendInvoiceEmail, invoiceLink } = require('../lib/mailer');
+const { initRoomIfNeeded } = require('../lib/minibarEngine');
 
 const router = express.Router();
 
@@ -386,6 +387,10 @@ router.post('/quick', adminAuth, requireRole('admin', 'staff'), async (req, res)
       totals = await recomputeBookingTotal(bookingId);
     }
 
+    if (status === 'checked_in' && physicalRoomId) {
+      await initRoomIfNeeded(physicalRoomId, req.user.username).catch((err) => console.error('[minibar init]', err));
+    }
+
     const bookingResult = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [bookingId] });
 
     res.status(201).json({
@@ -669,6 +674,9 @@ router.patch('/:id', adminAuth, requireRole('admin', 'staff'), async (req, res) 
         sql: 'INSERT INTO booking_status_log (booking_id, from_status, to_status, changed_by, reason) VALUES (?, ?, ?, ?, ?)',
         args: [req.params.id, booking.status, status, req.user.username, reason || '']
       });
+      if (status === 'checked_in' && booking.physical_room_id) {
+        await initRoomIfNeeded(booking.physical_room_id, req.user.username).catch((err) => console.error('[minibar init]', err));
+      }
     }
 
     const updatedResult = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
