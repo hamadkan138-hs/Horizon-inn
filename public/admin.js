@@ -1857,7 +1857,10 @@ async function loadMinibarAnalytics() {
                     labels: data.dailySales.map((d) => d.day),
                     datasets: [{ label: 'Revenue', data: data.dailySales.map((d) => d.revenue), backgroundColor: '#c6a15b' }]
                 },
-                options: { responsive: true, plugins: { legend: { display: false } } }
+                options: {
+                    ...chartOptions,
+                    plugins: { legend: { display: false } }
+                }
             });
         } catch (chartErr) { /* chart library unavailable — tables below still render */ }
 
@@ -1880,6 +1883,25 @@ let paymentMethodChartInstance = null;
 let roomRevenueChartInstance = null;
 let lastRevenueData = [];
 let lastExpensesData = [];
+
+// Chart.js animation configuration
+const chartAnimationConfig = {
+    duration: 600,
+    easing: 'easeOutCubic',
+    delay: (ctx) => {
+        if (ctx.type !== 'data' || ctx.dropped) return 0;
+        const delay = (ctx.dataIndex + 1 + ctx.datasetIndex + 1) * 50;
+        return Math.min(delay, 300);
+    }
+};
+
+const chartOptions = {
+    responsive: true,
+    animation: chartAnimationConfig,
+    plugins: {
+        legend: { position: 'bottom' }
+    }
+};
 
 function reportDateRange() {
     const from = document.getElementById('reportFrom').value;
@@ -1929,7 +1951,7 @@ async function renderRevenueChart() {
                 { label: 'Expenses', data: periods.map((p) => expenseMap[p] || 0), backgroundColor: '#a5473c' }
             ]
         },
-        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        options: chartOptions
     });
 }
 
@@ -1957,7 +1979,10 @@ async function renderOccupancyChart() {
             labels: data.breakdown.map((d) => d.date),
             datasets: [{ label: 'Occupancy Rate', data: data.breakdown.map((d) => Math.round(d.rate * 100)), borderColor: '#14161f', backgroundColor: 'rgba(20,22,31,0.08)', fill: true, tension: 0.3 }]
         },
-        options: { responsive: true, scales: { y: { min: 0, max: 100, ticks: { callback: (v) => v + '%' } } } }
+        options: {
+            ...chartOptions,
+            scales: { y: { min: 0, max: 100, ticks: { callback: (v) => v + '%' } } }
+        }
     });
 }
 
@@ -1971,7 +1996,7 @@ async function renderPaymentMethodChart() {
             labels: data.map((d) => PAYMENT_METHOD_LABELS[d.method] || d.method),
             datasets: [{ data: data.map((d) => d.total), backgroundColor: palette }]
         },
-        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        options: chartOptions
     });
 }
 
@@ -1984,7 +2009,11 @@ async function renderRoomRevenueChart() {
             labels: data.map((d) => d.room_name),
             datasets: [{ label: 'Revenue', data: data.map((d) => d.revenue), backgroundColor: '#c6a15b' }]
         },
-        options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } } }
+        options: {
+            ...chartOptions,
+            indexAxis: 'y',
+            plugins: { legend: { display: false } }
+        }
     });
 }
 
@@ -2089,7 +2118,7 @@ async function loadVenueSummaryCards() {
                 { label: 'Operating Expenses', data: summary.revenueByMonth.map((r) => r.expenses), backgroundColor: '#a5473c' }
             ]
         },
-        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        options: chartOptions
     });
 
     if (venueOccupancyChartInstance) venueOccupancyChartInstance.destroy();
@@ -2100,7 +2129,7 @@ async function loadVenueSummaryCards() {
             labels: occupancyEntries.map(([name]) => name),
             datasets: [{ data: occupancyEntries.map(([, pct]) => pct), backgroundColor: ['#d4af37', '#14161f', '#3d7a4f', '#2f5faa'] }]
         },
-        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        options: chartOptions
     });
 }
 
