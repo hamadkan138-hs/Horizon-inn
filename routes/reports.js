@@ -212,6 +212,57 @@ router.get('/daily-summary', async (req, res) => {
   }
 });
 
+// "Today at a Glance" — a single call the admin dashboard's home screen
+// uses to answer "what needs my attention right now" without the admin
+// having to click through every tab. Pulls one small count/list from each
+// area that can accumulate unattended work (cancellations, vouchers,
+// abandoned leads, reviews, investor leads), reusing the same status
+// values each of those tabs already filters by.
+router.get('/overview', async (req, res) => {
+  try {
+    const daily = await getDailySummary();
+
+    const [cancellations, pendingVouchers, openRecovery, pendingReviews, newLeads] = await Promise.all([
+      db.execute(`
+        SELECT bookings.id, bookings.name, bookings.invoice_number, bookings.cancellation_requested_at
+        FROM bookings
+        WHERE cancellation_requested_at IS NOT NULL AND status != 'cancelled'
+        ORDER BY cancellation_requested_at DESC
+      `),
+      db.execute(`
+        SELECT id, code, amount, purchaser_name, purchaser_phone FROM gift_vouchers
+        WHERE status = 'pending_payment' ORDER BY created_at DESC
+      `),
+      db.execute(`
+        SELECT id, name, phone, checkin, checkout FROM abandoned_bookings
+        WHERE status = 'open' ORDER BY created_at DESC
+      `),
+      db.execute(`
+        SELECT id, guest_name, rating FROM reviews WHERE status = 'pending' ORDER BY created_at DESC
+      `),
+      db.execute(`
+        SELECT id, full_name, phone FROM investor_leads WHERE status = 'new_lead' ORDER BY created_at DESC
+      `)
+    ]);
+
+    res.json({
+      date: daily.date,
+      arrivals: daily.checkins,
+      departures: daily.checkouts,
+      outstandingTotal: daily.outstandingTotal,
+      outstandingCount: daily.outstandingBookings.length,
+      cancellationRequests: cancellations.rows,
+      pendingVouchers: pendingVouchers.rows,
+      openRecovery: openRecovery.rows,
+      pendingReviews: pendingReviews.rows,
+      newLeads: newLeads.rows
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load overview' });
+  }
+});
+
 // Lets an admin/staff member fire the automated daily summary email on
 // demand — useful to confirm the mail credentials work right after
 // deploying, without waiting for the next scheduled run.
