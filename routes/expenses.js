@@ -9,7 +9,12 @@ router.use(adminAuth, requireRole('admin', 'staff'));
 
 router.get('/', async (req, res) => {
   try {
-    const result = await db.execute('SELECT * FROM expenses ORDER BY expense_date DESC, id DESC');
+    const result = req.query.date
+      ? await db.execute({
+          sql: 'SELECT * FROM expenses WHERE expense_date = ? ORDER BY id DESC',
+          args: [req.query.date]
+        })
+      : await db.execute('SELECT * FROM expenses ORDER BY expense_date DESC, id DESC');
     res.json(result.rows);
   } catch (err) {
     console.error(err);
