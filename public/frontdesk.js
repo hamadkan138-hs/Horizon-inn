@@ -375,6 +375,53 @@ document.getElementById('fdMinibarDamageForm').addEventListener('submit', async 
     } catch (err) { msg.className = 'form-message error'; msg.textContent = err.message; }
 });
 
+/* ---------------- Expenses (subtracted from today's cash automatically) ---------------- */
+async function loadFdExpenses() {
+    try {
+        const day = today();
+        const [summary, expenses] = await Promise.all([
+            apiGet('/api/reports/daily-summary'),
+            apiGet(`/api/expenses?date=${day}`)
+        ]);
+
+        document.getElementById('fdExpenseCards').innerHTML = `
+            <div class="summary-card"><span>Cash Received Today</span><strong>${money(summary.cashReceivedToday)}</strong></div>
+            <div class="summary-card"><span>Expenses Today</span><strong>${money(summary.expensesTotalToday)}</strong></div>
+            <div class="summary-card"><span>Net Cash Today</span><strong>${money(summary.netCashToday)}</strong></div>
+        `;
+
+        document.getElementById('fdExpensesBody').innerHTML = expenses.map((ex) => `
+            <tr><td>${escapeHtml(ex.category)}</td><td>${escapeHtml(ex.description || '')}</td><td>${money(ex.amount)}</td></tr>
+        `).join('') || '<tr><td colspan="3">No expenses recorded today.</td></tr>';
+    } catch (err) { /* best-effort */ }
+}
+
+document.getElementById('fdExpenseBtn').addEventListener('click', () => {
+    document.getElementById('fdExpenseModalOverlay').style.display = 'flex';
+    document.getElementById('fdExpenseForm').reset();
+    document.getElementById('fdExpenseMessage').textContent = '';
+    loadFdExpenses();
+});
+document.getElementById('fdCloseExpenseModalBtn').addEventListener('click', () => {
+    document.getElementById('fdExpenseModalOverlay').style.display = 'none';
+});
+document.getElementById('fdExpenseForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('fdExpenseMessage');
+    try {
+        await apiSend('POST', '/api/expenses', {
+            category: document.getElementById('fdExpenseCategory').value,
+            description: document.getElementById('fdExpenseDescription').value,
+            amount: Number(document.getElementById('fdExpenseAmount').value),
+            expenseDate: today()
+        });
+        msg.className = 'form-message success';
+        msg.textContent = 'Expense added — subtracted from today\'s cash.';
+        document.getElementById('fdExpenseForm').reset();
+        loadFdExpenses();
+    } catch (err) { msg.className = 'form-message error'; msg.textContent = err.message; }
+});
+
 /* ---------------- State machine ---------------- */
 function showState(name) {
     Object.values(states).forEach((el) => { el.style.display = 'none'; });

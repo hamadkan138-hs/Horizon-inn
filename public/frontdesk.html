@@ -24,6 +24,7 @@
             <ul class="nav-menu active" style="position: static; background: none; padding: 0; flex-direction: row; align-items: center; gap: 18px;">
                 <li><button type="button" class="kiosk-nav-btn" id="fdAvailabilityBtn"><i class="fas fa-calendar-days"></i> Room Availability</button></li>
                 <li><button type="button" class="kiosk-nav-btn" id="fdMinibarBtn"><i class="fas fa-martini-glass"></i> Mini Bar</button></li>
+                <li><button type="button" class="kiosk-nav-btn" id="fdExpenseBtn"><i class="fas fa-money-bill-wave"></i> Expenses</button></li>
                 <li>
                     <button type="button" class="bell-btn" id="fdRequestsBtn" title="New booking requests">
                         <i class="fas fa-bell"></i>
@@ -306,6 +307,33 @@
                 </div>
                 <p class="form-message" id="fdMinibarDamageMessage"></p>
             </form>
+        </div>
+    </div>
+
+    <!-- Expenses modal -->
+    <div class="modal-overlay" id="fdExpenseModalOverlay" style="display: none;">
+        <div class="modal-box" style="max-width: 640px;">
+            <h3 style="margin-bottom: 4px;">Today's Expenses</h3>
+            <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 18px;">Cash paid out today (e.g. supplies, repairs, fuel) is subtracted from today's cash automatically.</p>
+
+            <div class="summary-cards" id="fdExpenseCards" style="margin-bottom: 18px;"></div>
+
+            <form id="fdExpenseForm" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px;">
+                <input type="text" id="fdExpenseCategory" placeholder="Category (e.g. Utilities)" required style="flex: 1 1 160px;">
+                <input type="text" id="fdExpenseDescription" placeholder="Description" style="flex: 2 1 200px;">
+                <input type="number" id="fdExpenseAmount" placeholder="Amount (Rs.)" min="0" step="0.01" required style="flex: 1 1 130px;">
+                <button type="submit" class="action-btn confirm">Add Expense</button>
+            </form>
+            <p class="form-message" id="fdExpenseMessage"></p>
+
+            <div style="overflow-x: auto; max-height: 40vh; overflow-y: auto;">
+                <table class="admin-table" id="fdExpensesTable">
+                    <thead><tr><th>Category</th><th>Description</th><th>Amount</th></tr></thead>
+                    <tbody id="fdExpensesBody"></tbody>
+                </table>
+            </div>
+
+            <button type="button" class="action-btn cancel" id="fdCloseExpenseModalBtn" style="margin-top: 16px;">Close</button>
         </div>
     </div>
 

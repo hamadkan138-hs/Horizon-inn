@@ -706,11 +706,16 @@ async function loadDailySummary() {
             <div class="summary-card"><span>Check-ins</span><strong>${data.checkins.length}</strong></div>
             <div class="summary-card"><span>Check-outs</span><strong>${data.checkouts.length}</strong></div>
             <div class="summary-card"><span>Cash Received Today</span><strong>${money(data.cashReceivedToday)}</strong></div>
+            <div class="summary-card"><span>Expenses Today</span><strong>${money(data.expensesTotalToday)}</strong></div>
+            <div class="summary-card"><span>Net Cash Today</span><strong>${money(data.netCashToday)}</strong></div>
             <div class="summary-card"><span>Total Outstanding</span><strong>${money(data.outstandingTotal)}</strong></div>
         `;
 
         document.getElementById('dailyCheckinsBody').innerHTML = data.checkins.map(dailyRowHtml).join('') || '<tr><td colspan="5">No check-ins scheduled.</td></tr>';
         document.getElementById('dailyCheckoutsBody').innerHTML = data.checkouts.map(dailyRowHtml).join('') || '<tr><td colspan="5">No check-outs scheduled.</td></tr>';
+        document.getElementById('dailyExpensesBody').innerHTML = data.expensesToday.map((ex) => `
+            <tr><td>${escapeHtml(ex.category)}</td><td>${escapeHtml(ex.description || '')}</td><td>${money(ex.amount)}</td></tr>
+        `).join('') || '<tr><td colspan="3">No expenses recorded today.</td></tr>';
 
         document.getElementById('outstandingBody').innerHTML = data.outstandingBookings.map((b) => `
             <tr><td>${escapeHtml(b.name)}<br><small>${escapeHtml(b.phone)}</small></td><td>${escapeHtml(b.room_name)}</td><td><span class="status-pill ${b.status}">${STATUS_LABELS[b.status]}</span></td><td>${money(b.total_amount)}</td><td>${money(b.balance)}</td></tr>
