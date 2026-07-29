@@ -2293,6 +2293,74 @@ document.getElementById('staffForm').addEventListener('submit', async (e) => {
     } catch (err) { msg.textContent = err.message; msg.className = 'form-message error'; }
 });
 
+/* ---------------- Data & Backups ---------------- */
+function downloadJson(data, filename) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
+
+document.getElementById('downloadBackupBtn').addEventListener('click', async (e) => {
+    const btn = e.target;
+    btn.disabled = true;
+    btn.textContent = 'Preparing backup…';
+    try {
+        const backup = await apiGet('/api/admin/backup');
+        downloadJson(backup, `horizon-inn-backup-${backup.exportedAt.slice(0, 10)}.json`);
+    } catch (err) {
+        alert(err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Download Full Backup Now';
+    }
+});
+
+const RESET_DATA_PHRASE = 'DELETE CUSTOMER DATA';
+
+document.getElementById('openResetDataModalBtn').addEventListener('click', () => {
+    document.getElementById('resetDataForm').reset();
+    document.getElementById('resetDataSubmitBtn').disabled = true;
+    document.getElementById('resetDataMessage').textContent = '';
+    document.getElementById('resetDataModalOverlay').style.display = 'flex';
+});
+document.getElementById('closeResetDataModalBtn').addEventListener('click', () => {
+    document.getElementById('resetDataModalOverlay').style.display = 'none';
+});
+document.getElementById('resetDataConfirmInput').addEventListener('input', (e) => {
+    document.getElementById('resetDataSubmitBtn').disabled = e.target.value !== RESET_DATA_PHRASE;
+});
+
+document.getElementById('resetDataForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('resetDataMessage');
+    const submitBtn = document.getElementById('resetDataSubmitBtn');
+    submitBtn.disabled = true;
+    msg.className = 'form-message';
+    msg.textContent = 'Backing up, then deleting…';
+    try {
+        const result = await apiSend('POST', '/api/admin/reset-customer-data', {
+            confirm: document.getElementById('resetDataConfirmInput').value
+        });
+        downloadJson(result.backup, `horizon-inn-backup-before-reset-${result.backup.exportedAt.slice(0, 10)}.json`);
+        const counts = Object.entries(result.deleted).map(([table, n]) => `${table}: ${n}`).join(', ');
+        msg.className = 'form-message success';
+        msg.textContent = `Done. Deleted — ${counts}. A backup was downloaded to your browser${result.backupEmailed ? ' and emailed' : ''}.`;
+        setTimeout(() => {
+            document.getElementById('resetDataModalOverlay').style.display = 'none';
+        }, 4000);
+    } catch (err) {
+        msg.className = 'form-message error';
+        msg.textContent = err.message;
+        submitBtn.disabled = document.getElementById('resetDataConfirmInput').value !== RESET_DATA_PHRASE;
+    }
+});
+
 /* ---------------- Media Library ---------------- */
 async function loadMediaLibrary() {
     try {

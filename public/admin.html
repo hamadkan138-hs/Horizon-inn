@@ -1104,7 +1104,43 @@
                         <tbody id="staffBody"></tbody>
                     </table>
                 </div>
+
+                <h2 style="text-align: left; font-size: 1.2rem; margin-top: 40px;">Data &amp; Backups</h2>
+                <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 16px;">A full backup (every table except uploaded media) is also emailed automatically every night at 2:30 AM PKT, if email is configured.</p>
+                <button type="button" class="action-btn details-toggle" id="downloadBackupBtn">Download Full Backup Now</button>
+
+                <div class="investor-note danger-note" style="margin-top: 30px;">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <strong>Danger Zone</strong> — this permanently deletes every stored guest/customer record and payment transaction (bookings, payments, venue bookings, gift vouchers, abandoned-booking leads, contact messages). Room types, pricing, physical rooms, mini bar catalog, promo codes, staff/investor/corporate accounts, and site content are never touched. A backup of everything about to be deleted is taken automatically first.
+                </div>
+                <button type="button" class="action-btn cancel" id="openResetDataModalBtn" style="margin-top: 12px;">Reset Customer &amp; Payment Data&hellip;</button>
             </section>
+
+            <!-- Reset customer & payment data confirmation modal -->
+            <div class="modal-overlay" id="resetDataModalOverlay" style="display: none;">
+                <div class="modal-box">
+                    <h3 style="margin-bottom: 4px; color: #a5473c;">Reset Customer &amp; Payment Data</h3>
+                    <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 12px;">This cannot be undone. It will permanently delete:</p>
+                    <ul style="font-size: 0.85rem; color: var(--text-light); margin: 0 0 14px 18px; padding: 0;">
+                        <li>All bookings, booking charges, status history &amp; payments</li>
+                        <li>All Crescent Grove venue bookings</li>
+                        <li>All gift vouchers</li>
+                        <li>Abandoned-booking leads &amp; contact messages</li>
+                    </ul>
+                    <p style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 14px;">Room types, pricing, physical rooms, mini bar setup, promo codes, and every account (staff/admin/investor/corporate) are kept. A safety-net backup is taken automatically before anything is deleted.</p>
+                    <form id="resetDataForm">
+                        <div class="form-group">
+                            <label>Type <code>DELETE CUSTOMER DATA</code> to confirm</label>
+                            <input type="text" id="resetDataConfirmInput" autocomplete="off" required>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button type="submit" class="action-btn cancel" id="resetDataSubmitBtn" disabled>Permanently Delete</button>
+                            <button type="button" class="action-btn details-toggle" id="closeResetDataModalBtn">Cancel</button>
+                        </div>
+                        <p class="form-message" id="resetDataMessage"></p>
+                    </form>
+                </div>
+            </div>
 
             <!-- Investor Accounts -->
             <section class="admin-panel" id="panel-investors" style="display: none;">

@@ -1870,6 +1870,14 @@ table.admin-table th {
     margin-right: 8px;
 }
 
+.investor-note.danger-note {
+    border-left-color: #a5473c;
+}
+
+.investor-note.danger-note i {
+    color: #a5473c;
+}
+
 /* Simple, human-readable vertical list (Daily Summary / Handover / Cash In-Out) */
 .simple-list {
     list-style: none;
