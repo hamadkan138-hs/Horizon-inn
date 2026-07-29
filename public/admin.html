@@ -1083,6 +1083,7 @@
                     <select id="staffRole">
                         <option value="staff">Staff</option>
                         <option value="admin">Admin</option>
+                        <option value="kiosk">Kiosk Device</option>
                         <option value="investor">Investor</option>
                     </select>
                     <input type="number" id="staffInvestorCapital" placeholder="Capital invested (Rs.)" min="1" style="display: none; max-width: 180px;">
@@ -1091,6 +1092,7 @@
                 </form>
                 <p class="form-message" id="staffMessage"></p>
                 <p style="font-size: 0.82rem; color: var(--text-light); margin-top: 6px;">Selecting <strong>Investor</strong> above also creates their investor profile (capital invested, lockup terms, compliance status) — manage those further from the <strong>Investor Accounts</strong> tab. Investors sign in separately at <code>/investor.html</code> and only ever see financial totals — never guest names, contact details, or booking data.</p>
+                <p style="font-size: 0.82rem; color: var(--text-light); margin-top: 6px;"><strong>Kiosk Device</strong> is for the unattended lobby check-in tablet at <code>/kiosk.html</code>. Sign the tablet in once with this account and leave it on that page — guests never see a login. It can only look up a booking the guest can already identify and check that guest in; it cannot open the guest directory, reports, cash records, or this dashboard.</p>
                 <div style="overflow-x: auto; margin-top: 16px;">
                     <table class="admin-table" id="staffTable">
                         <thead>

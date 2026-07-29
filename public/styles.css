@@ -3537,3 +3537,272 @@ table.admin-table th {
     width: 54px;
     text-align: center;
 }
+
+/* ============================================================
+   Self-service check-in kiosk (public/kiosk.html)
+   Sized for an unattended lobby tablet at arm's length: larger type and
+   much larger touch targets than any of the staff-facing screens, and
+   nothing that depends on hover.
+   ============================================================ */
+.kiosk-selfservice .ks-state {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 32px;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+
+.kiosk-selfservice .ks-idle-logo {
+    width: 84px;
+    margin-bottom: 26px;
+    opacity: 0.95;
+}
+
+.kiosk-selfservice .ks-idle-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3.1rem);
+    color: var(--white, #fff);
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.kiosk-selfservice .ks-idle-sub {
+    font-size: clamp(1rem, 2.2vw, 1.25rem);
+    color: rgba(255, 255, 255, 0.72);
+    margin-bottom: 38px;
+}
+
+.kiosk-selfservice .ks-idle-help {
+    margin-top: 30px;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+/* Deliberately oversized — this is pressed with a thumb, standing up,
+   sometimes by someone who has been travelling all day. */
+.kiosk-selfservice .ks-touch-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    min-height: 76px;
+    padding: 0 54px;
+    font-family: inherit;
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--charcoal, #14161f);
+    background: linear-gradient(135deg, #d4af37, #e8c874);
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow: 0 14px 40px rgba(212, 175, 55, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kiosk-selfservice .ks-touch-btn:active {
+    transform: scale(0.97);
+    box-shadow: 0 8px 22px rgba(212, 175, 55, 0.28);
+}
+
+.kiosk-selfservice .ks-touch-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.kiosk-selfservice .ks-touch-btn--quiet {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+    box-shadow: none;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    margin-top: 34px;
+}
+
+.kiosk-selfservice .ks-panel {
+    width: 100%;
+    max-width: 620px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 44px 40px;
+    backdrop-filter: blur(14px);
+}
+
+.kiosk-selfservice .ks-panel h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+    color: var(--white, #fff);
+    margin-bottom: 8px;
+}
+
+.kiosk-selfservice .ks-panel-sub {
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 1rem;
+    margin-bottom: 30px;
+}
+
+.kiosk-selfservice .ks-field {
+    text-align: left;
+    margin-bottom: 22px;
+}
+
+.kiosk-selfservice .ks-field label {
+    display: block;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.kiosk-selfservice .ks-input {
+    width: 100%;
+    min-height: 66px;
+    padding: 0 20px;
+    font-family: inherit;
+    font-size: 1.25rem;
+    color: var(--white, #fff);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+}
+
+.kiosk-selfservice .ks-input:focus {
+    outline: none;
+    border-color: #d4af37;
+    background: rgba(255, 255, 255, 0.09);
+}
+
+.kiosk-selfservice .ks-details {
+    text-align: left;
+    margin: 0 0 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.kiosk-selfservice .ks-details > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 18px;
+    padding: 15px 2px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.kiosk-selfservice .ks-details dt {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.92rem;
+}
+
+.kiosk-selfservice .ks-details dd {
+    margin: 0;
+    color: var(--white, #fff);
+    font-size: 1.05rem;
+    font-weight: 600;
+    text-align: right;
+}
+
+.kiosk-selfservice .ks-balance {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    margin-bottom: 26px;
+    border-radius: 12px;
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.95rem;
+    text-align: left;
+}
+
+.kiosk-selfservice .ks-balance strong {
+    color: #e8c874;
+    font-size: 1.2rem;
+}
+
+.kiosk-selfservice .ks-back {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 52px;
+    padding: 0 22px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.75);
+    font-family: inherit;
+    font-size: 0.92rem;
+    cursor: pointer;
+}
+
+.kiosk-selfservice .ks-tick {
+    width: 108px;
+    height: 108px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.8rem;
+    margin-bottom: 26px;
+    background: rgba(16, 185, 129, 0.14);
+    border: 2px solid rgba(16, 185, 129, 0.5);
+    color: #10b981;
+}
+
+.kiosk-selfservice .ks-tick--warn {
+    background: rgba(212, 175, 55, 0.13);
+    border-color: rgba(212, 175, 55, 0.5);
+    color: #e8c874;
+}
+
+/* The room number is what the guest is here for — it should be readable
+   from a step back, and is the largest thing on any kiosk screen. */
+.kiosk-selfservice .ks-roomnum {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.6rem, 4.5vw, 2.6rem);
+    color: rgba(255, 255, 255, 0.75);
+    margin-bottom: 10px;
+}
+
+.kiosk-selfservice .ks-roomnum strong {
+    color: #e8c874;
+    font-size: 1.5em;
+}
+
+.kiosk-selfservice .ks-nextsteps {
+    margin-top: 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 1.02rem;
+}
+
+.kiosk-selfservice .ks-nextsteps i {
+    color: #e8c874;
+    margin-right: 10px;
+}
+
+.kiosk-selfservice .ks-msg {
+    margin-top: 18px;
+    font-size: 1rem;
+}
+
+@media (max-width: 640px) {
+    .kiosk-selfservice .ks-state { padding: 80px 20px 40px; }
+    .kiosk-selfservice .ks-panel { padding: 32px 22px; }
+    .kiosk-selfservice .ks-touch-btn { width: 100%; padding: 0 24px; }
+    .kiosk-selfservice .ks-back { top: 18px; left: 18px; }
+}

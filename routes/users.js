@@ -26,7 +26,11 @@ router.post('/', async (req, res) => {
     // with "no investor profile linked"). Investor accounts must always be
     // created atomically via POST /api/investor-accounts instead, which
     // creates the login and the profile together.
-    if (!username || !password || !['admin', 'staff'].includes(role)) {
+    // 'kiosk' is a deliberately low-privilege role for the unattended lobby
+    // check-in device: it can reach /api/kiosk and nothing else, so a tablet
+    // left in a public space can't be used to read the guest directory,
+    // reports, or cash records even if someone gets at the browser.
+    if (!username || !password || !['admin', 'staff', 'kiosk'].includes(role)) {
       return res.status(400).json({ error: 'Username, password, and a valid role are required' });
     }
     if (password.length < 6) {
