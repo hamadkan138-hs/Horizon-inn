@@ -237,10 +237,13 @@ const MicroInteractions = {
       return;
     }
 
-    anime.stagger(staggerDelay, {
+    // anime.stagger() produces a per-target delay value, not an entry point —
+    // the animation call is anime({...}) with anime.stagger() as the `delay`.
+    anime({
       targets: buttons,
       opacity: [0, 1],
       translateY: [20, 0],
+      delay: anime.stagger(staggerDelay),
       duration: 400,
       easing: 'easeOutQuad'
     });

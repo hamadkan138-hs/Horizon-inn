@@ -117,10 +117,14 @@ class LoadingStateManager {
       return;
     }
 
-    return anime.stagger(this.config.staggerDelay, {
+    // anime.stagger() only produces a per-target delay value — it isn't an
+    // entry point itself. The animation call is anime({...}), with
+    // anime.stagger() passed as the `delay` value for the stagger effect.
+    return anime({
       targets: rows,
       opacity: [0, 1],
       translateY: [12, 0],
+      delay: anime.stagger(this.config.staggerDelay),
       easing: ANIMATION_CONFIG.easing,
       duration: this.config.duration
     }).finished;

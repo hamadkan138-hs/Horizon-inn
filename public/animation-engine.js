@@ -28,10 +28,13 @@ const AnimationEngine = {
       return null;
     }
 
-    return anime.stagger(staggerDelay, {
+    // anime.stagger() produces a per-target delay value, not an entry point —
+    // the animation call is anime({...}) with anime.stagger() as the `delay`.
+    return anime({
       targets: selector,
       opacity: [0, 1],
       translateY: [20, 0],
+      delay: anime.stagger(staggerDelay),
       easing: 'cubicBezier(0.4, 0, 0.2, 1)',
       duration: duration
     });
