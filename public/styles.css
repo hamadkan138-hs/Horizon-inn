@@ -605,14 +605,19 @@ body.has-offer .navbar {
 .about-card {
     text-align: center;
     padding: 48px 26px;
-    background: var(--white);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
     box-shadow: var(--shadow);
-    transition: transform var(--transition), box-shadow var(--transition);
+    transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
 }
 
 .about-card:hover {
-    transform: translateY(-8px);
-    box-shadow: var(--shadow-lg);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--shadow-lg), 0 0 40px rgba(59, 130, 246, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .about-card i {
@@ -672,18 +677,23 @@ body.has-offer .navbar {
 }
 
 .room-card {
-    background: var(--white);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
     overflow: hidden;
     box-shadow: var(--shadow);
     position: relative;
     display: flex;
     flex-direction: column;
-    transition: box-shadow var(--transition), transform var(--transition);
+    transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
 }
 
 .room-card:hover {
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg), 0 0 40px rgba(59, 130, 246, 0.12);
+    transform: translateY(-6px) scale(1.01);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .room-card.featured {
@@ -1088,7 +1098,11 @@ body.has-offer .navbar {
 .contact-form {
     max-width: 800px;
     margin: 0 auto;
-    background: var(--white);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
     padding: 48px;
     box-shadow: var(--shadow);
 }
@@ -1097,9 +1111,7 @@ body.has-offer .navbar {
     margin: 28px 0 0;
     max-width: none;
     padding: 32px;
-    background: var(--cream);
     box-shadow: none;
-    border: 1px solid var(--hair);
 }
 
 .form-row {
