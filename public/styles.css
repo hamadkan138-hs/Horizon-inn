@@ -1,17 +1,31 @@
 :root {
+    /* Apple/Stripe-style dark glass palette. --charcoal stays a dark tone
+       (it's also used as a background for dark accent panels, e.g. nav/
+       footer/buttons) — every "color: var(--charcoal)" heading usage was
+       swapped file-wide to "color: var(--text-dark)" instead, since that's
+       the var that actually needs to flip light for legibility. --gold
+       stays the brand accent unchanged; --cream/--white (page background /
+       raised surface) and --text-dark/--text-light (body copy) invert. */
     --charcoal: #14161f;
     --charcoal-soft: #1d202c;
     --gold: #c6a15b;
     --gold-soft: #e0c48a;
-    --cream: #f8f6f1;
-    --white: #ffffff;
-    --text-dark: #23242c;
-    --text-light: #6f7180;
+    --cream: #0B0F1A;
+    --white: #111827;
+    --text-dark: #eef0f4;
+    --text-light: #9aa0ae;
+    /* Dark text specifically for content sitting on a gold background/badge
+       (nav CTA, buttons, badges) — --text-dark went light for body copy on
+       the dark page, but gold buttons still need dark text for contrast. */
+    --on-gold: #14161f;
     --radius: 4px;
     --radius-lg: 6px;
-    --shadow: 0 20px 50px rgba(20, 22, 31, 0.08);
-    --shadow-lg: 0 30px 70px rgba(20, 22, 31, 0.16);
+    --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 30px 70px rgba(0, 0, 0, 0.5);
     --transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --hair: rgba(255, 255, 255, 0.08);
 }
 
 * {
@@ -53,7 +67,7 @@ h2 {
     text-align: center;
     font-size: clamp(2rem, 3vw, 2.6rem);
     margin-bottom: 16px;
-    color: var(--charcoal);
+    color: var(--text-dark);
 }
 
 h2::after {
@@ -200,7 +214,7 @@ section h2::after,
 }
 
 .nav-brand {
-    color: var(--white);
+    color: var(--text-dark);
     font-family: 'Playfair Display', serif;
     font-size: 1.5rem;
     font-weight: 600;
@@ -227,7 +241,7 @@ section h2::after,
 }
 
 .nav-menu a {
-    color: var(--white);
+    color: var(--text-dark);
     font-weight: 400;
     font-size: 0.92rem;
     letter-spacing: 0.06em;
@@ -261,7 +275,7 @@ section h2::after,
 /* The one nav item that should read as an action, not a destination. */
 .nav-menu a.nav-cta {
     background: var(--gold);
-    color: var(--charcoal);
+    color: var(--on-gold);
     padding: 9px 20px;
     border-radius: 3px;
     font-weight: 600;
@@ -272,7 +286,7 @@ section h2::after,
 
 .nav-menu a.nav-cta:hover {
     background: var(--gold-soft);
-    color: var(--charcoal);
+    color: var(--on-gold);
     transform: translateY(-1px);
     box-shadow: 0 6px 18px rgba(198, 161, 91, 0.35);
 }
@@ -280,7 +294,7 @@ section h2::after,
 .kiosk-nav-btn {
     background: none;
     border: none;
-    color: var(--white);
+    color: var(--text-dark);
     font-weight: 400;
     font-size: 0.92rem;
     letter-spacing: 0.06em;
@@ -309,7 +323,7 @@ section h2::after,
 .nav-toggle span {
     width: 26px;
     height: 2px;
-    background: var(--white);
+    background: var(--text-dark);
 }
 
 /* Offers banner — sits above the fixed navbar, which shifts down to make room */
@@ -319,7 +333,7 @@ section h2::after,
     justify-content: center;
     gap: 10px;
     background: var(--gold);
-    color: var(--charcoal);
+    color: var(--on-gold);
     font-size: 0.85rem;
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -377,7 +391,7 @@ body.has-offer .navbar {
 .hero-content {
     position: relative;
     z-index: 2;
-    color: var(--white);
+    color: var(--text-dark);
     padding: 0 20px;
 }
 
@@ -427,7 +441,7 @@ body.has-offer .navbar {
     align-items: center;
     gap: 10px;
     background: transparent;
-    color: var(--white);
+    color: var(--text-dark);
     border: 1px solid var(--gold);
     padding: 15px 38px;
     font-size: 0.85rem;
@@ -446,7 +460,7 @@ body.has-offer .navbar {
 
 .cta-button:hover {
     background: var(--gold);
-    color: var(--charcoal);
+    color: var(--on-gold);
     letter-spacing: 0.18em;
 }
 
@@ -498,7 +512,7 @@ body.has-offer .navbar {
     background: none;
     font-family: inherit;
     font-size: 0.95rem;
-    color: var(--charcoal);
+    color: var(--text-dark);
     padding: 2px 0;
     width: 100%;
     cursor: pointer;
@@ -512,7 +526,7 @@ body.has-offer .navbar {
 
 .hero-search-btn {
     background: var(--charcoal);
-    color: var(--white);
+    color: var(--text-dark);
     border: none;
     font-family: inherit;
     font-size: 0.8rem;
@@ -529,7 +543,7 @@ body.has-offer .navbar {
 
 .hero-search-btn:hover {
     background: var(--gold);
-    color: var(--charcoal);
+    color: var(--on-gold);
     transform: translateY(-1px);
 }
 
@@ -616,7 +630,7 @@ body.has-offer .navbar {
 
 .about-card h3 {
     margin-bottom: 12px;
-    color: var(--charcoal);
+    color: var(--text-dark);
     font-size: 1.15rem;
 }
 
@@ -647,7 +661,7 @@ body.has-offer .navbar {
 .room-card.skeleton {
     height: 500px;
     box-shadow: none;
-    background: linear-gradient(100deg, #efedE7 30%, #f8f7f3 50%, #efedE7 70%);
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.15) 50%, rgba(59, 130, 246, 0.08) 100%);
     background-size: 200% 100%;
     animation: shimmer 1.6s ease-in-out infinite;
 }
@@ -681,7 +695,7 @@ body.has-offer .navbar {
     top: 20px;
     right: 20px;
     background: var(--gold);
-    color: var(--charcoal);
+    color: var(--on-gold);
     padding: 6px 16px;
     font-size: 0.72rem;
     font-weight: 600;
@@ -722,7 +736,7 @@ body.has-offer .navbar {
 }
 
 .room-content h3 {
-    color: var(--charcoal);
+    color: var(--text-dark);
     margin-bottom: 10px;
     font-size: 1.35rem;
 }
@@ -752,14 +766,14 @@ body.has-offer .navbar {
 .room-pricing {
     margin-bottom: 22px;
     padding-top: 18px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--hair);
 }
 
 .price {
     font-family: 'Playfair Display', serif;
     font-size: 1.9rem;
     font-weight: 600;
-    color: var(--charcoal);
+    color: var(--text-dark);
 }
 
 .per-night {
@@ -772,7 +786,7 @@ body.has-offer .navbar {
     display: block;
     text-align: center;
     background: var(--charcoal);
-    color: var(--white);
+    color: var(--text-dark);
     padding: 14px;
     font-size: 0.82rem;
     letter-spacing: 0.1em;
@@ -783,17 +797,17 @@ body.has-offer .navbar {
 
 .book-btn:hover {
     background: var(--gold);
-    color: var(--charcoal);
+    color: var(--on-gold);
 }
 
 .book-btn.primary {
     background: var(--gold);
-    color: var(--charcoal);
+    color: var(--on-gold);
 }
 
 .book-btn.primary:hover {
     background: var(--charcoal);
-    color: var(--white);
+    color: var(--text-dark);
 }
 
 .availability-badge {
@@ -807,13 +821,13 @@ body.has-offer .navbar {
 }
 
 .availability-badge.available {
-    background: #eaf3ea;
-    color: #3d7a4f;
+    background: rgba(16, 185, 129, 0.12);
+    color: #6ee7b7;
 }
 
 .availability-badge.unavailable {
-    background: #f6e9e8;
-    color: #a5473c;
+    background: rgba(248, 113, 113, 0.12);
+    color: #f87171;
 }
 
 /* Room photo gallery / slider */
@@ -843,7 +857,7 @@ body.has-offer .navbar {
     border: none;
     border-radius: 50%;
     background: rgba(20, 22, 31, 0.55);
-    color: var(--white);
+    color: var(--text-dark);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -855,7 +869,7 @@ body.has-offer .navbar {
 
 .gallery-arrow:hover {
     background: var(--gold);
-    color: var(--charcoal);
+    color: var(--on-gold);
 }
 
 .gallery-arrow.prev {
@@ -912,8 +926,8 @@ body.has-offer .navbar {
 .pricing-tier {
     text-align: center;
     padding: 10px 4px;
-    border: 1px solid #eee;
-    background: #faf9f6;
+    border: 1px solid var(--hair);
+    background: rgba(255, 255, 255, 0.04);
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -921,7 +935,7 @@ body.has-offer .navbar {
 
 .pricing-tier.tier-highlight {
     border-color: var(--gold);
-    background: #fbf6ea;
+    background: rgba(198, 161, 91, 0.12);
 }
 
 .tier-label {
@@ -935,7 +949,7 @@ body.has-offer .navbar {
     font-family: 'Playfair Display', serif;
     font-size: 1.05rem;
     font-weight: 600;
-    color: var(--charcoal);
+    color: var(--text-dark);
 }
 
 .mattress-note {
@@ -957,7 +971,7 @@ body.has-offer .navbar {
 }
 
 .gallery h2 {
-    color: var(--white);
+    color: var(--text-dark);
 }
 
 .gallery-intro {
@@ -1042,7 +1056,7 @@ body.has-offer .navbar {
     left: 22px;
     bottom: 18px;
     z-index: 2;
-    color: var(--white);
+    color: var(--text-dark);
     font-family: 'Playfair Display', serif;
     font-size: 1.1rem;
     letter-spacing: 0.02em;
@@ -1085,7 +1099,7 @@ body.has-offer .navbar {
     padding: 32px;
     background: var(--cream);
     box-shadow: none;
-    border: 1px solid #ece8de;
+    border: 1px solid var(--hair);
 }
 
 .form-row {
@@ -1122,7 +1136,7 @@ body.has-offer .navbar {
 .form-group textarea {
     padding: 13px 4px;
     border: none;
-    border-bottom: 1px solid #d8d4c9;
+    border-bottom: 1px solid var(--hair);
     border-radius: 0;
     font-size: 1rem;
     font-family: inherit;
@@ -1147,10 +1161,10 @@ body.has-offer .navbar {
 .form-fieldset legend {
     font-family: 'Playfair Display', serif;
     font-size: 1.15rem;
-    color: var(--charcoal);
+    color: var(--text-dark);
     margin-bottom: 18px;
     padding-bottom: 10px;
-    border-bottom: 1px solid #ece8de;
+    border-bottom: 1px solid var(--hair);
     width: 100%;
 }
 
@@ -1168,8 +1182,8 @@ body.has-offer .navbar {
     display: flex;
     align-items: flex-start;
     gap: 8px;
-    background: #f6e9e8;
-    color: #a5473c;
+    background: rgba(248, 113, 113, 0.12);
+    color: #f87171;
     padding: 12px 16px;
     font-size: 0.82rem;
     line-height: 1.5;
@@ -1185,7 +1199,7 @@ body.has-offer .navbar {
     max-height: 200px;
     overflow-y: auto;
     background: var(--cream);
-    border: 1px solid #ece8de;
+    border: 1px solid var(--hair);
     padding: 20px;
     font-size: 0.85rem;
     color: var(--text-light);
@@ -1201,7 +1215,7 @@ body.has-offer .navbar {
 }
 
 .terms-box strong {
-    color: var(--charcoal);
+    color: var(--text-dark);
 }
 
 .checkbox-group {
@@ -1230,7 +1244,7 @@ body.has-offer .navbar {
 .submit-btn {
     width: 100%;
     background: var(--charcoal);
-    color: var(--white);
+    color: var(--text-dark);
     border: none;
     padding: 16px;
     font-size: 0.85rem;
@@ -1242,7 +1256,7 @@ body.has-offer .navbar {
 
 .submit-btn:hover {
     background: var(--gold);
-    color: var(--charcoal);
+    color: var(--on-gold);
 }
 
 .submit-btn:disabled {
@@ -1259,11 +1273,11 @@ body.has-offer .navbar {
 }
 
 .form-message.success {
-    color: #3d7a4f;
+    color: #6ee7b7;
 }
 
 .form-message.error {
-    color: #a5473c;
+    color: #f87171;
 }
 
 /* Contact */
@@ -1294,7 +1308,7 @@ body.has-offer .navbar {
 }
 
 .info-item h4 {
-    color: var(--charcoal);
+    color: var(--text-dark);
     margin-bottom: 4px;
     font-size: 1rem;
     font-weight: 600;
@@ -1320,7 +1334,7 @@ body.has-offer .navbar {
     align-items: center;
     gap: 8px;
     background: var(--charcoal);
-    color: var(--white);
+    color: var(--text-dark);
     text-align: center;
     justify-content: center;
     padding: 14px;
@@ -1333,13 +1347,13 @@ body.has-offer .navbar {
 
 .map-directions-link:hover {
     background: var(--gold);
-    color: var(--charcoal);
+    color: var(--on-gold);
 }
 
 /* Footer */
 .footer {
     background: var(--charcoal);
-    color: var(--white);
+    color: var(--text-dark);
     padding: 70px 0 24px;
 }
 
@@ -1399,7 +1413,7 @@ body.has-offer .navbar {
 .social-links a:hover {
     background: var(--gold);
     border-color: var(--gold);
-    color: var(--charcoal);
+    color: var(--on-gold);
 }
 
 .footer-bottom {
@@ -1419,7 +1433,7 @@ body.has-offer .navbar {
 }
 
 .admin-page h1 {
-    color: var(--charcoal);
+    color: var(--text-dark);
     margin-bottom: 8px;
     font-size: 1.8rem;
 }
@@ -1449,7 +1463,7 @@ table.admin-table th,
 table.admin-table td {
     padding: 14px 18px;
     text-align: left;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--hair);
     font-size: 0.88rem;
 }
 
@@ -1473,29 +1487,29 @@ table.admin-table th {
 
 .status-pill.confirmed,
 .status-pill.paid {
-    background: #eaf3ea;
-    color: #3d7a4f;
+    background: rgba(16, 185, 129, 0.12);
+    color: #6ee7b7;
 }
 
 .status-pill.cancelled {
-    background: #f6e9e8;
-    color: #a5473c;
+    background: rgba(248, 113, 113, 0.12);
+    color: #f87171;
 }
 
 .status-pill.pending,
 .status-pill.unpaid {
-    background: #fbf1e0;
-    color: #9a6c1f;
+    background: rgba(251, 191, 36, 0.12);
+    color: #fbbf24;
 }
 
 .status-pill.checked_in {
-    background: #e7eefb;
-    color: #2f5faa;
+    background: rgba(59, 130, 246, 0.12);
+    color: #93c5fd;
 }
 
 .status-pill.checked_out {
-    background: #ece7f6;
-    color: #6a4fa0;
+    background: rgba(167, 139, 250, 0.12);
+    color: #c4b5fd;
 }
 
 .action-btn {
@@ -1512,18 +1526,18 @@ table.admin-table th {
 }
 
 .action-btn.confirm {
-    background: #eaf3ea;
-    color: #3d7a4f;
+    background: rgba(16, 185, 129, 0.12);
+    color: #6ee7b7;
 }
 
 .action-btn.cancel {
-    background: #f6e9e8;
-    color: #a5473c;
+    background: rgba(248, 113, 113, 0.12);
+    color: #f87171;
 }
 
 .action-btn.details-toggle {
-    background: #eee;
-    color: var(--charcoal);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-dark);
 }
 
 .payment-method-label {
@@ -1534,7 +1548,7 @@ table.admin-table th {
 
 .status-select {
     padding: 8px 10px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--hair);
     background: var(--white);
     font-family: inherit;
     font-size: 0.82rem;
@@ -1568,8 +1582,8 @@ table.admin-table th {
 }
 
 .status-pill.partial {
-    background: #fdf0e2;
-    color: #b5701f;
+    background: rgba(251, 191, 36, 0.12);
+    color: #fbbf24;
 }
 
 /* Admin dashboard: header + notification bell */
@@ -1583,13 +1597,13 @@ table.admin-table th {
 .bell-btn {
     position: relative;
     background: var(--white);
-    border: 1px solid #e4e1d8;
+    border: 1px solid var(--hair);
     width: 44px;
     height: 44px;
     border-radius: 50%;
     cursor: pointer;
     font-size: 1.1rem;
-    color: var(--charcoal);
+    color: var(--text-dark);
     box-shadow: var(--shadow);
     flex-shrink: 0;
 }
@@ -1599,7 +1613,7 @@ table.admin-table th {
     top: -4px;
     right: -4px;
     background: var(--gold);
-    color: var(--charcoal);
+    color: var(--on-gold);
     font-size: 0.7rem;
     font-weight: 700;
     min-width: 18px;
@@ -1617,7 +1631,7 @@ table.admin-table th {
     flex-wrap: wrap;
     gap: 4px;
     margin: 28px 0 30px;
-    border-bottom: 1px solid #e4e1d8;
+    border-bottom: 1px solid var(--hair);
 }
 
 .admin-tab {
@@ -1634,11 +1648,11 @@ table.admin-table th {
 }
 
 .admin-tab:hover {
-    color: var(--charcoal);
+    color: var(--text-dark);
 }
 
 .admin-tab.active {
-    color: var(--charcoal);
+    color: var(--text-dark);
     border-bottom-color: var(--gold);
     font-weight: 600;
 }
@@ -1657,7 +1671,7 @@ table.admin-table th {
 .panel-toolbar input,
 .panel-toolbar select {
     padding: 10px 14px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--hair);
     background: var(--white);
     font-family: inherit;
     font-size: 0.88rem;
@@ -1681,7 +1695,7 @@ table.admin-table th {
 .inline-form select,
 .inline-form textarea {
     padding: 10px 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--hair);
     background: var(--white);
     font-family: inherit;
     font-size: 0.88rem;
@@ -1697,7 +1711,7 @@ table.admin-table th {
 
 .media-item {
     background: var(--white);
-    border: 1px solid #eee;
+    border: 1px solid var(--hair);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -1708,7 +1722,7 @@ table.admin-table th {
     height: 120px;
     object-fit: cover;
     display: block;
-    background: #f4f3ef;
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .media-item-body {
@@ -1753,7 +1767,7 @@ table.admin-table th {
     height: 60px;
     border-radius: 4px;
     overflow: hidden;
-    border: 1px solid #ddd;
+    border: 1px solid var(--hair);
 }
 
 .room-photo-thumb img {
@@ -1783,7 +1797,7 @@ table.admin-table th {
     bottom: 2px;
     left: 2px;
     background: var(--gold);
-    color: var(--charcoal);
+    color: var(--on-gold);
     font-size: 0.6rem;
     font-weight: 700;
     padding: 1px 5px;
@@ -1793,16 +1807,16 @@ table.admin-table th {
 .detail-subsection {
     margin-top: 22px;
     padding-top: 18px;
-    border-top: 1px dashed #d8d4c9;
+    border-top: 1px dashed var(--hair);
 }
 
 .verify-banner {
-    background: #fdf0e2;
-    border-left: 3px solid #b5701f;
+    background: rgba(251, 191, 36, 0.12);
+    border-left: 3px solid #fbbf24;
     padding: 14px 18px;
     margin-bottom: 20px;
     font-size: 0.9rem;
-    color: #6b4a12;
+    color: #fde68a;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -1810,7 +1824,7 @@ table.admin-table th {
 }
 
 .verify-banner i {
-    color: #b5701f;
+    color: #fbbf24;
 }
 
 .verify-banner .verify-btn {
@@ -1819,13 +1833,13 @@ table.admin-table th {
 
 .detail-subsection h4 {
     font-size: 0.95rem;
-    color: var(--charcoal);
+    color: var(--text-dark);
     margin-bottom: 12px;
 }
 
 .mini-table {
     box-shadow: none;
-    border: 1px solid #eee;
+    border: 1px solid var(--hair);
     margin-bottom: 12px;
 }
 
@@ -1835,15 +1849,15 @@ table.admin-table th {
 }
 
 .discount-row td {
-    color: #3d7a4f;
+    color: #6ee7b7;
 }
 
 .overdue-row {
-    background: #fdf3f2;
+    background: rgba(248, 113, 113, 0.06);
 }
 
 .overdue-row:hover {
-    background: #fbe9e7;
+    background: rgba(248, 113, 113, 0.1);
 }
 
 /* Availability calendar */
@@ -1884,18 +1898,18 @@ table.admin-table th {
 }
 
 .calendar-cell.low {
-    background: #eaf3ea;
-    color: #3d7a4f;
+    background: rgba(16, 185, 129, 0.12);
+    color: #6ee7b7;
 }
 
 .calendar-cell.mid {
-    background: #fbf1e0;
-    color: #9a6c1f;
+    background: rgba(251, 191, 36, 0.12);
+    color: #fbbf24;
 }
 
 .calendar-cell.full {
-    background: #f6e9e8;
-    color: #a5473c;
+    background: rgba(248, 113, 113, 0.12);
+    color: #f87171;
 }
 
 .cal-day {
@@ -1923,9 +1937,9 @@ table.admin-table th {
     margin-left: 10px;
 }
 
-.legend-swatch.legend-low { background: #eaf3ea; }
-.legend-swatch.legend-mid { background: #fbf1e0; }
-.legend-swatch.legend-full { background: #f6e9e8; }
+.legend-swatch.legend-low { background: rgba(16, 185, 129, 0.12); }
+.legend-swatch.legend-mid { background: rgba(251, 191, 36, 0.12); }
+.legend-swatch.legend-full { background: rgba(248, 113, 113, 0.12); }
 
 /* Room settings cards */
 .room-edit-card {
@@ -1962,7 +1976,7 @@ table.admin-table th {
 .summary-card strong {
     font-family: 'Playfair Display', serif;
     font-size: 1.6rem;
-    color: var(--charcoal);
+    color: var(--text-dark);
 }
 
 .summary-card.clickable {
@@ -1979,7 +1993,7 @@ table.admin-table th {
 }
 
 .summary-card.attention strong {
-    color: #a5473c;
+    color: #f87171;
 }
 
 .quick-launch-grid {
@@ -2004,7 +2018,7 @@ table.admin-table th {
     align-items: center;
     justify-content: center;
     background: var(--gold);
-    color: #fff;
+    color: var(--on-gold);
     font-size: 1.05rem;
     flex-shrink: 0;
 }
@@ -2018,7 +2032,7 @@ table.admin-table th {
 .quick-launch-text strong {
     font-family: 'Playfair Display', serif;
     font-size: 1rem;
-    color: var(--charcoal);
+    color: var(--text-dark);
 }
 
 .quick-launch-text span {
@@ -2058,7 +2072,7 @@ table.admin-table th {
 
 /* Info banner (used for the locked-ledger notice, investor dashboard, etc.) */
 .investor-note {
-    background: #f8f7f3;
+    background: rgba(255, 255, 255, 0.04);
     border-left: 3px solid var(--gold);
     padding: 12px 18px;
     font-size: 0.88rem;
@@ -2071,11 +2085,11 @@ table.admin-table th {
 }
 
 .investor-note.danger-note {
-    border-left-color: #a5473c;
+    border-left-color: #f87171;
 }
 
 .investor-note.danger-note i {
-    color: #a5473c;
+    color: #f87171;
 }
 
 /* Simple, human-readable vertical list (Daily Summary / Handover / Cash In-Out) */
@@ -2093,7 +2107,7 @@ table.admin-table th {
     align-items: center;
     gap: 16px;
     padding: 14px 20px;
-    border-bottom: 1px solid #f0efe9;
+    border-bottom: 1px solid var(--hair);
     font-size: 0.98rem;
 }
 
@@ -2114,14 +2128,14 @@ table.admin-table th {
 
 .simple-list .item-amount {
     font-weight: 700;
-    color: var(--charcoal);
+    color: var(--text-dark);
     font-family: 'Playfair Display', serif;
     font-size: 1.1rem;
     white-space: nowrap;
 }
 
 .simple-list .item-amount.negative {
-    color: #a5473c;
+    color: #f87171;
 }
 
 .simple-list .empty-row {
@@ -2132,7 +2146,7 @@ table.admin-table th {
 
 .simple-total {
     background: var(--charcoal);
-    color: var(--white);
+    color: var(--text-dark);
     padding: 22px 26px;
     display: flex;
     justify-content: space-between;
@@ -2154,13 +2168,13 @@ table.admin-table th {
 }
 
 .status-pill.handed-over {
-    background: #e9e6df;
-    color: #6f6a5a;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-light);
 }
 
 .status-pill.active-pending {
-    background: #fdf0e2;
-    color: #9a6c1f;
+    background: rgba(251, 191, 36, 0.12);
+    color: #fbbf24;
 }
 
 /* Modal */
@@ -2190,7 +2204,7 @@ table.admin-table th {
 }
 
 .modal-summary {
-    background: #f8f7f3;
+    background: rgba(255, 255, 255, 0.04);
     padding: 16px 18px;
     margin-bottom: 18px;
     display: flex;
@@ -2205,12 +2219,12 @@ table.admin-table th {
 }
 
 .modal-summary .grand {
-    border-top: 1px solid #ddd;
+    border-top: 1px solid var(--hair);
     margin-top: 6px;
     padding-top: 10px;
     font-weight: 700;
     font-size: 1.05rem;
-    color: var(--charcoal);
+    color: var(--text-dark);
 }
 
 /* Room status board */
@@ -2225,15 +2239,15 @@ table.admin-table th {
     background: var(--white);
     box-shadow: var(--shadow);
     padding: 18px;
-    border-top: 4px solid #ccc;
+    border-top: 4px solid rgba(255, 255, 255, 0.15);
 }
 
 .room-status-card.available {
-    border-top-color: #3d7a4f;
+    border-top-color: #6ee7b7;
 }
 
 .room-status-card.occupied {
-    border-top-color: #a5473c;
+    border-top-color: #f87171;
 }
 
 .room-status-card.booked {
@@ -2243,7 +2257,7 @@ table.admin-table th {
 .room-status-card h4 {
     margin: 0 0 8px;
     font-size: 1rem;
-    color: var(--charcoal);
+    color: var(--text-dark);
 }
 
 .room-status-badge {
@@ -2257,9 +2271,9 @@ table.admin-table th {
     margin-bottom: 8px;
 }
 
-.room-status-badge.available { color: #3d7a4f; }
-.room-status-badge.occupied { color: #a5473c; }
-.room-status-badge.booked { color: #9a6c1f; }
+.room-status-badge.available { color: #6ee7b7; }
+.room-status-badge.occupied { color: #f87171; }
+.room-status-badge.booked { color: #fbbf24; }
 
 .room-status-dates {
     font-size: 0.82rem;
@@ -2269,7 +2283,7 @@ table.admin-table th {
 .advance-paid-tag {
     display: inline-block;
     background: var(--gold);
-    color: var(--charcoal);
+    color: var(--on-gold);
     font-size: 0.68rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -2285,7 +2299,7 @@ table.admin-table th {
 
 .report-controls select {
     padding: 6px 10px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--hair);
     font-family: inherit;
 }
 
@@ -2298,7 +2312,7 @@ table.admin-table th {
 
 .chart-card h3 {
     font-size: 1rem;
-    color: var(--charcoal);
+    color: var(--text-dark);
     margin-bottom: 16px;
 }
 
@@ -3174,7 +3188,7 @@ table.admin-table th {
     align-items: center;
     font-size: 0.82rem;
     color: var(--text-light);
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--hair);
     padding-top: 12px;
 }
 
@@ -3182,7 +3196,7 @@ table.admin-table th {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-size: 0.68rem;
-    background: #f4f1e8;
+    background: rgba(255, 255, 255, 0.06);
     padding: 3px 9px;
     border-radius: 999px;
 }
@@ -3202,7 +3216,7 @@ table.admin-table th {
 
 .star-picker {
     font-size: 1.6rem;
-    color: #d8d4c9;
+    color: var(--text-light);
     display: flex;
     gap: 8px;
     cursor: pointer;
@@ -3237,7 +3251,7 @@ table.admin-table th {
 
 .booking-result-summary strong {
     font-size: 1.05rem;
-    color: var(--charcoal);
+    color: var(--text-dark);
 }
 
 /* ---- Sales features: scarcity, add-ons, WhatsApp button, social proof ---- */
@@ -3245,8 +3259,8 @@ table.admin-table th {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #fdf0e2;
-    color: #9a6c1f;
+    background: rgba(251, 191, 36, 0.12);
+    color: #fbbf24;
     font-size: 0.76rem;
     font-weight: 600;
     padding: 4px 10px;
@@ -3268,7 +3282,7 @@ table.admin-table th {
     padding: 12px 14px;
     cursor: pointer;
     font-size: 0.88rem;
-    border: 1px solid #ece8de;
+    border: 1px solid var(--hair);
 }
 
 .addon-option input {
@@ -3380,16 +3394,16 @@ table.admin-table th {
     font-weight: 700;
     letter-spacing: 0.1em;
     margin: 16px 0;
-    color: var(--charcoal);
+    color: var(--text-dark);
 }
 
 .exit-intent-box .cta-button {
-    color: var(--charcoal);
+    color: var(--text-dark);
     margin-top: 16px;
 }
 
 .exit-intent-box .cta-button:hover {
-    color: var(--charcoal);
+    color: var(--text-dark);
 }
 
 @media (max-width: 640px) {
@@ -3405,7 +3419,7 @@ table.admin-table th {
     flex-wrap: wrap;
     margin-bottom: 22px;
     padding-bottom: 14px;
-    border-bottom: 1px solid var(--hair, #e4e1d8);
+    border-bottom: 1px solid var(--hair);
 }
 
 .minibar-subtab {
@@ -3476,9 +3490,9 @@ table.admin-table th {
     margin-right: 6px;
 }
 
-.minibar-room-dot.green { background: #3d7a4f; }
-.minibar-room-dot.orange { background: #c98a2c; }
-.minibar-room-dot.red { background: #a5473c; }
+.minibar-room-dot.green { background: #6ee7b7; }
+.minibar-room-dot.orange { background: #fbbf24; }
+.minibar-room-dot.red { background: #f87171; }
 .minibar-room-dot.grey { background: #8a8f98; }
 
 .minibar-pos-grid {
@@ -3517,9 +3531,9 @@ table.admin-table th {
     letter-spacing: 0.04em;
 }
 
-.minibar-pos-item .item-stock.green { color: #3d7a4f; }
-.minibar-pos-item .item-stock.orange { color: #c98a2c; }
-.minibar-pos-item .item-stock.red { color: #a5473c; }
+.minibar-pos-item .item-stock.green { color: #6ee7b7; }
+.minibar-pos-item .item-stock.orange { color: #fbbf24; }
+.minibar-pos-item .item-stock.red { color: #f87171; }
 
 .minibar-pos-item .item-controls {
     display: flex;
