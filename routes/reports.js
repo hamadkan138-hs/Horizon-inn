@@ -222,55 +222,60 @@ router.get('/daily-summary', async (req, res) => {
 router.get('/overview', async (req, res) => {
   try {
     const today = new Date().toISOString().slice(0, 10);
-    const daily = await getDailySummary();
 
-    const [
+    // getDailySummary() and the queries below are independent of each
+    // other's results, so run them concurrently rather than waiting for
+    // the summary to finish before starting the rest.
+    const [daily, [
       cancellations, pendingVouchers, openRecovery, pendingReviews, newLeads, lowStockMinibar,
       pendingWithdrawals, occupancyRooms, occupiedBookings, minibarSalesToday, handoverPreview
-    ] = await Promise.all([
-      db.execute(`
-        SELECT bookings.id, bookings.name, bookings.invoice_number, bookings.cancellation_requested_at
-        FROM bookings
-        WHERE cancellation_requested_at IS NOT NULL AND status != 'cancelled'
-        ORDER BY cancellation_requested_at DESC
-      `),
-      db.execute(`
-        SELECT id, code, amount, purchaser_name, purchaser_phone FROM gift_vouchers
-        WHERE status = 'pending_payment' ORDER BY created_at DESC
-      `),
-      db.execute(`
-        SELECT id, name, phone, checkin, checkout FROM abandoned_bookings
-        WHERE status = 'open' ORDER BY created_at DESC
-      `),
-      db.execute(`
-        SELECT id, guest_name, rating FROM reviews WHERE status = 'pending' ORDER BY created_at DESC
-      `),
-      db.execute(`
-        SELECT id, full_name, phone FROM investor_leads WHERE status = 'new_lead' ORDER BY created_at DESC
-      `),
-      db.execute(`
-        SELECT id, name, stock_quantity, low_stock_threshold FROM minibar_items
-        WHERE active = 1 AND stock_quantity <= low_stock_threshold ORDER BY stock_quantity ASC
-      `),
-      db.execute(`
-        SELECT withdrawal_requests.id, withdrawal_requests.type, withdrawal_requests.amount,
-               withdrawal_requests.requested_at, investors.investor_code, users.username
-        FROM withdrawal_requests
-        JOIN investors ON investors.id = withdrawal_requests.investor_id
-        JOIN users ON users.id = investors.user_id
-        WHERE withdrawal_requests.status = 'pending'
-        ORDER BY withdrawal_requests.requested_at ASC
-      `),
-      db.execute(`SELECT COALESCE(SUM(total_units), 0) AS capacity FROM rooms WHERE active = 1`),
-      db.execute({
-        sql: `SELECT COUNT(*) AS occupied FROM bookings WHERE status = 'checked_in' AND checkin <= ? AND checkout > ?`,
-        args: [today, today]
-      }),
-      db.execute({
-        sql: `SELECT COALESCE(SUM(-quantity * unit_price), 0) AS revenue FROM minibar_room_log WHERE action = 'consume' AND date(created_at) = ?`,
-        args: [today]
-      }),
-      computeUnswept()
+    ]] = await Promise.all([
+      getDailySummary(),
+      Promise.all([
+        db.execute(`
+          SELECT bookings.id, bookings.name, bookings.invoice_number, bookings.cancellation_requested_at
+          FROM bookings
+          WHERE cancellation_requested_at IS NOT NULL AND status != 'cancelled'
+          ORDER BY cancellation_requested_at DESC
+        `),
+        db.execute(`
+          SELECT id, code, amount, purchaser_name, purchaser_phone FROM gift_vouchers
+          WHERE status = 'pending_payment' ORDER BY created_at DESC
+        `),
+        db.execute(`
+          SELECT id, name, phone, checkin, checkout FROM abandoned_bookings
+          WHERE status = 'open' ORDER BY created_at DESC
+        `),
+        db.execute(`
+          SELECT id, guest_name, rating FROM reviews WHERE status = 'pending' ORDER BY created_at DESC
+        `),
+        db.execute(`
+          SELECT id, full_name, phone FROM investor_leads WHERE status = 'new_lead' ORDER BY created_at DESC
+        `),
+        db.execute(`
+          SELECT id, name, stock_quantity, low_stock_threshold FROM minibar_items
+          WHERE active = 1 AND stock_quantity <= low_stock_threshold ORDER BY stock_quantity ASC
+        `),
+        db.execute(`
+          SELECT withdrawal_requests.id, withdrawal_requests.type, withdrawal_requests.amount,
+                 withdrawal_requests.requested_at, investors.investor_code, users.username
+          FROM withdrawal_requests
+          JOIN investors ON investors.id = withdrawal_requests.investor_id
+          JOIN users ON users.id = investors.user_id
+          WHERE withdrawal_requests.status = 'pending'
+          ORDER BY withdrawal_requests.requested_at ASC
+        `),
+        db.execute(`SELECT COALESCE(SUM(total_units), 0) AS capacity FROM rooms WHERE active = 1`),
+        db.execute({
+          sql: `SELECT COUNT(*) AS occupied FROM bookings WHERE status = 'checked_in' AND checkin <= ? AND checkout > ?`,
+          args: [today, today]
+        }),
+        db.execute({
+          sql: `SELECT COALESCE(SUM(-quantity * unit_price), 0) AS revenue FROM minibar_room_log WHERE action = 'consume' AND date(created_at) = ?`,
+          args: [today]
+        }),
+        computeUnswept()
+      ])
     ]);
 
     res.json({

@@ -86,25 +86,34 @@
                 <button class="admin-tab" data-tab="bookings"><i class="fas fa-calendar-check"></i> Bookings</button>
                 <button class="admin-tab" data-tab="guests"><i class="fas fa-users"></i> Guests</button>
 
-                <!-- Operations Management -->
-                <button class="admin-tab" data-tab="availability"><i class="fas fa-bed"></i> Operations (Rooms, Pricing, Availability)</button>
-                <button class="admin-tab" data-tab="minibar" style="display: none;"><i class="fas fa-martini-glass"></i> Mini Bar</button>
-                <button class="admin-tab" data-tab="rooms" style="display: none;"><i class="fas fa-cog"></i> Room Settings</button>
+                <!-- Operations: section toggle + subrow of real tabs -->
+                <button class="admin-tab admin-section-toggle" data-section="operations"><i class="fas fa-bed"></i> Operations</button>
+                <div class="admin-subrow" data-subrow-for="operations" style="display: none;">
+                    <button class="admin-tab" data-tab="availability"><i class="fas fa-bed"></i> Availability</button>
+                    <button class="admin-tab" data-tab="minibar"><i class="fas fa-martini-glass"></i> Mini Bar</button>
+                    <button class="admin-tab" data-tab="rooms"><i class="fas fa-cog"></i> Room Settings</button>
+                </div>
 
-                <!-- Financial & Accounting -->
-                <button class="admin-tab" data-tab="payments"><i class="fas fa-money-bill-wave"></i> Payments & Accounting</button>
-                <button class="admin-tab" data-tab="daily" style="display: none;"><i class="fas fa-chart-line"></i> Daily Summary</button>
-                <button class="admin-tab" data-tab="handover" style="display: none;"><i class="fas fa-hand-holding-dollar"></i> Cash Handover</button>
-                <button class="admin-tab" data-tab="expenses" style="display: none;"><i class="fas fa-receipt"></i> Expenses</button>
-                <button class="admin-tab" data-tab="reports" style="display: none;"><i class="fas fa-chart-pie"></i> Reports</button>
-                <button class="admin-tab" data-tab="venues" style="display: none;"><i class="fas fa-cash-register"></i> Financial Controls</button>
+                <!-- Payments & Accounting: section toggle + subrow of real tabs -->
+                <button class="admin-tab admin-section-toggle" data-section="accounting"><i class="fas fa-money-bill-wave"></i> Payments & Accounting</button>
+                <div class="admin-subrow" data-subrow-for="accounting" style="display: none;">
+                    <button class="admin-tab" data-tab="payments"><i class="fas fa-money-bill-wave"></i> Transactions</button>
+                    <button class="admin-tab" data-tab="daily"><i class="fas fa-chart-line"></i> Daily Summary</button>
+                    <button class="admin-tab" data-tab="handover"><i class="fas fa-hand-holding-dollar"></i> Cash Handover</button>
+                    <button class="admin-tab" data-tab="expenses"><i class="fas fa-receipt"></i> Expenses</button>
+                    <button class="admin-tab" data-tab="reports"><i class="fas fa-chart-pie"></i> Reports</button>
+                    <button class="admin-tab" data-tab="venues"><i class="fas fa-cash-register"></i> Financial Controls</button>
+                </div>
 
-                <!-- Guest Relations & Marketing -->
-                <button class="admin-tab" data-tab="corporate"><i class="fas fa-gift"></i> Marketing & VIP</button>
-                <button class="admin-tab" data-tab="leads" style="display: none;"><i class="fas fa-user-tie"></i> Investor Leads</button>
-                <button class="admin-tab" data-tab="reviews" style="display: none;"><i class="fas fa-star"></i> Reviews</button>
-                <button class="admin-tab" data-tab="promotions" style="display: none;"><i class="fas fa-gift"></i> Promotions</button>
-                <button class="admin-tab" data-tab="recovery" style="display: none;"><i class="fas fa-arrow-rotate-left"></i> Recovery</button>
+                <!-- Marketing & VIP: section toggle + subrow of real tabs -->
+                <button class="admin-tab admin-section-toggle" data-section="marketing"><i class="fas fa-gift"></i> Marketing & VIP</button>
+                <div class="admin-subrow" data-subrow-for="marketing" style="display: none;">
+                    <button class="admin-tab" data-tab="corporate"><i class="fas fa-gift"></i> Corporate</button>
+                    <button class="admin-tab" data-tab="leads"><i class="fas fa-user-tie"></i> Investor Leads</button>
+                    <button class="admin-tab" data-tab="reviews"><i class="fas fa-star"></i> Reviews</button>
+                    <button class="admin-tab" data-tab="promotions"><i class="fas fa-gift"></i> Promotions</button>
+                    <button class="admin-tab" data-tab="recovery"><i class="fas fa-arrow-rotate-left"></i> Recovery</button>
+                </div>
 
                 <!-- Messages -->
                 <button class="admin-tab" data-tab="messages"><i class="fas fa-envelope"></i> Messages</button>

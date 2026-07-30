@@ -94,11 +94,26 @@ async function showDashboard() {
 }
 
 /* ---------------- Tabs with Fade Transition -------- */
-document.querySelectorAll('.admin-tab').forEach((btn) => {
+// Expand the subrow (if any) that a tab button belongs to, and mark its
+// parent section-toggle active, so the nav shows where you are.
+function showSubrowFor(tabBtn) {
+    const parentSubrow = tabBtn.closest('.admin-subrow');
+    document.querySelectorAll('.admin-subrow').forEach((row) => {
+        row.style.display = (row === parentSubrow) ? 'flex' : 'none';
+    });
+    document.querySelectorAll('.admin-section-toggle').forEach((b) => b.classList.remove('active'));
+    if (parentSubrow) {
+        const sectionBtn = document.querySelector(`.admin-section-toggle[data-section="${parentSubrow.dataset.subrowFor}"]`);
+        if (sectionBtn) sectionBtn.classList.add('active');
+    }
+}
+
+document.querySelectorAll('.admin-tab[data-tab]').forEach((btn) => {
     btn.addEventListener('click', () => {
         // Update active tab
         document.querySelectorAll('.admin-tab').forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
+        showSubrowFor(btn);
 
         // Fade out all panels
         const allPanels = document.querySelectorAll('.admin-panel');
@@ -139,6 +154,16 @@ document.querySelectorAll('.admin-tab').forEach((btn) => {
         if (btn.dataset.tab === 'recovery') loadRecoveryPanel();
         if (btn.dataset.tab === 'overview') loadOverview();
         if (btn.dataset.tab === 'bookings') { localStorage.setItem('horizonLastSeen', new Date().toISOString()); updateNotifyBell(); }
+    });
+});
+
+/* Section toggles (Operations / Payments & Accounting / Marketing & VIP):
+   expand that section's subrow and jump to its first real tab. */
+document.querySelectorAll('.admin-section-toggle').forEach((btn) => {
+    btn.addEventListener('click', () => {
+        const subrow = document.querySelector(`.admin-subrow[data-subrow-for="${btn.dataset.section}"]`);
+        const firstTab = subrow && subrow.querySelector('.admin-tab[data-tab]');
+        if (firstTab) firstTab.click();
     });
 });
 
@@ -1578,6 +1603,10 @@ document.getElementById('expenseForm').addEventListener('submit', async (e) => {
 
 /* ---------------- Mini Bar Stock Management ---------------- */
 let allMinibarItems = [];
+// loadMinibarStore() always fetches fresh (it's the catalog editor tab) and
+// marks this true; other tabs that only need to read the catalog (Packages)
+// reuse that cache instead of issuing their own redundant fetch.
+let minibarItemsCacheValid = false;
 let allMinibarRooms = [];
 let selectedMinibarRoomId = null;
 
@@ -1626,25 +1655,48 @@ function minibarRoomStatusDot(room) {
     return 'grey';
 }
 
+function minibarRoomCardHtml(r) {
+    return `
+        <div class="minibar-room-card ${r.id === selectedMinibarRoomId ? 'selected' : ''}" data-id="${r.id}">
+            <div class="room-number"><span class="minibar-room-dot ${minibarRoomStatusDot(r)}"></span>Room ${escapeHtml(r.roomNumber)}</div>
+            <div class="room-meta">${escapeHtml(r.roomTypeName)}${r.floor ? ` &middot; Floor ${escapeHtml(r.floor)}` : ''}</div>
+            <div class="room-guest">${r.activeBooking ? `<strong>${escapeHtml(r.activeBooking.guestName)}</strong>` : '<span style="color: var(--text-light);">No guest checked in</span>'}</div>
+            ${r.initialized ? `<div style="font-size: 0.76rem; margin-top: 6px; color: var(--text-light);">${r.itemCount} items tracked${r.lowStockCount ? `, <span style="color: #c98a2c;">${r.lowStockCount} low</span>` : ''}</div>` : '<div style="font-size: 0.76rem; margin-top: 6px; color: var(--text-light);">Not yet stocked</div>'}
+        </div>
+    `;
+}
+
+function bindMinibarRoomCard(card) {
+    card.addEventListener('click', () => selectMinibarRoom(Number(card.dataset.id)));
+}
+
 async function loadMinibarRooms() {
     try {
         allMinibarRooms = await apiGet('/api/minibar/rooms');
         const grid = document.getElementById('minibarRoomGrid');
-        grid.innerHTML = allMinibarRooms.map((r) => `
-            <div class="minibar-room-card ${r.id === selectedMinibarRoomId ? 'selected' : ''}" data-id="${r.id}">
-                <div class="room-number"><span class="minibar-room-dot ${minibarRoomStatusDot(r)}"></span>Room ${escapeHtml(r.roomNumber)}</div>
-                <div class="room-meta">${escapeHtml(r.roomTypeName)}${r.floor ? ` &middot; Floor ${escapeHtml(r.floor)}` : ''}</div>
-                <div class="room-guest">${r.activeBooking ? `<strong>${escapeHtml(r.activeBooking.guestName)}</strong>` : '<span style="color: var(--text-light);">No guest checked in</span>'}</div>
-                ${r.initialized ? `<div style="font-size: 0.76rem; margin-top: 6px; color: var(--text-light);">${r.itemCount} items tracked${r.lowStockCount ? `, <span style="color: #c98a2c;">${r.lowStockCount} low</span>` : ''}</div>` : '<div style="font-size: 0.76rem; margin-top: 6px; color: var(--text-light);">Not yet stocked</div>'}
-            </div>
-        `).join('') || '<p style="color: var(--text-light);">No physical rooms registered yet — add rooms in Rooms &amp; Pricing first.</p>';
+        grid.innerHTML = allMinibarRooms.map(minibarRoomCardHtml).join('') || '<p style="color: var(--text-light);">No physical rooms registered yet — add rooms in Rooms &amp; Pricing first.</p>';
 
-        grid.querySelectorAll('.minibar-room-card').forEach((card) => {
-            card.addEventListener('click', () => selectMinibarRoom(Number(card.dataset.id)));
-        });
+        grid.querySelectorAll('.minibar-room-card').forEach(bindMinibarRoomCard);
 
         if (selectedMinibarRoomId) selectMinibarRoom(selectedMinibarRoomId);
     } catch (err) { /* handled */ }
+}
+
+// Update just one room's card in place from data we already fetched for the
+// detail panel, instead of refetching and re-rendering the whole grid.
+function patchMinibarRoomCard(roomId, room) {
+    const cached = allMinibarRooms.find((r) => Number(r.id) === Number(roomId));
+    if (!cached) return; // grid not loaded yet — nothing to patch
+    cached.activeBooking = room.activeBooking;
+    cached.itemCount = room.stock.length;
+    cached.lowStockCount = room.stock.filter((s) => s.currentStock < s.openingStock).length;
+    cached.initialized = room.stock.length > 0;
+
+    const card = document.querySelector(`.minibar-room-card[data-id="${roomId}"]`);
+    if (!card) return;
+    card.outerHTML = minibarRoomCardHtml(cached);
+    const newCard = document.querySelector(`.minibar-room-card[data-id="${roomId}"]`);
+    if (newCard) bindMinibarRoomCard(newCard);
 }
 
 async function selectMinibarRoom(roomId) {
@@ -1656,6 +1708,7 @@ async function selectMinibarRoom(roomId) {
 
     try {
         const room = await apiGet(`/api/minibar/rooms/${roomId}`);
+        patchMinibarRoomCard(roomId, room);
         document.getElementById('minibarRoomTitle').textContent = `Room ${room.roomNumber}`;
         document.getElementById('minibarRoomGuest').textContent = room.activeBooking
             ? `${room.activeBooking.guestName} — ${room.activeBooking.invoiceNumber}`
@@ -1689,7 +1742,6 @@ async function selectMinibarRoom(roomId) {
                     msg.className = 'form-message success';
                     msg.textContent = `Charged ${qty} x ${btn.dataset.name} to the guest's bill.`;
                     selectMinibarRoom(roomId);
-                    loadMinibarRooms();
                 } catch (err) {
                     msg.className = 'form-message error'; msg.textContent = err.message;
                     btn.disabled = false;
@@ -1713,7 +1765,6 @@ async function selectMinibarRoom(roomId) {
             try {
                 await apiSend('POST', `/api/minibar/rooms/${roomId}/init`, { force: true });
                 selectMinibarRoom(roomId);
-                loadMinibarRooms();
             } catch (err) { alert(err.message); }
         };
 
@@ -1727,7 +1778,6 @@ async function selectMinibarRoom(roomId) {
                     await apiSend('POST', `/api/minibar/rooms/${roomId}/refill`, { itemId: s.minibarItemId, quantity: s.suggestedRefillQty });
                 }
                 selectMinibarRoom(roomId);
-                loadMinibarRooms();
             } catch (err) { alert(err.message); }
         };
 
@@ -1764,7 +1814,6 @@ document.getElementById('minibarDamageForm').addEventListener('submit', async (e
         setTimeout(() => {
             document.getElementById('minibarDamageModalOverlay').style.display = 'none';
             selectMinibarRoom(Number(roomId));
-            loadMinibarRooms();
         }, 600);
     } catch (err) { msg.className = 'form-message error'; msg.textContent = err.message; }
 });
@@ -1773,6 +1822,7 @@ document.getElementById('minibarDamageForm').addEventListener('submit', async (e
 async function loadMinibarStore() {
     try {
         allMinibarItems = await apiGet('/api/minibar');
+        minibarItemsCacheValid = true;
         document.getElementById('minibarBody').innerHTML = allMinibarItems.map((item) => `
             <tr>
                 <td>${escapeHtml(item.name)}</td>
@@ -1829,7 +1879,10 @@ document.getElementById('minibarForm').addEventListener('submit', async (e) => {
 /* ---- Packages ---- */
 async function loadMinibarPackages() {
     try {
-        if (!allMinibarItems.length) allMinibarItems = await apiGet('/api/minibar');
+        if (!minibarItemsCacheValid) {
+            allMinibarItems = await apiGet('/api/minibar');
+            minibarItemsCacheValid = true;
+        }
         const packages = await apiGet('/api/minibar/packages');
         document.getElementById('minibarPackagesList').innerHTML = packages.map((pkg) => `
             <div class="detail-subsection" style="margin: 0;">
