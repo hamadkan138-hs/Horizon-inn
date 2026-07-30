@@ -2,8 +2,8 @@
 
 body {
     font-family: 'Lora', serif;
-    color: #23242c;
-    background: #faf9f6;
+    color: #eef0f4;
+    background: #0B0F1A;
     margin: 0;
     line-height: 1.7;
 }
@@ -18,7 +18,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: #6f7180;
+    color: #9aa0ae;
     text-decoration: none;
     font-size: 0.85rem;
     margin-bottom: 30px;
@@ -31,36 +31,36 @@ body {
 h1 {
     font-family: 'Playfair Display', serif;
     font-size: 2.2rem;
-    color: #14161f;
+    color: #eef0f4;
     margin-bottom: 6px;
 }
 
 .legal-updated {
-    color: #6f7180;
+    color: #9aa0ae;
     font-size: 0.85rem;
     margin-bottom: 24px;
 }
 
 .legal-disclaimer-box {
-    background: #f8f3e8;
+    background: rgba(198, 161, 91, 0.08);
     border-left: 3px solid #c6a15b;
     padding: 16px 20px;
     font-size: 0.88rem;
-    color: #55524a;
+    color: #d5d7dd;
     margin-bottom: 36px;
 }
 
 h2 {
     font-family: 'Playfair Display', serif;
     font-size: 1.3rem;
-    color: #14161f;
+    color: #eef0f4;
     margin-top: 36px;
     margin-bottom: 10px;
 }
 
 p, li {
     font-size: 0.96rem;
-    color: #3a3b45;
+    color: #d5d7dd;
 }
 
 ul {
