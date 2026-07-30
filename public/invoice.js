@@ -147,4 +147,144 @@ async function loadInvoice() {
     }
 }
 
+// Store current booking for editing
+let currentBooking = null;
+
+// Enhanced loadInvoice with edit capability
+const originalLoadInvoice = loadInvoice;
+loadInvoice = async function() {
+    await originalLoadInvoice.call(this);
+
+    // After invoice loads, setup edit functionality
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    const token = localStorage.getItem('horizonAdminAuth');
+
+    // Only show edit button if user is admin (has auth token)
+    if (token && id) {
+        try {
+            const res = await fetch(`/api/bookings/${id}`, { headers: { Authorization: `Basic ${token}` } });
+            if (res.ok) {
+                currentBooking = await res.json();
+                document.getElementById('editInvoiceBtn').style.display = 'inline-block';
+                document.getElementById('editInvoiceBtn').addEventListener('click', openInvoiceEditor);
+            }
+        } catch (err) { /* not admin, hide edit button */ }
+    }
+};
+
+// Premium invoice editor modal
+function openInvoiceEditor() {
+    if (!currentBooking) return;
+
+    const modal = document.getElementById('editInvoiceModal');
+    const n = nights(currentBooking.checkin, currentBooking.checkout);
+    const rate = currentBooking.room_amount / n;
+    const chargesTotal = currentBooking.charges.reduce((sum, c) => sum + Number(c.amount), 0);
+    const subtotal = Number(currentBooking.room_amount) + chargesTotal;
+
+    // Populate form with current values
+    document.getElementById('editRoomNumber').value = currentBooking.room_number || '';
+    document.getElementById('editRoomRate').value = Math.round(rate);
+    document.getElementById('editExtraCharges').value = chargesTotal > 0 ? Math.round(chargesTotal) : '';
+    document.getElementById('editInvoiceNotes').value = currentBooking.invoice_notes || '';
+
+    // Show modal with animation
+    modal.style.display = 'flex';
+    modal.style.animation = 'overlay-fade-in 200ms ease-in-out';
+
+    updateEditPreview();
+}
+
+function closeInvoiceEditor() {
+    const modal = document.getElementById('editInvoiceModal');
+    modal.style.display = 'none';
+}
+
+function updateEditPreview() {
+    const rate = Number(document.getElementById('editRoomRate').value) || 0;
+    const charges = Number(document.getElementById('editExtraCharges').value) || 0;
+    const n = nights(currentBooking.checkin, currentBooking.checkout);
+
+    const roomAmount = rate * n;
+    const subtotal = roomAmount + charges;
+    const taxAmount = subtotal * (Number(currentBooking.tax_percent) / 100);
+    const total = subtotal + taxAmount;
+
+    document.getElementById('editSubtotal').textContent = money(subtotal);
+    document.getElementById('editNewTotal').textContent = money(total);
+}
+
+// Add event listeners
+document.getElementById('editRoomRate').addEventListener('change', updateEditPreview);
+document.getElementById('editExtraCharges').addEventListener('change', updateEditPreview);
+
+document.getElementById('cancelEditBtn').addEventListener('click', closeInvoiceEditor);
+
+document.getElementById('editInvoiceModal').addEventListener('click', (e) => {
+    if (e.target.id === 'editInvoiceModal') closeInvoiceEditor();
+});
+
+// Handle form submission
+document.getElementById('editInvoiceForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const msg = document.getElementById('editMessage');
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const token = localStorage.getItem('horizonAdminAuth');
+
+    msg.textContent = '';
+    msg.className = 'form-message';
+    submitBtn.disabled = true;
+
+    try {
+        const newRoomNumber = document.getElementById('editRoomNumber').value;
+        const newRate = Number(document.getElementById('editRoomRate').value);
+        const extraCharges = Number(document.getElementById('editExtraCharges').value) || 0;
+        const newNotes = document.getElementById('editInvoiceNotes').value;
+
+        const n = nights(currentBooking.checkin, currentBooking.checkout);
+        const newRoomAmount = newRate * n;
+
+        // Calculate charge difference
+        const currentCharges = currentBooking.charges.reduce((sum, c) => sum + Number(c.amount), 0);
+        const chargeDifference = extraCharges - currentCharges;
+
+        // API call to update booking
+        const res = await fetch(`/api/bookings/${currentBooking.id}/update-invoice`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${token}`
+            },
+            body: JSON.stringify({
+                room_number: newRoomNumber || null,
+                room_amount: newRoomAmount,
+                invoice_notes: newNotes,
+                extra_charges: chargeDifference > 0 ? { description: 'Additional charges', amount: chargeDifference } : null
+            })
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.message || 'Failed to update invoice');
+        }
+
+        msg.textContent = '✓ Invoice updated successfully';
+        msg.className = 'form-message success';
+
+        // Reload invoice
+        setTimeout(() => {
+            closeInvoiceEditor();
+            location.reload();
+        }, 1500);
+
+    } catch (err) {
+        msg.textContent = '✗ Error: ' + err.message;
+        msg.className = 'form-message error';
+    } finally {
+        submitBtn.disabled = false;
+    }
+});
+
 loadInvoice();

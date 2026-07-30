@@ -857,4 +857,64 @@ router.patch('/:id/cleaning', adminAuth, requireRole('admin', 'staff'), async (r
   }
 });
 
+// Update invoice: admin can edit room number, room amount, and notes
+router.post('/:id/update-invoice', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
+  try {
+    const { room_number, room_amount, invoice_notes, extra_charges } = req.body;
+
+    const bookingResult = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
+    const booking = bookingResult.rows[0];
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    // Update booking fields
+    const updates = [];
+    const values = [];
+
+    if (room_number !== undefined) {
+      updates.push('room_number = ?');
+      values.push(room_number);
+    }
+
+    if (room_amount !== undefined) {
+      updates.push('room_amount = ?');
+      values.push(room_amount);
+    }
+
+    if (invoice_notes !== undefined) {
+      updates.push('invoice_notes = ?');
+      values.push(invoice_notes);
+    }
+
+    if (updates.length > 0) {
+      values.push(req.params.id);
+      await db.execute({
+        sql: `UPDATE bookings SET ${updates.join(', ')} WHERE id = ?`,
+        args: values
+      });
+    }
+
+    // Add extra charge if specified
+    if (extra_charges && extra_charges.amount !== 0) {
+      await db.execute({
+        sql: `
+          INSERT INTO booking_charges (booking_id, description, amount, added_by, added_at)
+          VALUES (?, ?, ?, ?, datetime('now'))
+        `,
+        args: [req.params.id, extra_charges.description || 'Additional charges', extra_charges.amount, req.user.username]
+      });
+    }
+
+    // Recompute totals
+    const totals = await recomputeBookingTotal(req.params.id);
+
+    const updated = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
+    res.json({ booking: updated.rows[0], totals });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update invoice: ' + err.message });
+  }
+});
+
 module.exports = router;
