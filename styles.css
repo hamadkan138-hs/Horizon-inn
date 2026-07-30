@@ -1,0 +1,124 @@
+/* styles.css */
+
+/* Prevent transitions during theme initialisation */
+.theme-prevent-transition * {
+  transition: none !important;
+}
+
+/* Base variables (light theme) */
+:root {
+  --bg: #ffffff;                 /* crisp white */
+  --surface: #fbfaf9;            /* slightly warm white */
+  --text: #222222;               /* deep charcoal text */
+  --muted: #6b6b6b;              /* muted text */
+  --accent: #b8860b;             /* soft gold */
+  --accent-strong: #a77408;      /* stronger gold */
+  --card-bg: #ffffff;
+  --glass: rgba(255, 255, 255, 0.7);
+  --shadow: 0 6px 20px rgba(34, 34, 34, 0.08);
+  --focus: rgba(184,134,11,0.18);
+}
+
+/* Dark theme variables */
+[data-theme="dark"] {
+  --bg: #071022;                 /* deep navy (very dark) */
+  --surface: #0f1724;            /* rich charcoal surface */
+  --text: #e7e7e5;               /* light warm text */
+  --muted: #c2c2bf;
+  --accent: #ffb84d;             /* warm ambient glow (golden-orange) */
+  --accent-strong: #ff9f1a;
+  --card-bg: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  --glass: rgba(255, 180, 77, 0.04);
+  --shadow: 0 8px 30px rgba(2,6,23,0.6);
+  --focus: rgba(255,184,77,0.12);
+}
+
+/* Page basics */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  transition: background-color 220ms ease, color 220ms ease;
+  line-height: 1.45;
+}
+
+/* Utility container */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem;
+  display:flex;
+  align-items:center;
+  gap:1rem;
+}
+
+/* Header */
+.site-header {
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  background: linear-gradient(180deg, var(--surface), transparent);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  backdrop-filter: blur(6px);
+}
+.brand {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--text);
+  margin: 0;
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  margin-left: auto;
+  background: none;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem;
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+.theme-toggle:focus {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Icons */
+.icon { display:block; }
+.icon-sun { color: var(--accent-strong); }
+.icon-moon { color: var(--muted); }
+
+/* Hero */
+.hero {
+  padding: 3rem 0;
+}
+.hero h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2rem;
+  color: var(--text);
+}
+.hero p { color: var(--muted); margin: 0 0 1.25rem 0; }
+
+/* Card */
+.card {
+  background: var(--card-bg);
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(255,255,255,0.04);
+  color: var(--text);
+}
+
+/* Links / accents */
+a, .accent {
+  color: var(--accent);
+  text-decoration: none;
+}
