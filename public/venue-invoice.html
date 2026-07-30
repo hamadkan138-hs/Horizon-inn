@@ -8,47 +8,190 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Lora', serif; color: #23242c; max-width: 800px; margin: 40px auto; padding: 0 24px; line-height: 1.6; }
+        body {
+            font-family: 'Lora', serif;
+            color: #e0e0e0;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 24px;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #0B0F1A 0%, #16213E 100%);
+            min-height: 100vh;
+        }
         h1, h2, h3, h4 { font-family: 'Playfair Display', serif; }
-        .invoice-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px; border-bottom: 2px solid #c6a15b; padding-bottom: 20px; margin-bottom: 24px; }
-        .invoice-header h1 { margin: 0; color: #14161f; font-size: 1.7rem; }
-        .hotel-contact { font-size: 0.85rem; color: #6f7180; margin-top: 6px; }
-        .invoice-meta { text-align: right; font-size: 0.9rem; color: #6f7180; }
-        .invoice-meta strong { color: #14161f; }
-        .status-badge { display: inline-block; padding: 3px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 4px; }
-        .status-badge.confirmed, .status-badge.completed { background: #eaf3ea; color: #3d7a4f; }
-        .status-badge.pending_cash { background: #fdf0e2; color: #9a6c1f; }
-        .status-badge.cancelled { background: #f6e9e8; color: #a5473c; }
-        .invoice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 30px; }
-        .invoice-block h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: #6f7180; margin: 0 0 10px; }
-        .invoice-block p { margin: 2px 0; font-size: 0.92rem; }
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 20px;
+            border-bottom: 1px solid rgba(198, 161, 91, 0.3);
+            padding-bottom: 20px;
+            margin-bottom: 24px;
+        }
+        .invoice-header h1 { margin: 0; color: #e0c48a; font-size: 1.7rem; }
+        .hotel-contact { font-size: 0.85rem; color: #a0a8b8; margin-top: 6px; }
+        .invoice-meta { text-align: right; font-size: 0.9rem; color: #a0a8b8; }
+        .invoice-meta strong { color: #e0c48a; }
+        .status-badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-top: 4px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .status-badge.confirmed, .status-badge.completed { background: rgba(61, 122, 79, 0.15); color: #6ee7b7; border-color: rgba(110, 231, 183, 0.3); }
+        .status-badge.pending_cash { background: rgba(217, 119, 6, 0.15); color: #fbbf24; border-color: rgba(251, 191, 36, 0.3); }
+        .status-badge.cancelled { background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(248, 113, 113, 0.3); }
+        .invoice-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+        .invoice-block {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.05);
+        }
+        .invoice-block h3 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #e0c48a;
+            margin: 0 0 10px;
+        }
+        .invoice-block p { margin: 2px 0; font-size: 0.92rem; color: #e0e0e0; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-        th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
-        th { background: #14161f; color: #e0c48a; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
+        th { background: rgba(14, 17, 31, 0.6); color: #e0c48a; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        td { color: #d0d0d0; }
         td.num, th.num { text-align: right; }
-        .section-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: #6f7180; margin: 0 0 10px; }
-        .totals { margin-left: auto; width: 300px; margin-bottom: 30px; }
-        .totals div { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.92rem; }
-        .totals .grand { font-weight: 700; font-size: 1.25rem; border-top: 2px solid #14161f; padding-top: 10px; margin-top: 4px; }
-        .notes-box { background: #f8f7f3; border-left: 3px solid #c6a15b; padding: 14px 18px; font-size: 0.9rem; color: #444; margin-bottom: 30px; white-space: pre-wrap; }
-        .footer-note { text-align: center; color: #6f7180; font-size: 0.95rem; padding-top: 20px; border-top: 1px solid #eee; }
-        .footer-note strong { color: #14161f; font-family: 'Playfair Display', serif; }
-        .actions { margin-bottom: 30px; display: flex; gap: 10px; flex-wrap: wrap; }
-        .btn { background: #14161f; color: #fff; border: none; padding: 12px 26px; cursor: pointer; font-size: 0.82rem; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; display: inline-block; }
-        .btn:hover { background: #c6a15b; color: #14161f; }
+        .section-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #e0c48a;
+            margin: 0 0 10px;
+        }
+        .totals {
+            margin-left: auto;
+            width: 300px;
+            margin-bottom: 30px;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.05);
+        }
+        .totals div {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 0.92rem;
+            color: #d0d0d0;
+        }
+        .totals .grand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 10px;
+            margin-top: 8px;
+            color: #e0c48a;
+        }
+        .notes-box {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-left: 3px solid #e0c48a;
+            border-radius: 8px;
+            padding: 14px 18px;
+            font-size: 0.9rem;
+            color: #d0d0d0;
+            margin-bottom: 30px;
+            white-space: pre-wrap;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.05);
+        }
+        .footer-note {
+            text-align: center;
+            color: #a0a8b8;
+            font-size: 0.95rem;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .footer-note strong { color: #e0c48a; font-family: 'Playfair Display', serif; }
+        .actions {
+            margin-bottom: 30px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(167, 139, 250, 0.15) 100%);
+            backdrop-filter: blur(10px);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 12px 26px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            text-decoration: none;
+            display: inline-block;
+            border-radius: 8px;
+            transition: all 200ms ease-out;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+        .btn:hover {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(167, 139, 250, 0.25) 100%);
+            border-color: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2);
+        }
+        .btn:active { transform: translateY(0); }
         @media print {
             @page { size: A4; margin: 16mm; }
             .actions { display: none; }
-            body { margin: 0; max-width: 100%; }
+            body {
+                margin: 0;
+                max-width: 100%;
+                background: white;
+                color: #000;
+            }
+            .invoice-block, .totals, .notes-box {
+                background: white;
+                border-color: #ddd;
+                color: #000;
+            }
+            th, td { color: #000; border-bottom-color: #ddd; }
+            .invoice-header h1, .invoice-meta strong, .invoice-block h3, .section-label, .totals .grand, .footer-note strong { color: #000; }
+            .status-badge.confirmed, .status-badge.completed { background: #eaf3ea; color: #3d7a4f; }
+            .status-badge.pending_cash { background: #fdf0e2; color: #9a6c1f; }
+            .status-badge.cancelled { background: #f6e9e8; color: #a5473c; }
         }
         @media (max-width: 600px) {
+            body { padding: 0 16px; margin: 20px auto; }
             .invoice-grid { grid-template-columns: 1fr; }
             .invoice-meta { text-align: left; }
             .totals { width: 100%; }
             table { font-size: 0.8rem; }
             th, td { padding: 8px 4px; }
         }
-        #status { color: #6f7180; }
+        #status { color: #a0a8b8; }
+        #invoiceContent { animation: fadeIn 400ms ease-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -95,7 +238,7 @@
 
         <div class="totals">
             <div><span>Subtotal</span><span id="subtotal"></span></div>
-            <div id="discountLine" style="display: none; color: #3d7a4f;"><span>Discount</span><span id="discountAmount"></span></div>
+            <div id="discountLine" style="display: none; color: #6ee7b7;"><span>Discount</span><span id="discountAmount"></span></div>
             <div id="gstLine" style="display: none;"><span>GST</span><span id="gstAmount"></span></div>
             <div id="depositLine" style="display: none;"><span>Security Deposit (refundable)</span><span id="depositAmount"></span></div>
             <div class="grand"><span>Total Due</span><span id="totalDue"></span></div>
