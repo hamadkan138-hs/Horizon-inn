@@ -617,22 +617,12 @@ a:hover {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0);
-  backdrop-filter: blur(0);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: flex-end;
   justify-content: center;
   z-index: 1000;
-  opacity: 0;
-  pointer-events: none;
-  transition: all 200ms ease-in-out;
-}
-
-.modal-overlay.active {
-  opacity: 1;
-  pointer-events: auto;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
 }
 
 .modal-box {
