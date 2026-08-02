@@ -770,7 +770,7 @@ function openCheckoutModal(booking) {
 
     // Show modal with slide-up animation
     const overlay = document.getElementById('checkoutModalOverlay');
-    overlay.classList.add('active');
+    overlay.style.display = 'flex';
 
     // Animate breakdown items with stagger
     setTimeout(() => {
@@ -785,16 +785,11 @@ function openCheckoutModal(booking) {
 }
 
 document.getElementById('closeCheckoutModalBtn').addEventListener('click', () => {
-    const overlay = document.getElementById('checkoutModalOverlay');
-    overlay.classList.remove('active');
-    setTimeout(() => {
-        overlay.classList.remove('active');
-    }, 300);
+    document.getElementById('checkoutModalOverlay').style.display = 'none';
 });
 document.getElementById('checkoutModalOverlay').addEventListener('click', (e) => {
     if (e.target.id === 'checkoutModalOverlay') {
-        const overlay = document.getElementById('checkoutModalOverlay');
-        overlay.classList.remove('active');
+        document.getElementById('checkoutModalOverlay').style.display = 'none';
     }
 });
 
@@ -816,12 +811,8 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
             transactionId: document.getElementById('checkoutTransactionId').value
         });
 
-        // Close modal with animation
-        const overlay = document.getElementById('checkoutModalOverlay');
-        overlay.classList.remove('active');
-        setTimeout(() => {
-            overlay.classList.remove('active');
-        }, 300);
+        // Close modal
+        document.getElementById('checkoutModalOverlay').style.display = 'none';
 
         // Show success toast
         const when = formatPKT(result.booking.checked_out_at);
@@ -1027,8 +1018,7 @@ async function openHandoverModal() {
         document.getElementById('handoverNote').value = '';
 
         // Show modal with slide-up animation
-        const overlay = document.getElementById('handoverModalOverlay');
-        overlay.classList.add('active');
+        document.getElementById('handoverModalOverlay').style.display = 'flex';
 
         // Animate breakdown items
         setTimeout(() => {
@@ -1052,13 +1042,11 @@ async function openHandoverModal() {
 
 document.getElementById('openHandoverModalBtn').addEventListener('click', openHandoverModal);
 document.getElementById('closeHandoverModalBtn').addEventListener('click', () => {
-    const overlay = document.getElementById('handoverModalOverlay');
-    overlay.classList.remove('active');
+    document.getElementById('handoverModalOverlay').style.display = 'none';
 });
 document.getElementById('handoverModalOverlay').addEventListener('click', (e) => {
     if (e.target.id === 'handoverModalOverlay') {
-        const overlay = document.getElementById('handoverModalOverlay');
-        overlay.classList.remove('active');
+        document.getElementById('handoverModalOverlay').style.display = 'none';
     }
 });
 document.getElementById('handoverReceiverType').addEventListener('change', (e) => {
@@ -1081,9 +1069,8 @@ document.getElementById('handoverForm').addEventListener('submit', async (e) => 
             note: document.getElementById('handoverNote').value
         });
 
-        // Close modal with animation
-        const overlay = document.getElementById('handoverModalOverlay');
-        overlay.classList.remove('active');
+        // Close modal
+        document.getElementById('handoverModalOverlay').style.display = 'none';
 
         // Show success toast
         if (typeof AnimationEngine !== 'undefined') {
