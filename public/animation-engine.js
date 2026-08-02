@@ -20,7 +20,12 @@ const AnimationEngine = {
    * @returns {anime.AnimeInstance}
    */
   staggerFadeSlideUp(selector, staggerDelay = 100, duration = 500) {
-    if (this.prefersReducedMotion) {
+    // If anime.js failed to load (CDN blocked, ad-blocker, network issue),
+    // fall back to revealing content instantly instead of leaving it stuck
+    // at opacity:0 forever — the same fallback already used for
+    // prefers-reduced-motion, since a missing animation library must never
+    // be able to permanently hide real content.
+    if (this.prefersReducedMotion || typeof anime === 'undefined') {
       document.querySelectorAll(selector).forEach(el => {
         el.style.opacity = '1';
         el.style.transform = 'translateY(0)';
@@ -220,7 +225,7 @@ const AnimationEngine = {
    * @returns {anime.AnimeInstance}
    */
   fadeTransition(oldSelector, newSelector, duration = 300) {
-    if (this.prefersReducedMotion) {
+    if (this.prefersReducedMotion || typeof anime === 'undefined') {
       const oldEl = typeof oldSelector === 'string' ? document.querySelector(oldSelector) : oldSelector;
       const newEl = typeof newSelector === 'string' ? document.querySelector(newSelector) : newSelector;
 
@@ -395,7 +400,7 @@ const AnimationEngine = {
    * @returns {anime.AnimeInstance}
    */
   pageTransition(exitSelector, enterSelector, duration = 400) {
-    if (this.prefersReducedMotion) {
+    if (this.prefersReducedMotion || typeof anime === 'undefined') {
       const exitEl = typeof exitSelector === 'string' ? document.querySelector(exitSelector) : exitSelector;
       const enterEl = typeof enterSelector === 'string' ? document.querySelector(enterSelector) : enterSelector;
       if (exitEl) exitEl.style.opacity = '0';

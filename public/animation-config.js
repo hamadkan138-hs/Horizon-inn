@@ -109,7 +109,10 @@ class LoadingStateManager {
     const rows = this.content.querySelectorAll('.animate-row');
     if (rows.length === 0) return;
 
-    if (this.prefersReducedMotion) {
+    // If anime.js failed to load, reveal instantly rather than leaving
+    // content stuck at opacity:0 forever — same fallback as
+    // prefers-reduced-motion.
+    if (this.prefersReducedMotion || typeof anime === 'undefined') {
       rows.forEach(row => {
         row.style.opacity = '1';
         row.style.transform = 'translateY(0)';
@@ -138,7 +141,7 @@ class LoadingStateManager {
 
     await new Promise(resolve => {
       setTimeout(() => {
-        if (this.prefersReducedMotion) {
+        if (this.prefersReducedMotion || typeof anime === 'undefined') {
           this.skeleton.style.display = 'none';
           resolve();
         } else {

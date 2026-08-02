@@ -229,7 +229,10 @@ const MicroInteractions = {
 
     const buttons = container.querySelectorAll('button, .btn, a.btn');
 
-    if (this.prefersReducedMotion) {
+    // If anime.js failed to load, reveal instantly rather than leaving
+    // buttons stuck at opacity:0 forever — same fallback as
+    // prefers-reduced-motion.
+    if (this.prefersReducedMotion || typeof anime === 'undefined') {
       buttons.forEach(btn => {
         btn.style.opacity = '1';
         btn.style.transform = 'translateY(0)';
@@ -407,7 +410,7 @@ const MicroInteractions = {
   pageTransition(exitElement, enterElement, duration = 400) {
     if (!exitElement || !enterElement) return;
 
-    if (this.prefersReducedMotion) {
+    if (this.prefersReducedMotion || typeof anime === 'undefined') {
       if (exitElement) exitElement.style.opacity = '0';
       if (enterElement) {
         enterElement.style.opacity = '1';

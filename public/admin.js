@@ -122,7 +122,7 @@ document.querySelectorAll('.admin-tab[data-tab]').forEach((btn) => {
         // Show new panel with fade animation
         const newPanel = document.getElementById(`panel-${btn.dataset.tab}`);
         newPanel.style.display = 'block';
-        if (typeof AnimationEngine !== 'undefined' && !AnimationEngine.prefersReducedMotion) {
+        if (typeof AnimationEngine !== 'undefined' && !AnimationEngine.prefersReducedMotion && typeof anime !== 'undefined') {
             anime({
               targets: newPanel,
               opacity: [0, 1],
