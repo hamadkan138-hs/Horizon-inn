@@ -3591,7 +3591,7 @@ table.admin-table th {
 .kiosk-selfservice .ks-idle-title {
     font-family: 'Playfair Display', serif;
     font-size: clamp(2rem, 5vw, 3.1rem);
-    color: var(--white, #fff);
+    color: #fff;
     margin-bottom: 12px;
     font-weight: 600;
 }
@@ -3662,7 +3662,7 @@ table.admin-table th {
 .kiosk-selfservice .ks-panel h2 {
     font-family: 'Playfair Display', serif;
     font-size: clamp(1.5rem, 3.4vw, 2.1rem);
-    color: var(--white, #fff);
+    color: #fff;
     margin-bottom: 8px;
 }
 
@@ -3693,7 +3693,7 @@ table.admin-table th {
     padding: 0 20px;
     font-family: inherit;
     font-size: 1.25rem;
-    color: var(--white, #fff);
+    color: #fff;
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 12px;
@@ -3729,7 +3729,7 @@ table.admin-table th {
 
 .kiosk-selfservice .ks-details dd {
     margin: 0;
-    color: var(--white, #fff);
+    color: #fff;
     font-size: 1.05rem;
     font-weight: 600;
     text-align: right;
