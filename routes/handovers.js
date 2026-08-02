@@ -107,10 +107,10 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Receiver name is required (owner name, bank name, or the staff taking over)' });
     }
 
+    // Zero pending bookings/expenses is a valid state, not an error — staff
+    // must always be able to record a shift close-out (even an empty one)
+    // instead of getting stuck unable to submit the handover form.
     const summary = await computeUnswept();
-    if (summary.bookingCount === 0 && summary.expenses.length === 0) {
-      return res.status(400).json({ error: 'There is nothing to hand over right now — no checked-out bookings or expenses are pending.' });
-    }
 
     const insertResult = await db.execute({
       sql: `
