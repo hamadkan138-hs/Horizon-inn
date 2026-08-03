@@ -3376,6 +3376,96 @@ table.admin-table th {
     transform: scale(1.08);
 }
 
+/* ---- Sticky booking CTA bar ----
+   Hidden via transform (not display) so the slide-in/out actually
+   transitions instead of snapping; off-screen at translateY(100%) is
+   already unreachable to clicks/focus without needing pointer-events. */
+.sticky-cta-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 950;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 28px;
+    background: rgba(10, 11, 14, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--hair);
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.35);
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sticky-cta-bar.visible {
+    transform: translateY(0);
+}
+
+.sticky-cta-info {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    color: var(--text-light);
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sticky-cta-price {
+    color: var(--gold);
+    font-size: 1.2rem;
+    font-weight: 700;
+    font-family: 'Playfair Display', serif;
+}
+
+.sticky-cta-btn.cta-button {
+    padding: 11px 30px;
+    font-size: 0.78rem;
+    background: var(--gold);
+    color: var(--on-gold);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.sticky-cta-btn.cta-button:hover {
+    background: var(--gold-soft);
+}
+
+.sticky-cta-btn.cta-button::after {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Move the WhatsApp bubble above the sticky bar instead of letting the two
+   fixed-position elements overlap at the bottom-right corner. */
+body.has-sticky-cta .whatsapp-float-btn {
+    bottom: 92px;
+}
+
+@media (max-width: 640px) {
+    .sticky-cta-bar {
+        padding: 12px 16px;
+    }
+    .sticky-cta-info {
+        font-size: 0.72rem;
+        gap: 4px;
+    }
+    .sticky-cta-price {
+        font-size: 1rem;
+    }
+    .sticky-cta-btn.cta-button {
+        padding: 10px 20px;
+        font-size: 0.72rem;
+    }
+    body.has-sticky-cta .whatsapp-float-btn {
+        bottom: 84px;
+    }
+}
+
 .social-proof-bar {
     background: var(--charcoal);
     padding: 30px 0;

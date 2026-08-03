@@ -96,6 +96,45 @@ if (navbar) {
     window.addEventListener('scroll', toggleNavbarBg, { passive: true });
 }
 
+// Sticky booking CTA bar — appears once the guest has scrolled past the
+// hero, hides again once the real booking form scrolls into view so there's
+// never a second "Book Now" sitting on top of the actual form. Declared as
+// a hoisted function (updateStickyCtaPrice) so renderRooms(), defined later
+// in this file, can call it without any load-order dependency.
+const stickyCtaBar = document.getElementById('stickyCtaBar');
+let updateStickyCtaPrice = () => {};
+if (stickyCtaBar) {
+    const stickyCtaPrice = document.getElementById('stickyCtaPrice');
+    const bookingSection = document.getElementById('booking');
+    let pastHero = false;
+    let bookingInView = false;
+
+    const updateStickyCtaVisibility = () => {
+        const shouldShow = pastHero && !bookingInView;
+        stickyCtaBar.classList.toggle('visible', shouldShow);
+        document.body.classList.toggle('has-sticky-cta', shouldShow);
+    };
+
+    window.addEventListener('scroll', () => {
+        pastHero = window.scrollY > window.innerHeight * 0.6;
+        updateStickyCtaVisibility();
+    }, { passive: true });
+
+    if (bookingSection) {
+        const bookingObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => { bookingInView = entry.isIntersecting; });
+            updateStickyCtaVisibility();
+        }, { threshold: 0.1 });
+        bookingObserver.observe(bookingSection);
+    }
+
+    updateStickyCtaPrice = (rooms) => {
+        const prices = rooms.map((r) => Number(r.price)).filter((p) => p > 0);
+        if (!prices.length) return;
+        stickyCtaPrice.textContent = money(Math.min(...prices));
+    };
+}
+
 // Anyone who has asked their OS to reduce motion gets the finished state
 // immediately instead of any scroll-driven movement.
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -362,6 +401,7 @@ function renderRooms(rooms) {
     });
     staggerReveal(roomsGrid, ':scope > .room-card');
     initGallerySliders();
+    updateStickyCtaPrice(rooms);
 }
 
 function renderRoomOptions(rooms) {
