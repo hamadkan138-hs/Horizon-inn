@@ -53,7 +53,12 @@ const AnimationEngine = {
    * @returns {anime.AnimeInstance}
    */
   countUp(selector, targetValue, duration = 1200) {
-    if (this.prefersReducedMotion) {
+    // Same fallback as every other animation here: if anime.js didn't load,
+    // jump straight to the final value instead of throwing and silently
+    // aborting whatever code runs after this call (this sits inline in
+    // several places with no per-call try/catch, so an uncaught throw here
+    // has previously taken out the rest of the calling function too).
+    if (this.prefersReducedMotion || typeof anime === 'undefined') {
       const el = typeof selector === 'string' ? document.querySelector(selector) : selector;
       if (el) el.textContent = targetValue.toLocaleString();
       return null;
@@ -141,7 +146,7 @@ const AnimationEngine = {
    * @returns {anime.AnimeInstance}
    */
   slidePanelFromRight(selector, duration = 300) {
-    if (this.prefersReducedMotion) {
+    if (this.prefersReducedMotion || typeof anime === 'undefined') {
       const el = typeof selector === 'string' ? document.querySelector(selector) : selector;
       if (el) {
         el.style.opacity = '1';
@@ -166,7 +171,7 @@ const AnimationEngine = {
    * @returns {anime.AnimeInstance}
    */
   slidePanelFromBottom(selector, duration = 400) {
-    if (this.prefersReducedMotion) {
+    if (this.prefersReducedMotion || typeof anime === 'undefined') {
       const el = typeof selector === 'string' ? document.querySelector(selector) : selector;
       if (el) {
         el.style.opacity = '1';
@@ -192,7 +197,7 @@ const AnimationEngine = {
    * @returns {anime.AnimeInstance}
    */
   expandCard(cardSelector, contentSelector, duration = 400) {
-    if (this.prefersReducedMotion) {
+    if (this.prefersReducedMotion || typeof anime === 'undefined') {
       const card = typeof cardSelector === 'string' ? document.querySelector(cardSelector) : cardSelector;
       const content = typeof contentSelector === 'string' ? document.querySelector(contentSelector) : contentSelector;
 
@@ -284,7 +289,7 @@ const AnimationEngine = {
    * @returns {anime.AnimeInstance}
    */
   chartBarGrow(barSelector, heightProperty = 'height', duration = 600) {
-    if (this.prefersReducedMotion) {
+    if (this.prefersReducedMotion || typeof anime === 'undefined') {
       document.querySelectorAll(barSelector).forEach(el => {
         el.style[heightProperty] = el.dataset.targetHeight || '100%';
       });
@@ -338,7 +343,7 @@ const AnimationEngine = {
    * @returns {anime.AnimeInstance}
    */
   errorSlideIn(errorSelector, duration = 300) {
-    if (this.prefersReducedMotion) {
+    if (this.prefersReducedMotion || typeof anime === 'undefined') {
       const el = typeof errorSelector === 'string' ? document.querySelector(errorSelector) : errorSelector;
       if (el) {
         el.style.opacity = '1';
@@ -374,7 +379,7 @@ const AnimationEngine = {
    * @returns {anime.AnimeInstance}
    */
   toastSlideIn(toastSelector, duration = 400) {
-    if (this.prefersReducedMotion) {
+    if (this.prefersReducedMotion || typeof anime === 'undefined') {
       const el = typeof toastSelector === 'string' ? document.querySelector(toastSelector) : toastSelector;
       if (el) {
         el.style.opacity = '1';
@@ -436,7 +441,7 @@ const AnimationEngine = {
    * @param {string|Element} summarySelector - Modal summary container
    */
   animateModalSummary(summarySelector, baseDelay = 100) {
-    if (this.prefersReducedMotion) {
+    if (this.prefersReducedMotion || typeof anime === 'undefined') {
       const container = typeof summarySelector === 'string'
         ? document.querySelector(summarySelector)
         : summarySelector;

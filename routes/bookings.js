@@ -385,7 +385,15 @@ router.post('/quick', adminAuth, requireRole('admin', 'staff'), async (req, res)
       await initRoomIfNeeded(physicalRoomId, req.user.username).catch((err) => console.error('[minibar init]', err));
     }
 
-    const bookingResult = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [bookingId] });
+    const bookingResult = await db.execute({
+      sql: `
+        SELECT bookings.*, physical_rooms.room_number AS physical_room_number
+        FROM bookings
+        LEFT JOIN physical_rooms ON physical_rooms.id = bookings.physical_room_id
+        WHERE bookings.id = ?
+      `,
+      args: [bookingId]
+    });
 
     res.status(201).json({
       booking: bookingResult.rows[0],
@@ -429,10 +437,12 @@ router.get('/', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
     const result = await db.execute({
       sql: `
         SELECT bookings.*, rooms.name AS room_name,
+               physical_rooms.room_number AS physical_room_number,
                COALESCE(p.paid, 0) AS paid_total,
                bookings.total_amount - COALESCE(p.paid, 0) AS balance
         FROM bookings
         JOIN rooms ON rooms.id = bookings.room_id
+        LEFT JOIN physical_rooms ON physical_rooms.id = bookings.physical_room_id
         LEFT JOIN (SELECT booking_id, SUM(amount) AS paid FROM payments GROUP BY booking_id) p ON p.booking_id = bookings.id
         ${whereClause}
         ORDER BY bookings.created_at DESC
@@ -479,9 +489,11 @@ router.get('/:id', adminAuth, requireRole('admin', 'staff'), async (req, res) =>
   try {
     const result = await db.execute({
       sql: `
-        SELECT bookings.*, rooms.name AS room_name, rooms.price AS room_price
+        SELECT bookings.*, rooms.name AS room_name, rooms.price AS room_price,
+               physical_rooms.room_number AS physical_room_number
         FROM bookings
         JOIN rooms ON rooms.id = bookings.room_id
+        LEFT JOIN physical_rooms ON physical_rooms.id = bookings.physical_room_id
         WHERE bookings.id = ?
       `,
       args: [req.params.id]

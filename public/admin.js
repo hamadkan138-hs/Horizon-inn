@@ -17,6 +17,14 @@ const STATUS_TRANSITIONS = {
     pending: ['confirmed', 'cancelled'],
     confirmed: ['checked_in', 'cancelled']
 };
+// A booking's physical room gets assigned two different ways — a manually
+// typed invoice-notes field, or automatically via physical_room_id when
+// front desk creates/checks in a walk-in — and either one alone can be
+// blank. Always resolve to whichever one actually has a value so staff see
+// the real assigned room number regardless of which path set it.
+function assignedRoomNumber(b) {
+    return b.room_number || b.physical_room_number || '';
+}
 const PAYMENT_METHOD_LABELS = {
     pay_at_property: 'Pay at Property', bank_transfer: 'Bank Transfer',
     easypaisa: 'EasyPaisa', jazzcash: 'JazzCash', cash: 'Cash'
@@ -367,7 +375,10 @@ function bookingRowHtml(b) {
                 ${escapeHtml(b.name)}<br><small>${escapeHtml(b.email)} &middot; ${escapeHtml(b.phone)}</small>
                 ${b.cancellation_requested_at ? '<br><span class="status-pill cancelled" style="margin-top: 4px; display: inline-block;">Cancellation Requested</span>' : ''}
             </td>
-            <td>${escapeHtml(b.room_name)}</td>
+            <td>
+                ${escapeHtml(b.room_name)}
+                ${assignedRoomNumber(b) ? `<br><small>Room ${escapeHtml(assignedRoomNumber(b))}</small>` : ''}
+            </td>
             <td>${b.checkin}</td>
             <td>${b.checkout}</td>
             <td>${b.guests}</td>
@@ -417,6 +428,7 @@ async function renderBookingDetail(id) {
         cell.innerHTML = `
             ${verifyBanner}
             <div class="detail-grid">
+                ${detailField('Room Number', assignedRoomNumber(b))}
                 ${detailField('CNIC / Passport', b.cnic)}
                 ${detailField('Marital Status', b.marital_status)}
                 ${detailField('Address', b.address)}
@@ -435,7 +447,7 @@ async function renderBookingDetail(id) {
             <div class="detail-subsection">
                 <h4>Invoice &mdash; ${escapeHtml(b.invoice_number)}</h4>
                 <form class="inline-form invoice-fields-form" data-id="${id}">
-                    <input type="text" name="roomNumber" value="${escapeHtml(b.room_number)}" placeholder="Room number (e.g. 12)">
+                    <input type="text" name="roomNumber" value="${escapeHtml(assignedRoomNumber(b))}" placeholder="Room number (e.g. 12)">
                     <input type="text" name="invoiceNotes" value="${escapeHtml(b.invoice_notes)}" placeholder="Notes to print on invoice">
                     <button type="submit" class="action-btn confirm">Save</button>
                     <a class="action-btn details-toggle" href="invoice.html?id=${id}" target="_blank" rel="opener">Open Invoice</a>
@@ -864,7 +876,8 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
 
 /* ---------------- Daily Summary ---------------- */
 function dailyRowHtml(b) {
-    return `<tr><td>${escapeHtml(b.name)}<br><small>${escapeHtml(b.phone)}</small></td><td>${escapeHtml(b.room_name)}</td><td>${b.guests}</td><td><span class="status-pill ${b.status}">${STATUS_LABELS[b.status]}</span></td><td>${money(b.balance)}</td></tr>`;
+    const roomCell = assignedRoomNumber(b) ? `${escapeHtml(b.room_name)}<br><small>Room ${escapeHtml(assignedRoomNumber(b))}</small>` : escapeHtml(b.room_name);
+    return `<tr><td>${escapeHtml(b.name)}<br><small>${escapeHtml(b.phone)}</small></td><td>${roomCell}</td><td>${b.guests}</td><td><span class="status-pill ${b.status}">${STATUS_LABELS[b.status]}</span></td><td>${money(b.balance)}</td></tr>`;
 }
 
 async function loadDailySummary() {
@@ -890,7 +903,7 @@ async function loadDailySummary() {
         `).join('') || '<tr><td colspan="3">No expenses recorded today.</td></tr>';
 
         document.getElementById('outstandingBody').innerHTML = data.outstandingBookings.map((b) => `
-            <tr><td>${escapeHtml(b.name)}<br><small>${escapeHtml(b.phone)}</small></td><td>${escapeHtml(b.room_name)}</td><td><span class="status-pill ${b.status}">${STATUS_LABELS[b.status]}</span></td><td>${money(b.total_amount)}</td><td>${money(b.balance)}</td></tr>
+            <tr><td>${escapeHtml(b.name)}<br><small>${escapeHtml(b.phone)}</small></td><td>${assignedRoomNumber(b) ? `${escapeHtml(b.room_name)}<br><small>Room ${escapeHtml(assignedRoomNumber(b))}</small>` : escapeHtml(b.room_name)}</td><td><span class="status-pill ${b.status}">${STATUS_LABELS[b.status]}</span></td><td>${money(b.total_amount)}</td><td>${money(b.balance)}</td></tr>
         `).join('') || '<tr><td colspan="5">No outstanding balances. 🎉</td></tr>';
     } catch (err) { /* handled */ }
 }
@@ -985,7 +998,7 @@ async function loadHandoverPanel() {
                 <td>${b.checkout}</td>
                 <td>${escapeHtml(b.invoice_number)}</td>
                 <td>${escapeHtml(b.name)}</td>
-                <td>${b.room_number ? escapeHtml(b.room_number) : '&mdash;'}</td>
+                <td>${assignedRoomNumber(b) ? escapeHtml(assignedRoomNumber(b)) : '&mdash;'}</td>
                 <td>${b.checkin}</td>
                 <td>${b.checkout}</td>
                 <td>${money(b.total_amount)}</td>

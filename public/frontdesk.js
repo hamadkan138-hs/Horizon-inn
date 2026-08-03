@@ -661,6 +661,7 @@ document.getElementById('foundCheckinForm').addEventListener('submit', async (e)
         showCheckedInState({
             id: result.booking.id,
             roomName: '',
+            roomNumber: result.booking.room_number || result.booking.physical_room_number || '',
             roomId,
             checkin: result.booking.checkin,
             checkout: result.booking.checkout,
@@ -732,6 +733,7 @@ document.getElementById('newGuestForm').addEventListener('submit', async (e) => 
         showCheckedInState({
             id: result.booking.id,
             roomName: '',
+            roomNumber: result.booking.room_number || result.booking.physical_room_number || '',
             roomId,
             checkin: result.booking.checkin,
             checkout: result.booking.checkout,
@@ -761,8 +763,15 @@ async function showCheckedInState(booking, guestName) {
     }
     booking.roomName = roomName;
 
+    // Lead with the physical room number (what staff actually scan/track a
+    // guest by) and keep the room type as context, since roomName alone
+    // ("Deluxe Twin Room") doesn't say which specific room they're in.
+    const roomDisplay = booking.roomNumber
+        ? `Room ${booking.roomNumber} — ${roomName || ''}`.trim().replace(/—\s*$/, '').trim()
+        : (roomName || '—');
+
     document.getElementById('checkedInGuestName').textContent = guestName || '';
-    document.getElementById('checkedInRoom').textContent = roomName || '—';
+    document.getElementById('checkedInRoom').textContent = roomDisplay;
     document.getElementById('checkedInTime').textContent = formatPKT(booking.createdAt);
     document.getElementById('checkedInExpected').textContent = booking.checkout || '—';
     document.getElementById('sendInvoiceMessage').textContent = '';

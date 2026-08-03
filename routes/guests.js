@@ -60,9 +60,11 @@ router.get('/lookup', async (req, res) => {
 
     const activeResult = await db.execute({
       sql: `
-        SELECT bookings.*, rooms.name AS room_name, COALESCE(p.paid, 0) AS paid_total
+        SELECT bookings.*, rooms.name AS room_name, physical_rooms.room_number AS physical_room_number,
+               COALESCE(p.paid, 0) AS paid_total
         FROM bookings
         JOIN rooms ON rooms.id = bookings.room_id
+        LEFT JOIN physical_rooms ON physical_rooms.id = bookings.physical_room_id
         LEFT JOIN (SELECT booking_id, SUM(amount) AS paid FROM payments GROUP BY booking_id) p ON p.booking_id = bookings.id
         WHERE bookings.cnic = ? AND bookings.status IN ('confirmed', 'checked_in')
         ORDER BY bookings.created_at DESC
@@ -86,7 +88,7 @@ router.get('/lookup', async (req, res) => {
         id: active.id,
         roomId: active.room_id,
         roomName: active.room_name,
-        roomNumber: active.room_number,
+        roomNumber: active.room_number || active.physical_room_number || '',
         checkin: active.checkin,
         checkout: active.checkout,
         status: active.status,
