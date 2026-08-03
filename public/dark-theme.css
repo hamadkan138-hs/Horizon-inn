@@ -125,6 +125,13 @@ input[type="date"], input[type="datetime-local"] { color-scheme: dark; }
     font-size: 0.82rem; letter-spacing: 0.01em; font-weight: 600; white-space: nowrap;
     padding: 10px 18px; border-radius: 10px; cursor: pointer; transition: all 0.25s ease;
     display: flex; align-items: center; gap: 8px;
+    /* The site-wide button reset (glass-theme.css) sets overflow:hidden on
+       every button, which makes flex items shrinkable below their content
+       size (auto min-width resolves to 0 when overflow isn't visible).
+       Without this, the pill row crushes every label down to a sliver of
+       its first letter instead of scrolling — flex-shrink:0 keeps each tab
+       at its natural width so .admin-tabs's overflow-x:auto can do its job. */
+    flex-shrink: 0;
 }
 .admin-tab:hover { color: var(--gold-light); transform: translateY(-1px); }
 .admin-tab.active { background: var(--gold); color: #14151a; font-weight: 700; }

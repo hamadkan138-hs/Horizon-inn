@@ -2351,6 +2351,28 @@ table.admin-table th {
         display: flex;
     }
 
+    /* A handful of utility pages (admin, front desk, investor, gift
+       voucher, manage booking) force this menu to stay a static horizontal
+       row via inline style, opting out of the hamburger collapse above —
+       but with no wrap and no width limit, their small utility nav links
+       crush together and overlap the logo on narrow screens. Inline style
+       doesn't set flex-wrap, gap, or font-size, so these still apply. */
+    .nav-container {
+        flex-wrap: wrap;
+        row-gap: 8px;
+    }
+
+    .navbar .nav-menu[style*="position: static"] {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        row-gap: 6px;
+        gap: 12px !important;
+    }
+
+    .navbar .nav-menu[style*="position: static"] a {
+        font-size: 0.78rem;
+    }
+
     .hero-content h1 {
         font-size: 2.4rem;
     }
