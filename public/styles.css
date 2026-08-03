@@ -1579,6 +1579,27 @@ table.admin-table th {
     gap: 12px 24px;
 }
 
+/* .detail-grid's auto-fit columns size against the *table's* full
+   scrollable width (900px+, driven by the data columns), not the mobile
+   viewport, since it lives in a colspan cell inside that same table — so
+   on a phone it still renders 3-4 columns side by side, requiring a
+   horizontal scroll just to read a guest's detail fields. Force a single
+   column below the width where that stops being readable, independent of
+   how wide the table around it actually is. */
+@media (max-width: 700px) {
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Shared wrapper for any wide data table (bookings, guests, transactions,
+   etc.) so it scrolls horizontally within itself instead of forcing the
+   whole page to overflow. */
+.table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 .detail-field {
     font-size: 0.85rem;
     color: var(--text-dark);
