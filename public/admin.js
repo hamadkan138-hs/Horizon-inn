@@ -8,6 +8,15 @@ const STATUS_LABELS = {
     pending: 'Pending', confirmed: 'Confirmed', checked_in: 'Checked In',
     checked_out: 'Checked Out', cancelled: 'Cancelled'
 };
+// The workflow only moves forward — matches the transition map enforced
+// server-side in routes/bookings.js. checked_in only ever moves to
+// checked_out (via the dedicated Checkout button, not this dropdown);
+// checked_out/cancelled aren't listed because they're locked — no further
+// moves are offered at all.
+const STATUS_TRANSITIONS = {
+    pending: ['confirmed', 'cancelled'],
+    confirmed: ['checked_in', 'cancelled']
+};
 const PAYMENT_METHOD_LABELS = {
     pay_at_property: 'Pay at Property', bank_transfer: 'Bank Transfer',
     easypaisa: 'EasyPaisa', jazzcash: 'JazzCash', cash: 'Cash'
@@ -329,6 +338,26 @@ function detailField(label, value) {
     return `<div class="detail-field"><strong>${label}:</strong> ${escapeHtml(value) || '&mdash;'}</div>`;
 }
 
+// Once checked in, the only remaining move is checkout — no dropdown, just
+// a single button, so there's no way to bounce a checked-in guest back to
+// pending or cancel the room from here. Checked-out/cancelled bookings are
+// locked (server-enforced too) and shown as a plain status pill with no
+// control at all.
+function bookingStatusCellHtml(b) {
+    if (b.status === 'checked_out' || b.status === 'cancelled') {
+        return `<span class="status-pill ${b.status}">${STATUS_LABELS[b.status]}</span>`;
+    }
+    if (b.status === 'checked_in') {
+        return `<button type="button" class="action-btn confirm checkout-btn" data-id="${b.id}">Checkout</button>`;
+    }
+    const options = [b.status, ...(STATUS_TRANSITIONS[b.status] || [])];
+    return `
+        <select class="status-select" data-id="${b.id}">
+            ${options.map((s) => `<option value="${s}" ${s === b.status ? 'selected' : ''}>${STATUS_LABELS[s]}</option>`).join('')}
+        </select>
+    `;
+}
+
 function bookingRowHtml(b) {
     const balance = Math.max(0, Number(b.total_amount) - (b._paidTotal || 0));
     return `
@@ -342,11 +371,7 @@ function bookingRowHtml(b) {
             <td>${b.checkin}</td>
             <td>${b.checkout}</td>
             <td>${b.guests}</td>
-            <td>
-                <select class="status-select" data-id="${b.id}">
-                    ${BOOKING_STATUSES.map((s) => `<option value="${s}" ${s === b.status ? 'selected' : ''}>${STATUS_LABELS[s]}</option>`).join('')}
-                </select>
-            </td>
+            <td>${bookingStatusCellHtml(b)}</td>
             <td>
                 <div class="payment-method-label">${PAYMENT_METHOD_LABELS[b.payment_method] || b.payment_method}</div>
                 <span class="status-pill ${b.payment_status}">${b.payment_status}</span>
@@ -701,13 +726,6 @@ function applyBookingFilters() {
     body.querySelectorAll('.status-select').forEach((select) => {
         const previousValue = select.value;
         select.addEventListener('change', async () => {
-            if (select.value === 'checked_out' && previousValue !== 'checked_out') {
-                const booking = allBookings.find((b) => String(b.id) === String(select.dataset.id));
-                select.value = previousValue; // don't visually commit until checkout actually succeeds
-                openCheckoutModal(booking);
-                return;
-            }
-
             let reason;
             if (select.value === 'cancelled' && previousValue !== 'cancelled') {
                 const booking = allBookings.find((b) => String(b.id) === String(select.dataset.id));
@@ -723,6 +741,13 @@ function applyBookingFilters() {
                 await apiSend('PATCH', `/api/bookings/${select.dataset.id}`, { status: select.value, reason });
                 loadBookings();
             } catch (err) { alert(err.message); select.disabled = false; }
+        });
+    });
+
+    body.querySelectorAll('.checkout-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const booking = allBookings.find((b) => String(b.id) === String(btn.dataset.id));
+            if (booking) openCheckoutModal(booking);
         });
     });
 

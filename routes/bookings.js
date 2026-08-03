@@ -19,6 +19,18 @@ const MARITAL_STATUSES = ['Single', 'Married', 'Divorced', 'Widowed'];
 const BOOKING_STATUSES = ['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled'];
 const PAYMENT_STATUSES = ['unpaid', 'partial', 'paid'];
 
+// The only forward moves this generic status PATCH allows. checked_in has
+// no listed move at all — checkout only happens through the dedicated
+// POST /:id/checkout endpoint below, which also stamps checked_out_at and
+// can record the final payment; allowing it here too would let a booking
+// reach 'checked_out' without either. checked_out/cancelled have no listed
+// moves because assertBookingUnlocked already rejects any change once a
+// booking reaches either of those.
+const STATUS_TRANSITIONS = {
+  pending: ['confirmed', 'cancelled'],
+  confirmed: ['checked_in', 'cancelled']
+};
+
 // Optional upsells offered at checkout — small, fixed catalog rather than a
 // full admin-managed table, since these rarely change.
 const HOTEL_ADDONS = {
@@ -633,9 +645,25 @@ router.patch('/:id', adminAuth, requireRole('admin', 'staff'), async (req, res) 
     if (!booking) {
       return res.status(404).json({ error: 'Booking not found' });
     }
-    // A checked-out booking is settled and locked — no further status or
-    // payment-status change is allowed, by anyone, including admins.
+    // A checked-out or cancelled booking is settled and locked — no further
+    // status or payment-status change is allowed, by anyone, including admins.
     assertBookingUnlocked(booking);
+
+    // The workflow only moves forward: pending → confirmed/cancelled,
+    // confirmed → checked_in/cancelled. A checked-in guest can't be bounced
+    // back to pending or cancelled from here, and checkout isn't done
+    // through this endpoint either — POST /:id/checkout is the only way to
+    // check a guest out, since it also stamps checked_out_at and can record
+    // the final payment.
+    if (status !== undefined && status !== booking.status) {
+      const allowedNext = STATUS_TRANSITIONS[booking.status];
+      if (!allowedNext) {
+        return res.status(400).json({ error: `A ${booking.status} booking's status can't be changed here — use the Checkout action to check a guest out.` });
+      }
+      if (!allowedNext.includes(status)) {
+        return res.status(400).json({ error: `A ${booking.status} booking can only move to: ${allowedNext.join(', ')}.` });
+      }
+    }
 
     // A confirmed (advance-paid, room-locked) booking can only be cancelled by
     // an admin — front-desk staff can't override a locked room on their own.
@@ -802,6 +830,9 @@ router.post('/:id/checkout', adminAuth, requireRole('admin', 'staff'), async (re
       return res.status(404).json({ error: 'Booking not found' });
     }
     assertBookingUnlocked(booking);
+    if (booking.status !== 'checked_in') {
+      return res.status(400).json({ error: `Only a checked-in booking can be checked out (this one is ${booking.status}).` });
+    }
 
     let totals = null;
     let payment = null;
