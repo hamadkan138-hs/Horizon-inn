@@ -5,7 +5,11 @@ async function loadSiteSettings() {
         const settings = await fetch('/api/settings').then((r) => r.json());
 
         if (settings.hero_eyebrow) document.getElementById('heroEyebrow').textContent = settings.hero_eyebrow;
-        if (settings.hero_heading) document.getElementById('heroHeading').textContent = settings.hero_heading;
+        // Emphasize "Horizon Inn" wherever it lands in the admin-editable
+        // heading text, in the same mixed serif/italic style used on a
+        // couple of other section headings — works with whatever text is
+        // currently stored without needing to touch that setting directly.
+        if (settings.hero_heading) document.getElementById('heroHeading').innerHTML = settings.hero_heading.replace(/Horizon Inn/g, '<em>Horizon Inn</em>');
         if (settings.hero_subtext) document.getElementById('heroSubtext').textContent = settings.hero_subtext;
 
         if (settings.offers_enabled === '1' && settings.offers_text) {
