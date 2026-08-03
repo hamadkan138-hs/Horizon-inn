@@ -154,7 +154,13 @@
         </div>
     </section>
 
-    <!-- Gallery Section -->
+    <!-- Gallery Section.
+         Every card below opens a click-to-enlarge lightbox already. To turn
+         any one of them into a video preview card (hover-to-play muted
+         clip, a play-button badge, full playback with sound in the
+         lightbox), just add data-video="images/gallery/your-clip.mp4" to
+         that .gallery-item div — script.js picks it up automatically, no
+         other change needed. Cards with no data-video stay plain photos. -->
     <section id="gallery" class="gallery">
         <div class="container">
             <h2>Around Horizon Inn</h2>
@@ -709,6 +715,12 @@
             <p style="font-size: 0.8rem; color: var(--text-light);">Enter this code in the "Promo / Gift Voucher / Referral Code" field at checkout.</p>
             <a href="#booking" class="cta-button" id="exitIntentBookBtn">Book Now</a>
         </div>
+    </div>
+
+    <!-- Gallery / video preview lightbox -->
+    <div class="media-lightbox-overlay" id="mediaLightboxOverlay">
+        <button type="button" class="media-lightbox-close" id="mediaLightboxClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
+        <div class="media-lightbox-content" id="mediaLightboxContent"></div>
     </div>
 
     <script src="script.js"></script>

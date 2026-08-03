@@ -1131,6 +1131,106 @@ body.has-offer .navbar {
     transform: translateY(0);
 }
 
+/* Play-button overlay — only rendered (by script.js) for a .gallery-item
+   that carries a data-video attribute, so a plain photo never shows an
+   affordance for a video it doesn't have. */
+.gallery-play-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.85);
+    z-index: 2;
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.45);
+    border: 2px solid rgba(255, 255, 255, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.25rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition), transform var(--transition), background var(--transition), border-color var(--transition);
+}
+
+.gallery-item:hover .gallery-play-icon {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    background: rgba(198, 161, 91, 0.55);
+    border-color: var(--gold);
+}
+
+/* ---- Gallery / video preview lightbox ---- */
+.media-lightbox-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 4000;
+    background: rgba(5, 5, 8, 0.92);
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+}
+
+.media-lightbox-overlay.active {
+    display: flex;
+}
+
+.media-lightbox-content {
+    max-width: 1000px;
+    width: 100%;
+}
+
+.media-lightbox-content img,
+.media-lightbox-content video {
+    width: 100%;
+    max-height: 82vh;
+    object-fit: contain;
+    border-radius: 8px;
+    display: block;
+    box-shadow: var(--shadow-lg);
+}
+
+.media-lightbox-caption {
+    text-align: center;
+    color: var(--text-dark);
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    margin-top: 16px;
+}
+
+.media-lightbox-close {
+    position: fixed;
+    top: 24px;
+    right: 28px;
+    z-index: 4001;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.media-lightbox-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.08);
+}
+
+@media (max-width: 640px) {
+    .media-lightbox-close {
+        top: 14px;
+        right: 14px;
+        width: 38px;
+        height: 38px;
+    }
+}
+
 /* Booking & Contact forms */
 .booking,
 .contact {

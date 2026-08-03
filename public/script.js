@@ -1193,3 +1193,71 @@ if (abandonedPhoneInput) {
     overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.style.display = 'none'; });
     document.getElementById('exitIntentBookBtn').addEventListener('click', () => { overlay.style.display = 'none'; });
 })();
+
+// Gallery / video preview cards — every .gallery-item already works today
+// as a click-to-enlarge photo. A card opts into full video behavior (a
+// muted hover-to-preview clip, a play-button affordance, and a full player
+// with sound in the lightbox) purely by carrying a
+// data-video="images/gallery/whatever.mp4" attribute in the HTML — no
+// other code here needs to change when real video files are ready to drop
+// in; a plain photo card is simply never given the attribute.
+(() => {
+    const overlay = document.getElementById('mediaLightboxOverlay');
+    const contentEl = document.getElementById('mediaLightboxContent');
+    const closeBtn = document.getElementById('mediaLightboxClose');
+    if (!overlay || !contentEl || !closeBtn) return;
+
+    function closeLightbox() {
+        overlay.classList.remove('active');
+        contentEl.innerHTML = ''; // removing the <video> stops playback immediately
+    }
+
+    function openLightbox(item) {
+        const videoSrc = item.dataset.video;
+        const img = item.querySelector('img');
+        const caption = item.querySelector('.gallery-caption');
+
+        contentEl.innerHTML = videoSrc
+            ? `<video src="${videoSrc}" controls autoplay playsinline poster="${img ? img.src : ''}"></video>`
+            : `<img src="${img ? img.src : ''}" alt="${img ? img.alt : ''}">`;
+
+        if (caption && caption.textContent.trim()) {
+            contentEl.insertAdjacentHTML('beforeend', `<div class="media-lightbox-caption">${escapeHtml(caption.textContent)}</div>`);
+        }
+
+        overlay.classList.add('active');
+    }
+
+    document.querySelectorAll('.gallery-item').forEach((item) => {
+        if (item.dataset.video) {
+            item.insertAdjacentHTML('beforeend', '<span class="gallery-play-icon"><i class="fas fa-play"></i></span>');
+
+            const hoverVideo = document.createElement('video');
+            hoverVideo.src = item.dataset.video;
+            hoverVideo.muted = true;
+            hoverVideo.loop = true;
+            hoverVideo.playsInline = true;
+            hoverVideo.preload = 'none';
+            hoverVideo.style.cssText = 'position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 0.3s ease; z-index:1;';
+            item.appendChild(hoverVideo);
+
+            item.addEventListener('mouseenter', () => {
+                hoverVideo.style.opacity = '1';
+                hoverVideo.play().catch(() => {}); // autoplay can be rejected on some mobile browsers — a static photo underneath is still a fine result
+            });
+            item.addEventListener('mouseleave', () => {
+                hoverVideo.style.opacity = '0';
+                hoverVideo.pause();
+                hoverVideo.currentTime = 0;
+            });
+        }
+
+        item.addEventListener('click', () => openLightbox(item));
+    });
+
+    closeBtn.addEventListener('click', closeLightbox);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeLightbox(); });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && overlay.classList.contains('active')) closeLightbox();
+    });
+})();
