@@ -392,6 +392,53 @@ function initGallerySliders(container) {
     });
 }
 
+// Position dots for the mobile room-cards carousel (the grid itself only
+// becomes horizontally scrollable below 768px — see .rooms-grid in
+// styles.css — so on desktop this just renders inert, always-index-0 dots
+// that stay hidden via the same media query).
+//
+// roomsGrid itself is a permanent element (only its children get replaced
+// on every renderRooms() call, e.g. whenever the guest changes check-in/
+// check-out dates), so its scroll listener is attached exactly once here
+// and re-reads the live DOM on every scroll rather than closing over cards
+// from whichever render happened to be current when it was bound —
+// otherwise every date change would stack another listener on top of the
+// last one, each doing pointless work against stale, detached elements.
+let roomsCarouselScrollBound = false;
+
+function initRoomsCarouselDots(rooms) {
+    const dotsContainer = document.getElementById('roomsCarouselDots');
+    if (!dotsContainer) return;
+
+    if (rooms.length <= 1) {
+        dotsContainer.innerHTML = '';
+        return;
+    }
+
+    dotsContainer.innerHTML = rooms.map((_, i) =>
+        `<button type="button" data-index="${i}" aria-label="Go to room ${i + 1}" class="${i === 0 ? 'active' : ''}"></button>`
+    ).join('');
+
+    dotsContainer.querySelectorAll('button').forEach((dot) => {
+        dot.addEventListener('click', () => {
+            const card = roomsGrid.querySelectorAll(':scope > .room-card')[Number(dot.dataset.index)];
+            if (card) roomsGrid.scrollTo({ left: card.offsetLeft - roomsGrid.offsetLeft, behavior: 'smooth' });
+        });
+    });
+
+    if (roomsCarouselScrollBound) return;
+    roomsCarouselScrollBound = true;
+    roomsGrid.addEventListener('scroll', () => {
+        const cards = roomsGrid.querySelectorAll(':scope > .room-card');
+        const dots = dotsContainer.querySelectorAll('button');
+        if (!cards.length || !dots.length) return;
+        const cardWidth = cards[0].offsetWidth + 20; // matches the 20px gap in styles.css
+        const nearest = Math.round(roomsGrid.scrollLeft / cardWidth);
+        const active = Math.min(cards.length - 1, Math.max(0, nearest));
+        dots.forEach((dot, i) => dot.classList.toggle('active', i === active));
+    }, { passive: true });
+}
+
 function renderRooms(rooms) {
     roomsGrid.innerHTML = rooms.map(roomCardHtml).join('');
     roomsGrid.querySelectorAll('.book-btn').forEach((btn) => {
@@ -401,6 +448,7 @@ function renderRooms(rooms) {
     });
     staggerReveal(roomsGrid, ':scope > .room-card');
     initGallerySliders();
+    initRoomsCarouselDots(rooms);
     updateStickyCtaPrice(rooms);
 }
 

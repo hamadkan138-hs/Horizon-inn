@@ -656,6 +656,57 @@ body.has-offer .navbar {
     gap: 40px;
 }
 
+.rooms-carousel-dots {
+    display: none;
+}
+
+/* Below 768px the side-by-side grid becomes a swipeable, scroll-snapped
+   carousel — one room per "page" with a peek of the next so it reads as
+   swipeable at a glance, instead of a long vertical scroll through three
+   full-height cards. Desktop is untouched: three cards already fit
+   comfortably side by side there, so a carousel would only add complexity
+   with no real benefit. */
+@media (max-width: 768px) {
+    .rooms-grid {
+        display: flex;
+        grid-template-columns: none;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        gap: 20px;
+        margin: 0 -32px;
+        padding: 4px 32px 12px;
+    }
+
+    .rooms-grid > .room-card {
+        flex: 0 0 82vw;
+        scroll-snap-align: center;
+    }
+
+    .rooms-carousel-dots {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 4px;
+    }
+
+    .rooms-carousel-dots button {
+        width: 8px;
+        height: 8px;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background: var(--hair);
+        cursor: pointer;
+        transition: background 0.25s ease, transform 0.25s ease;
+    }
+
+    .rooms-carousel-dots button.active {
+        background: var(--gold);
+        transform: scale(1.3);
+    }
+}
+
 .loading-text,
 .error-text {
     text-align: center;
