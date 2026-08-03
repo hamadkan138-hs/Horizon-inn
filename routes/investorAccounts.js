@@ -11,13 +11,14 @@ const COMPLIANCE_STATUSES = ['pending', 'verified', 'signed', 'rejected'];
 const WITHDRAWAL_TYPES = ['dividend', 'capital'];
 const WITHDRAWAL_STATUSES = ['pending', 'processing', 'completed', 'rejected'];
 
-// Public, unauthenticated: lets prospective investors browsing the main site see
-// upcoming expansion projects (name, renders, capital/timeline) without needing an
-// investor login — everything below this route still requires admin/investor auth.
+// Formerly public; now requires admin/investor auth like the rest of this router.
+// The unauthenticated "Upcoming Expansion" teaser this fed was removed from the
+// public site for legal reasons, so this data must not be reachable by anyone
+// without a valid session, even via a direct request to the endpoint itself.
 // Deliberately excludes valuationAmount/ownerEquityPercent/projectedMonthlyIncome:
-// those feed the authenticated Share & ROI Calculator and are more sensitive than
-// what this pitch page has ever shown a general, unauthenticated visitor.
-router.get('/public/projects', async (req, res) => {
+// those feed the Share & ROI Calculator and are more sensitive than the rest of
+// this project data.
+router.get('/public/projects', adminAuth, requireRole('admin', 'investor'), async (req, res) => {
   try {
     const result = await db.execute(
       "SELECT * FROM investment_projects WHERE status != 'archived' ORDER BY created_at DESC"

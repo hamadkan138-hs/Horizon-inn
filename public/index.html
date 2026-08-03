@@ -215,63 +215,20 @@
         </div>
     </section>
 
-    <!-- Upcoming Expansion / Investment teaser -->
-    <section id="upcoming-projects" class="rooms upcoming-projects">
-        <div class="container">
-            <h2>Upcoming Expansion</h2>
-            <p class="gallery-intro">A look at what's next for Horizon Inn &mdash; and an open door for investors who want in early.</p>
-            <div class="rooms-grid" id="projectsGrid">
-                <div class="room-card skeleton"></div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Crescent Grove Event & Hospitality Complex — Facility Showcase, Partner CTA, ROI Calculator -->
+    <!-- Crescent Grove Event & Hospitality Complex — Facility Showcase.
+         Equity/profit-share investment pitch, the ROI calculator, and the
+         "Upcoming Expansion" investor teaser were removed from this
+         public page for legal reasons (that content must not be presented
+         to unauthenticated site visitors). The bookable-venue showcase
+         below is ordinary event-space rental content, not an investment
+         offer, so it stays. Investor-facing tools remain fully available
+         inside the authenticated investor portal and the admin dashboard. -->
     <section id="invest-with-us" class="crescent-zone">
         <div class="container">
             <h2 style="text-align: center;">Crescent Grove Facilities</h2>
             <p class="section-intro">Four bookable spaces, each available individually or as a full-complex buyout for exclusive events.</p>
             <div class="facility-grid" id="facilityGrid">
                 <p style="color: #9ca3af; text-align: center; grid-column: 1 / -1;">Loading facilities&hellip;</p>
-            </div>
-
-            <div class="partner-cta-banner">
-                <h2>Become an Equity / Profit Share Partner</h2>
-                <p>Crescent Grove is opening a limited window for early investors. Join as an equity partner or a monthly profit-share partner in Horizon Inn's newest revenue stream.</p>
-                <button type="button" class="partner-cta-btn" id="openPartnerModalBtn">Express Your Interest</button>
-            </div>
-
-            <div class="roi-dark-card">
-                <h2 style="text-align: center; font-size: 1.4rem; margin-bottom: 6px;">Investment Yield Calculator</h2>
-                <p class="section-intro" style="margin-bottom: 30px;">Move the sliders to see projected returns based on your own assumptions.</p>
-                <div class="roi-dark-grid">
-                    <div>
-                        <div class="roi-slider-group">
-                            <label>Initial Investment <strong id="roiCalcInvestmentLabel">Rs. 2,000,000</strong></label>
-                            <input type="range" id="roiCalcInvestment" min="500000" max="25000000" step="250000" value="2000000">
-                        </div>
-                        <div class="roi-slider-group">
-                            <label>Average Monthly Occupancy <strong id="roiCalcOccupancyLabel">60%</strong></label>
-                            <input type="range" id="roiCalcOccupancy" min="30" max="90" step="1" value="60">
-                        </div>
-                        <div class="roi-slider-group">
-                            <label>Rental Rate (per event-day) <strong id="roiCalcRateLabel">Rs. 45,000</strong></label>
-                            <input type="range" id="roiCalcRate" min="20000" max="80000" step="1000" value="45000">
-                        </div>
-                        <p style="font-size: 0.78rem; color: #9ca3af; margin-top: 6px;">Assumes a 25%&ndash;40% net profit margin band and a hypothetical ownership stake sized to your investment against a working valuation of Rs. 20,000,000.</p>
-                    </div>
-                    <div>
-                        <div class="roi-output-stats">
-                            <div class="roi-stat-box"><span>Gross Annual Revenue</span><strong id="roiCalcGrossRevenue">Rs. 0</strong></div>
-                            <div class="roi-stat-box"><span>Investor Net Payout / yr</span><strong id="roiCalcNetPayout">Rs. 0</strong></div>
-                            <div class="roi-stat-box"><span>Est. Annual ROI</span><strong id="roiCalcRoiPct">0%</strong></div>
-                            <div class="roi-stat-box"><span>Est. Payback Period</span><strong id="roiCalcPayback">&mdash;</strong></div>
-                        </div>
-                        <div class="roi-chart-wrap">
-                            <canvas id="roiCalcChart" height="160"></canvas>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </section>
@@ -565,11 +522,9 @@
                     </ul>
                 </div>
                 <div class="footer-section">
-                    <h4>Partners &amp; Staff</h4>
+                    <h4>Events &amp; Staff</h4>
                     <ul>
-                        <li><a href="#upcoming-projects">Upcoming Expansion</a></li>
-                        <li><a href="#invest-with-us">Invest With Us</a></li>
-                        <li><a href="investor.html">Investor Login</a></li>
+                        <li><a href="#invest-with-us">Events &amp; Venues</a></li>
                         <li><a href="admin.html">Staff Login</a></li>
                     </ul>
                 </div>
@@ -610,71 +565,6 @@
 
                 <a href="#booking" class="facility-modal-cta" id="facilityModalCta">Enquire About This Space</a>
             </div>
-        </div>
-    </div>
-
-    <!-- Become a Partner — multi-step lead capture modal -->
-    <div class="partner-modal-overlay" id="partnerModalOverlay">
-        <div class="partner-modal-box">
-            <button type="button" class="facility-modal-close" id="partnerModalCloseBtn"><i class="fas fa-xmark"></i></button>
-            <h3>Become a Partner</h3>
-            <div class="step-indicator" id="partnerStepIndicator">
-                <span class="done"></span><span></span><span></span>
-            </div>
-
-            <form id="partnerForm">
-                <div class="partner-step active" data-step="1">
-                    <label>Full Name</label>
-                    <input type="text" id="partnerFullName" required>
-                    <label>Phone / WhatsApp</label>
-                    <input type="tel" id="partnerPhone" required>
-                    <label>Email</label>
-                    <input type="email" id="partnerEmail">
-                    <label>Location</label>
-                    <input type="text" id="partnerLocation" placeholder="City, Country">
-                    <div class="partner-modal-nav">
-                        <span></span>
-                        <button type="button" class="partner-btn primary" data-next="2">Continue</button>
-                    </div>
-                </div>
-
-                <div class="partner-step" data-step="2">
-                    <label>Investment Tier Interest</label>
-                    <div class="tier-options" id="partnerTierOptions">
-                        <div class="tier-option" data-value="1M">PKR 1 Million</div>
-                        <div class="tier-option" data-value="5M">PKR 5 Million</div>
-                        <div class="tier-option" data-value="10M">PKR 10 Million+</div>
-                        <div class="tier-option" data-value="full_lease">Full Property Lease</div>
-                    </div>
-                    <label>Preferred Investment Type</label>
-                    <div class="tier-options" id="partnerTypeOptions">
-                        <div class="tier-option" data-value="revenue_share">Monthly Revenue Share</div>
-                        <div class="tier-option" data-value="fixed_yield">Fixed Yield</div>
-                    </div>
-                    <div class="partner-modal-nav">
-                        <button type="button" class="partner-btn ghost" data-back="1">Back</button>
-                        <button type="button" class="partner-btn primary" data-next="3">Continue</button>
-                    </div>
-                </div>
-
-                <div class="partner-step" data-step="3">
-                    <label>Notes / Strategic Value You Bring</label>
-                    <textarea id="partnerNotes" rows="4" placeholder="e.g. hospitality industry experience, existing client network, preferred timeline&hellip;"></textarea>
-                    <p class="form-message" id="partnerFormMessage"></p>
-                    <div class="partner-modal-nav">
-                        <button type="button" class="partner-btn ghost" data-back="2">Back</button>
-                        <button type="submit" class="partner-btn primary">Submit Interest</button>
-                    </div>
-                </div>
-
-                <div class="partner-step" data-step="success">
-                    <div class="partner-success">
-                        <i class="fas fa-circle-check"></i>
-                        <h3>Thank you.</h3>
-                        <p style="color: #9ca3af; font-size: 0.9rem;">Our team will reach out to discuss next steps.</p>
-                    </div>
-                </div>
-            </form>
         </div>
     </div>
 

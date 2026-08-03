@@ -428,77 +428,6 @@ if (heroSearchForm) {
     });
 }
 
-// Upcoming expansion projects — public read-only teaser so prospective
-// investors browsing the main site can see what's coming without logging in.
-const projectsGrid = document.getElementById('projectsGrid');
-const PROJECT_STATUS_LABELS = { planned: 'Planned', in_progress: 'Under Construction', completed: 'Completed' };
-
-function projectGalleryHtml(project) {
-    const images = Array.isArray(project.images) ? project.images.filter(Boolean) : [];
-    if (!images.length) {
-        return '<div class="room-image" style="background: linear-gradient(135deg, #2c2620, #6b5a3a);"></div>';
-    }
-    if (images.length === 1) {
-        return `<div class="room-image" style="background: url('${images[0]}') center/cover no-repeat;"></div>`;
-    }
-    const slides = images.map((img, i) => `<div class="gallery-slide ${i === 0 ? 'active' : ''}" style="background-image: url('${img}')"></div>`).join('');
-    const dots = images.map((_, i) => `<button type="button" class="gallery-dot ${i === 0 ? 'active' : ''}" data-index="${i}" aria-label="Photo ${i + 1}"></button>`).join('');
-    return `
-        <div class="room-image room-gallery" data-count="${images.length}">
-            ${slides}
-            <button type="button" class="gallery-arrow prev" aria-label="Previous photo"><i class="fas fa-chevron-left"></i></button>
-            <button type="button" class="gallery-arrow next" aria-label="Next photo"><i class="fas fa-chevron-right"></i></button>
-            <div class="gallery-dots">${dots}</div>
-        </div>
-    `;
-}
-
-function projectCardHtml(project, index) {
-    const statusLabel = PROJECT_STATUS_LABELS[project.status] || project.status;
-    const metaItems = [
-        project.location ? `<li><i class="fas fa-map-marker-alt"></i> ${project.location}</li>` : '',
-        (project.timeline && project.timeline !== 'TBD') ? `<li><i class="fas fa-calendar"></i> Target: ${project.timeline}</li>` : ''
-    ].filter(Boolean).join('');
-
-    return `
-        <div class="room-card fade-in-up" style="animation-delay: ${index * 0.12}s">
-            <div class="featured-badge">${statusLabel}</div>
-            ${projectGalleryHtml(project)}
-            <div class="room-content">
-                <h3>${project.name}</h3>
-                <p class="room-desc">${project.description}</p>
-                ${metaItems ? `<ul class="room-features">${metaItems}</ul>` : ''}
-                <a href="#contact" class="book-btn primary">Interested in Investing?</a>
-            </div>
-        </div>
-    `;
-}
-
-function renderProjects(projects) {
-    const section = projectsGrid.closest('section');
-    if (!projects.length) {
-        section.style.display = 'none';
-        return;
-    }
-    section.style.display = '';
-    projectsGrid.innerHTML = projects.map(projectCardHtml).join('');
-    staggerReveal(projectsGrid, ':scope > *');
-    initGallerySliders(projectsGrid);
-}
-
-async function loadProjects() {
-    try {
-        const res = await fetch('/api/investor-accounts/public/projects');
-        if (!res.ok) throw new Error('Failed to load projects');
-        const projects = await res.json();
-        renderProjects(projects);
-    } catch (err) {
-        projectsGrid.closest('section').style.display = 'none';
-    }
-}
-
-loadProjects();
-
 // Booking form
 const bookingForm = document.getElementById('bookingForm');
 const bookingMessage = document.getElementById('bookingMessage');
@@ -667,8 +596,7 @@ contactForm.addEventListener('submit', async (e) => {
 });
 
 /* ==================================================================
-   Crescent Grove: Facility Showcase, Become-a-Partner lead capture,
-   and the public Investment Yield Calculator.
+   Crescent Grove: Facility Showcase (bookable event/hospitality spaces).
    ================================================================== */
 const CATERING_CATEGORY_LABELS = {
     platters: 'Platters', high_tea: 'High Tea', espresso_bar: 'Espresso Bar', live_bbq: 'Live BBQ'
@@ -791,144 +719,8 @@ document.getElementById('facilityModalOverlay')?.addEventListener('click', (e) =
     if (e.target.id === 'facilityModalOverlay') e.target.style.display = 'none';
 });
 
-/* ---- Become a Partner: multi-step lead capture ---- */
-let partnerSelection = { tier: '', type: '' };
-
-function showPartnerStep(step) {
-    document.querySelectorAll('.partner-step').forEach((el) => el.classList.toggle('active', el.dataset.step === String(step)));
-    const totalSteps = 3;
-    document.querySelectorAll('#partnerStepIndicator span').forEach((el, i) => {
-        el.classList.toggle('done', step === 'success' || i < Number(step));
-    });
-}
-
-document.getElementById('openPartnerModalBtn')?.addEventListener('click', () => {
-    document.getElementById('partnerModalOverlay').style.display = 'flex';
-    showPartnerStep(1);
-});
-document.getElementById('partnerModalCloseBtn')?.addEventListener('click', () => {
-    document.getElementById('partnerModalOverlay').style.display = 'none';
-});
-document.getElementById('partnerModalOverlay')?.addEventListener('click', (e) => {
-    if (e.target.id === 'partnerModalOverlay') e.target.style.display = 'none';
-});
-
-document.querySelectorAll('#partnerForm [data-next]').forEach((btn) => {
-    btn.addEventListener('click', () => showPartnerStep(btn.dataset.next));
-});
-document.querySelectorAll('#partnerForm [data-back]').forEach((btn) => {
-    btn.addEventListener('click', () => showPartnerStep(btn.dataset.back));
-});
-
-document.querySelectorAll('#partnerTierOptions .tier-option').forEach((el) => {
-    el.addEventListener('click', () => {
-        document.querySelectorAll('#partnerTierOptions .tier-option').forEach((o) => o.classList.remove('selected'));
-        el.classList.add('selected');
-        partnerSelection.tier = el.dataset.value;
-    });
-});
-document.querySelectorAll('#partnerTypeOptions .tier-option').forEach((el) => {
-    el.addEventListener('click', () => {
-        document.querySelectorAll('#partnerTypeOptions .tier-option').forEach((o) => o.classList.remove('selected'));
-        el.classList.add('selected');
-        partnerSelection.type = el.dataset.value;
-    });
-});
-
-document.getElementById('partnerForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const msg = document.getElementById('partnerFormMessage');
-    try {
-        const res = await fetch('/api/investor-leads', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                fullName: document.getElementById('partnerFullName').value,
-                phone: document.getElementById('partnerPhone').value,
-                email: document.getElementById('partnerEmail').value,
-                location: document.getElementById('partnerLocation').value,
-                investmentTier: partnerSelection.tier,
-                investmentType: partnerSelection.type,
-                notes: document.getElementById('partnerNotes').value
-            })
-        });
-        if (!res.ok) throw new Error((await res.json()).error || 'Something went wrong');
-        showPartnerStep('success');
-        document.getElementById('partnerForm').reset();
-        partnerSelection = { tier: '', type: '' };
-        document.querySelectorAll('.tier-option').forEach((o) => o.classList.remove('selected'));
-    } catch (err) {
-        msg.style.color = '#e0685a';
-        msg.textContent = err.message;
-    }
-});
-
-/* ---- Public Investment Yield Calculator ---- */
-let roiCalcChartInstance = null;
-const WORKING_VALUATION = 20000000;
-
-function renderRoiCalculator() {
-    const investment = Number(document.getElementById('roiCalcInvestment').value);
-    const occupancy = Number(document.getElementById('roiCalcOccupancy').value);
-    const rate = Number(document.getElementById('roiCalcRate').value);
-
-    document.getElementById('roiCalcInvestmentLabel').textContent = money(investment);
-    document.getElementById('roiCalcOccupancyLabel').textContent = `${occupancy}%`;
-    document.getElementById('roiCalcRateLabel').textContent = `${money(rate)}`;
-
-    const grossAnnualRevenue = rate * 365 * (occupancy / 100);
-    const marginPct = 25 + ((occupancy - 30) / (90 - 30)) * 15;
-    const netProfit = grossAnnualRevenue * (marginPct / 100);
-    const ownershipShare = Math.min(investment / WORKING_VALUATION, 1);
-    const investorPayoutYear1 = netProfit * ownershipShare;
-    const roiPct = investment > 0 ? (investorPayoutYear1 / investment) * 100 : 0;
-    const paybackMonths = investorPayoutYear1 > 0 ? (investment / (investorPayoutYear1 / 12)) : Infinity;
-    const paybackText = !isFinite(paybackMonths) ? '—'
-        : paybackMonths < 24 ? `${Math.round(paybackMonths)} months`
-        : `${(paybackMonths / 12).toFixed(1)} years`;
-
-    document.getElementById('roiCalcGrossRevenue').textContent = money(grossAnnualRevenue);
-    document.getElementById('roiCalcNetPayout').textContent = money(investorPayoutYear1);
-    document.getElementById('roiCalcRoiPct').textContent = `${roiPct.toFixed(1)}%`;
-    document.getElementById('roiCalcPayback').textContent = paybackText;
-
-    const year2 = investorPayoutYear1 * 1.08;
-    const year3 = year2 * 1.08;
-    const cumulativeYear1 = investorPayoutYear1;
-    const cumulativeYear3 = investorPayoutYear1 + year2 + year3;
-
-    const canvas = document.getElementById('roiCalcChart');
-    if (!canvas || typeof Chart === 'undefined') return;
-    if (roiCalcChartInstance) roiCalcChartInstance.destroy();
-    roiCalcChartInstance = new Chart(canvas, {
-        type: 'bar',
-        data: {
-            labels: ['Year 1 (cumulative)', 'Year 3 (cumulative)'],
-            datasets: [{
-                label: 'Investor Payout (Rs.)',
-                data: [cumulativeYear1, cumulativeYear3],
-                backgroundColor: ['#d4af37', '#10b981'],
-                borderRadius: 8
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { ticks: { color: '#9ca3af' }, grid: { display: false } },
-                y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.06)' } }
-            }
-        }
-    });
-}
-
-['roiCalcInvestment', 'roiCalcOccupancy', 'roiCalcRate'].forEach((id) => {
-    document.getElementById(id)?.addEventListener('input', renderRoiCalculator);
-});
-
 if (document.getElementById('facilityGrid')) {
     loadFacilities();
-    renderRoiCalculator();
 }
 
 /* ==================================================================
