@@ -163,24 +163,37 @@
         }
         .btn:active { transform: translateY(0); }
         @media print {
+            /* Every color/background rule above this point was written for a
+               dark on-screen theme (light gray/gold text on a near-black
+               background). Printing to paper needs the opposite — dark text
+               on white — but several of those rules (.invoice-block p,
+               .totals div, th) target elements more specifically than a
+               plain override of their parent class can beat on specificity
+               alone, so a lighter-touch print block left them washed-out and
+               unreadable on the printed page. !important on every rule below
+               is deliberate: this block's only job is to unconditionally win
+               over every screen style, with nothing meant to layer on top of
+               it afterward. */
             @page { size: A4; margin: 16mm; }
-            .actions { display: none; }
-            body {
-                margin: 0;
-                max-width: 100%;
-                background: white;
-                color: #000;
+            .actions { display: none !important; }
+            * {
+                background: transparent !important;
+                box-shadow: none !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                color: #000 !important;
             }
-            .invoice-block, .totals, .notes-box {
-                background: white;
-                border-color: #ddd;
-                color: #000;
-            }
-            th, td { color: #000; border-bottom-color: #ddd; }
-            .invoice-header h1, .invoice-meta strong, .invoice-block h3, .section-label, .totals .grand, .footer-note strong { color: #000; }
-            .status-badge.paid { background: #eaf3ea; color: #3d7a4f; }
-            .status-badge.partial { background: #fdf0e2; color: #9a6c1f; }
-            .status-badge.unpaid { background: #f6e9e8; color: #a5473c; }
+            body { background: #fff !important; margin: 0; max-width: 100%; }
+            .invoice-block, .totals, .notes-box { border: 1px solid #ddd !important; }
+            th { border-bottom: 1px solid #999 !important; }
+            td { border-bottom: 1px solid #ddd !important; }
+            .status-badge { border: 1px solid #ccc !important; }
+            .status-badge.paid { background: #eaf3ea !important; color: #3d7a4f !important; }
+            .status-badge.partial { background: #fdf0e2 !important; color: #9a6c1f !important; }
+            .status-badge.unpaid { background: #f6e9e8 !important; color: #a5473c !important; }
+            tr.discount-row td { color: #2f7a4f !important; }
+            .totals .balance-due { color: #a5473c !important; }
+            .totals .balance-clear { color: #2f7a4f !important; }
         }
         @media (max-width: 600px) {
             body { padding: 0 16px; margin: 20px auto; }
