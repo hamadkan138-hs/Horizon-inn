@@ -13,8 +13,8 @@ router.get('/', async (req, res) => {
     const includeInactive = req.query.includeInactive === '1';
     const result = await db.execute(
       includeInactive
-        ? 'SELECT * FROM rooms ORDER BY price ASC'
-        : 'SELECT * FROM rooms WHERE active = 1 ORDER BY price ASC'
+        ? 'SELECT * FROM rooms ORDER BY featured DESC, price ASC'
+        : 'SELECT * FROM rooms WHERE active = 1 ORDER BY featured DESC, price ASC'
     );
 
     const rooms = await Promise.all(result.rows.map(async (room) => {
