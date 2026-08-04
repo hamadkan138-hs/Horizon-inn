@@ -2916,6 +2916,35 @@ table.admin-table th {
     border-radius: 999px;
 }
 
+.facility-media .facility-coming-soon-chip {
+    position: absolute;
+    top: 12px; left: 12px;
+    background: rgba(234, 88, 12, 0.16);
+    border: 1px solid rgba(234, 88, 12, 0.45);
+    color: #fb923c;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+
+.coming-soon-pill {
+    display: inline-block;
+    vertical-align: middle;
+    background: rgba(234, 88, 12, 0.16);
+    border: 1px solid rgba(234, 88, 12, 0.45);
+    color: #fb923c;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 5px 12px;
+    border-radius: 999px;
+    margin-left: 10px;
+}
+
 .facility-body {
     padding: 22px 22px 26px;
 }

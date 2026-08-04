@@ -707,6 +707,7 @@ function facilityCardHtml(f, i) {
     return `
         <div class="facility-card" data-id="${f.id}" style="animation-delay: ${i * 0.1}s">
             <div class="facility-media" style="${image ? `background-image: url('${image}');` : ''}">
+                <span class="facility-coming-soon-chip">Opening Soon</span>
                 ${f.isBuyout ? '<span class="facility-buyout-chip">Full Buyout</span>' : ''}
             </div>
             <div class="facility-body">
