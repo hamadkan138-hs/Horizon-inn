@@ -9,6 +9,7 @@
     "build:room-management-css": "tailwindcss -c build-tailwind/tailwind.config.js -i build-tailwind/input.css -o public/room-management-compiled.css --minify"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.115.0",
     "@libsql/client": "^0.17.4",
     "bcryptjs": "^3.0.3",
     "express": "^4.21.0",

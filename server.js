@@ -32,9 +32,16 @@ const abandonedBookingsRouter = require('./routes/abandonedBookings');
 const minibarRouter = require('./routes/minibar');
 const adminDataRouter = require('./routes/adminData');
 const kioskRouter = require('./routes/kiosk');
+const chatRouter = require('./routes/chat');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Render sits in front of the app as a reverse proxy — without this,
+// req.ip reflects Render's edge, not the guest's real IP, which would make
+// the chat endpoint's per-IP rate limit useless (everyone would look like
+// the same caller).
+app.set('trust proxy', 1);
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -66,6 +73,7 @@ app.use('/api/abandoned-bookings', abandonedBookingsRouter);
 app.use('/api/minibar', minibarRouter);
 app.use('/api/admin', adminDataRouter);
 app.use('/api/kiosk', kioskRouter);
+app.use('/api/chat', chatRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

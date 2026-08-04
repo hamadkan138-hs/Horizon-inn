@@ -670,15 +670,15 @@
         thinking.style.color = '#888';
         thinking.style.border = 'none';
         thinking.style.background = 'transparent';
-        fetch('https://hotel-chatbot-j71d.onrender.com/chat', {
+        fetch('/api/chat', {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
           body: JSON.stringify({text: text})
         })
-        .then(res => res.json())
-        .then(data => {
+        .then(res => res.json().then(data => ({ ok: res.ok, data })))
+        .then(({ ok, data }) => {
           thinking.remove();
-          chatAppendBubble(data.reply, 'bot');
+          chatAppendBubble(ok ? data.reply : (data.error || "Sorry, something went wrong."), 'bot');
         })
         .catch(() => {
           thinking.remove();
