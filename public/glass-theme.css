@@ -3,8 +3,8 @@
 
 :root {
   /* Color Palette */
-  --bg-primary: #0B0F1A;
-  --bg-secondary: #111827;
+  --bg-primary: #1a1a1c;
+  --bg-secondary: #242426;
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-border: rgba(255, 255, 255, 0.1);
 
@@ -29,7 +29,7 @@
 /* ===== GLOBAL BACKGROUND ===== */
 body {
   background-color: var(--bg-primary);
-  background: linear-gradient(135deg, var(--bg-primary) 0%, #0D1425 100%);
+  background: linear-gradient(135deg, var(--bg-primary) 0%, #201f22 100%);
   color: rgba(255, 255, 255, 0.9);
   transition: all var(--transition-normal);
 }
@@ -872,4 +872,157 @@ a:hover {
       backdrop-filter: none;
     }
   }
+}
+
+/* ============================================================
+   LIGHT THEME
+   Every dark-mode rule above uses either a CSS variable or a
+   hardcoded white-on-dark value. This block mirrors each one with
+   a light equivalent, scoped under [data-theme="light"] (toggled by
+   theme-toggle.js). Kept as direct selector overrides rather than
+   retokenizing the rules above, so the default dark theme is
+   untouched and can't regress.
+   ============================================================ */
+:root[data-theme="light"] {
+  --bg-primary: #f7f5f2;
+  --bg-secondary: #ffffff;
+  --glass-bg: rgba(20, 22, 31, 0.04);
+  --glass-border: rgba(20, 22, 31, 0.1);
+  --shadow-inset: inset 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+
+[data-theme="light"] body {
+  background: linear-gradient(135deg, var(--bg-primary) 0%, #efece6 100%);
+  color: rgba(20, 22, 31, 0.9);
+}
+
+[data-theme="light"] .glass-card:hover {
+  border-color: rgba(20, 22, 31, 0.15);
+}
+
+[data-theme="light"] button,
+[data-theme="light"] .btn,
+[data-theme="light"] a.btn {
+  color: #14161f;
+}
+
+[data-theme="light"] input,
+[data-theme="light"] textarea,
+[data-theme="light"] select {
+  background: rgba(20, 22, 31, 0.04);
+  border: 1px solid rgba(20, 22, 31, 0.12);
+  border-bottom: 2px solid rgba(20, 22, 31, 0.12);
+  color: #14161f;
+}
+
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: rgba(20, 22, 31, 0.4);
+}
+
+[data-theme="light"] input:focus,
+[data-theme="light"] textarea:focus,
+[data-theme="light"] select:focus {
+  background: rgba(59, 130, 246, 0.06);
+}
+
+[data-theme="light"] input:focus + label,
+[data-theme="light"] textarea:focus + label,
+[data-theme="light"] select:focus + label {
+  color: #14161f;
+}
+
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3,
+[data-theme="light"] h4,
+[data-theme="light"] h5,
+[data-theme="light"] h6 {
+  color: #14161f;
+}
+
+[data-theme="light"] label {
+  color: rgba(20, 22, 31, 0.75);
+}
+
+[data-theme="light"] p {
+  color: rgba(20, 22, 31, 0.75);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(20, 22, 31, 0.15);
+}
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(20, 22, 31, 0.25);
+}
+
+[data-theme="light"] .kiosk-card {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(20, 22, 31, 0.1);
+  box-shadow: 0 20px 60px rgba(20, 22, 31, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+
+[data-theme="light"] .kiosk-input {
+  background: rgba(20, 22, 31, 0.04);
+  border: 1px solid rgba(20, 22, 31, 0.15);
+  color: #14161f;
+}
+[data-theme="light"] .kiosk-input:focus {
+  background: rgba(59, 130, 246, 0.06);
+}
+[data-theme="light"] .kiosk-btn-lg {
+  color: #14161f;
+}
+
+[data-theme="light"] .kpi-label {
+  color: rgba(20, 22, 31, 0.6);
+}
+[data-theme="light"] .kpi-value {
+  color: #14161f;
+}
+[data-theme="light"] .kpi-meta {
+  color: rgba(20, 22, 31, 0.45);
+}
+
+[data-theme="light"] .modal-box {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.97) 0%, rgba(247, 245, 242, 0.99) 100%);
+  border: 1px solid rgba(20, 22, 31, 0.1);
+  box-shadow: 0 -20px 60px rgba(59, 130, 246, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+
+[data-theme="light"] .modal-summary {
+  background: rgba(20, 22, 31, 0.025);
+  border: 1px solid rgba(20, 22, 31, 0.08);
+}
+[data-theme="light"] .modal-summary div {
+  color: rgba(20, 22, 31, 0.75);
+  border-bottom: 1px solid rgba(20, 22, 31, 0.06);
+}
+[data-theme="light"] .modal-summary strong,
+[data-theme="light"] .modal-summary .total-amount {
+  color: #14161f;
+}
+
+[data-theme="light"] .cash-summary-card {
+  background: rgba(20, 22, 31, 0.03);
+  border: 1px solid rgba(20, 22, 31, 0.08);
+}
+[data-theme="light"] .cash-summary-card:hover {
+  background: rgba(20, 22, 31, 0.05);
+}
+[data-theme="light"] .cash-summary-label {
+  color: rgba(20, 22, 31, 0.55);
+}
+[data-theme="light"] .cash-summary-value {
+  color: #14161f;
+}
+
+[data-theme="light"] .floating-panel {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(20, 22, 31, 0.1);
+  box-shadow: 0 20px 60px rgba(20, 22, 31, 0.15);
+}
+
+[data-theme="light"] .toast-notification {
+  color: #14161f;
 }

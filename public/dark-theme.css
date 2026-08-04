@@ -282,3 +282,24 @@ table.admin-table input, table.admin-table select, table.admin-table textarea,
     .navbar, .date-presets, .inline-form, .admin-tabs, .withdraw-btn, .mesh-blob, .bell-btn { display: none !important; }
     #dashboard { margin-left: 0 !important; padding-bottom: 0 !important; }
 }
+
+/* Light theme — nearly everything in this file reads from the --ink/--glass/
+   --text-1/--text-2/--hair custom properties declared on body above, so
+   redeclaring those under [data-theme="light"] flips almost the entire
+   dashboard automatically. Toggled via theme-toggle.js. */
+html[data-theme="light"] body {
+    --ink: #f7f5f2;
+    --ink-2: #ffffff;
+    --glass: rgba(20, 22, 31, 0.03);
+    --glass-strong: rgba(20, 22, 31, 0.05);
+    --text-1: #1d1d1f;
+    --text-2: #6b6b70;
+    --hair: rgba(20, 22, 31, 0.1);
+}
+html[data-theme="light"] .navbar.scrolled {
+    background: rgba(255, 255, 255, 0.8) !important;
+}
+html[data-theme="light"] input[type="date"],
+html[data-theme="light"] input[type="datetime-local"] {
+    color-scheme: light;
+}

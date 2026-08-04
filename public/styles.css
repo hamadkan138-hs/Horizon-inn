@@ -10,8 +10,8 @@
     --charcoal-soft: #1d202c;
     --gold: #c6a15b;
     --gold-soft: #e0c48a;
-    --cream: #0B0F1A;
-    --white: #111827;
+    --cream: #1a1a1c;
+    --white: #242426;
     --text-dark: #eef0f4;
     --text-light: #9aa0ae;
     /* Dark text specifically for content sitting on a gold background/badge
@@ -27,6 +27,110 @@
     --glass-border: rgba(255, 255, 255, 0.1);
     --hair: rgba(255, 255, 255, 0.08);
     --gold-glow: rgba(198, 161, 91, 0.4);
+}
+
+/* Light theme — toggled via [data-theme="light"] on <html> (theme-toggle.js).
+   --charcoal/--charcoal-soft stay dark on purpose: nav/footer/dark buttons
+   keep their look in both themes (same low-risk pattern used when the site
+   first went dark — only page bg/card surface/body text actually flip). */
+:root[data-theme="light"] {
+    --cream: #f7f5f2;
+    --white: #ffffff;
+    --text-dark: #1d1d1f;
+    --text-light: #6b6b70;
+    --shadow: 0 20px 50px rgba(20, 22, 31, 0.08);
+    --shadow-lg: 0 30px 70px rgba(20, 22, 31, 0.14);
+    --glass-bg: rgba(20, 22, 31, 0.03);
+    --glass-border: rgba(20, 22, 31, 0.08);
+    --hair: rgba(20, 22, 31, 0.08);
+    --gold-glow: rgba(198, 161, 91, 0.25);
+}
+
+/* ===== Theme toggle switch (iOS-style sliding control) ===== */
+.theme-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: 54px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--hair);
+    border-radius: 999px;
+    background: var(--charcoal);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background var(--transition);
+}
+
+.theme-toggle-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7rem;
+    transition: opacity var(--transition);
+}
+.theme-toggle-icon.moon { left: 8px; color: #9aa0ae; opacity: 1; }
+.theme-toggle-icon.sun { right: 8px; color: #e0c48a; opacity: 0.5; }
+
+.theme-toggle-knob {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.theme-toggle[aria-checked="true"] .theme-toggle-knob {
+    transform: translateX(24px);
+}
+.theme-toggle[aria-checked="true"] .theme-toggle-icon.moon { opacity: 0.4; }
+.theme-toggle[aria-checked="true"] .theme-toggle-icon.sun { opacity: 1; }
+.theme-toggle[aria-checked="true"] {
+    background: var(--gold-soft);
+    border-color: transparent;
+}
+
+/* The hero (and any other full-bleed photo section) always sits on a fixed
+   dark overlay, independent of the page theme — its text must stay light
+   in both themes, or it goes unreadable against the photo in light mode.
+   glass-theme.css's light-mode h1-h6 override directly targets the heading
+   (a direct match always beats inheritance from .hero-content, regardless
+   of specificity), so this needs to target .hero-content h1/p directly too,
+   with higher specificity than that bare h1 rule, to win. */
+[data-theme="light"] .hero-content,
+[data-theme="light"] .hero-content h1,
+[data-theme="light"] .hero-content p {
+    color: #eef0f4;
+}
+
+/* The nav bar is transparent over the hero photo until scrolled, and even
+   then gets its own hardcoded dark background (.navbar.scrolled) — it never
+   actually sits on the page's light background, so its text stays light
+   in both themes too. */
+[data-theme="light"] .nav-brand,
+[data-theme="light"] .nav-menu a {
+    color: #eef0f4;
+}
+[data-theme="light"] .nav-menu a:hover,
+[data-theme="light"] .nav-menu a.active {
+    color: var(--gold-soft);
+}
+[data-theme="light"] .nav-menu a.nav-cta {
+    color: var(--on-gold);
+}
+
+/* .book-btn keeps its --charcoal (always-dark) background in both themes
+   for the room-card CTA — text must stay light to stay readable on it. */
+[data-theme="light"] .book-btn {
+    color: #eef0f4;
+}
+[data-theme="light"] .book-btn:hover,
+[data-theme="light"] .book-btn.primary {
+    color: var(--on-gold);
 }
 
 * {

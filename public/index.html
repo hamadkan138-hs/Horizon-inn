@@ -28,6 +28,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="glass-theme.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="theme-toggle.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/anime@3.2.1/lib/anime.min.js"></script>
     <script src="animation-config.js"></script>
     <script src="animation-engine.js"></script>
@@ -42,6 +43,11 @@
                 <img src="images/logo-mark.png" alt="Horizon Inn" class="nav-logo">
                 <span>Horizon Inn</span>
             </div>
+            <button type="button" class="theme-toggle" role="switch" aria-checked="false" aria-label="Toggle light/dark theme" style="margin-left: auto; margin-right: 14px;">
+                <i class="fas fa-moon theme-toggle-icon moon"></i>
+                <i class="fas fa-sun theme-toggle-icon sun"></i>
+                <span class="theme-toggle-knob"></span>
+            </button>
             <button class="nav-toggle" id="navToggle">
                 <span></span>
                 <span></span>
