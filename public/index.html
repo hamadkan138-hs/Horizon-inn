@@ -3,623 +3,607 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Horizon Inn - Luxury Guest House &amp; Event Complex in Peshawar</title>
-    <meta name="description" content="Horizon Inn is a boutique guest house in Peshawar offering luxury rooms, a courtyard fire pit, and the Crescent Grove Event &amp; Hospitality Complex for meetings, celebrations, and private events. Book direct for the best rates.">
+    <title>Horizon Inn Peshawar — A Cinematic Stay</title>
+    <meta name="description" content="Horizon Inn is a boutique guest house in Peshawar — elegant rooms, a courtyard fire pit, and easy reach of the city's storied bazaars and forts. Book direct for the best rates.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://horizon-inn.onrender.com/">
+    <link rel="icon" type="image/png" href="images/favicon.png">
 
     <meta property="og:type" content="lodging">
     <meta property="og:site_name" content="Horizon Inn">
-    <meta property="og:title" content="Horizon Inn - Luxury Guest House &amp; Event Complex in Peshawar">
-    <meta property="og:description" content="Boutique rooms, a courtyard fire pit, and the Crescent Grove Event &amp; Hospitality Complex — book direct in Peshawar.">
+    <meta property="og:title" content="Horizon Inn Peshawar — A Cinematic Stay">
+    <meta property="og:description" content="Boutique rooms, a courtyard fire pit, and the storied streets of Peshawar — book direct.">
     <meta property="og:image" content="https://horizon-inn.onrender.com/images/gallery/courtyard-lounge.jpg">
     <meta property="og:url" content="https://horizon-inn.onrender.com/">
 
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Horizon Inn - Luxury Guest House &amp; Event Complex in Peshawar">
-    <meta name="twitter:description" content="Boutique rooms, a courtyard fire pit, and the Crescent Grove Event &amp; Hospitality Complex — book direct in Peshawar.">
-    <meta name="twitter:image" content="https://horizon-inn.onrender.com/images/gallery/courtyard-lounge.jpg">
-
-    <script type="application/ld+json" id="structuredData">{}</script>
-    <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="glass-theme.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="theme-toggle.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/anime@3.2.1/lib/anime.min.js"></script>
-    <script src="animation-config.js"></script>
-    <script src="animation-engine.js"></script>
-    <script src="micro-interactions.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --bg: #0a0a0b;
+        --panel: #131315;
+        --ink: #f4f1ec;
+        --ink-dim: rgba(244, 241, 236, 0.68);
+        --ink-faint: rgba(244, 241, 236, 0.42);
+        --gold: #c9a15a;
+        --gold-soft: rgba(201, 161, 90, 0.85);
+        --hair: rgba(244, 241, 236, 0.14);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Inter', sans-serif;
+        overflow-x: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+
+    ::selection { background: var(--gold); color: #171512; }
+
+    /* ---------- Nav ---------- */
+    .cine-nav {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 500;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 26px 5vw;
+        transition: background 0.4s ease, padding 0.4s ease, box-shadow 0.4s ease;
+    }
+    .cine-nav.scrolled {
+        background: rgba(10, 10, 11, 0.86);
+        backdrop-filter: blur(10px);
+        padding: 16px 5vw;
+        box-shadow: 0 1px 0 var(--hair);
+    }
+    .cine-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: 'Playfair Display', serif;
+        font-size: 1.15rem;
+        letter-spacing: 0.04em;
+    }
+    .cine-brand img { height: 30px; width: auto; }
+    .cine-links {
+        display: flex;
+        align-items: center;
+        gap: 34px;
+        font-size: 0.78rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+    .cine-links a { opacity: 0.75; transition: opacity 0.25s ease; }
+    .cine-links a:hover { opacity: 1; }
+    .cine-links .nav-book {
+        opacity: 1;
+        border: 1px solid var(--gold-soft);
+        color: var(--gold);
+        padding: 10px 20px;
+        border-radius: 999px;
+        transition: background 0.25s ease, color 0.25s ease;
+    }
+    .cine-links .nav-book:hover { background: var(--gold); color: #171512; }
+    .nav-burger {
+        display: none;
+        flex-direction: column;
+        gap: 5px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 6px;
+    }
+    .nav-burger span { width: 22px; height: 1px; background: var(--ink); display: block; }
+
+    /* ---------- Scroll-snap panels ---------- */
+    .snap-container {
+        height: 100vh;
+        overflow-y: scroll;
+        scroll-snap-type: y mandatory;
+        scroll-behavior: smooth;
+    }
+    .panel {
+        position: relative;
+        min-height: 100vh;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        padding: 0 6vw;
+    }
+    .panel-bg {
+        position: absolute;
+        inset: -6% -6%;
+        background-size: cover;
+        background-position: center;
+        will-change: transform;
+    }
+    .panel-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(8,8,9,0.55) 0%, rgba(8,8,9,0.78) 55%, rgba(8,8,9,0.95) 100%);
+    }
+    .panel-content {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        max-width: 1180px;
+        margin: 0 auto;
+    }
+
+    .eyebrow {
+        display: inline-block;
+        font-size: 0.78rem;
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+        color: var(--gold-soft);
+        margin-bottom: 22px;
+    }
+
+    /* ---------- Reveal-on-scroll ---------- */
+    .reveal {
+        opacity: 0;
+        transform: translateY(46px);
+        transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1.1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.in-view { opacity: 1; transform: translateY(0); }
+    .reveal.delay-1 { transition-delay: 0.12s; }
+    .reveal.delay-2 { transition-delay: 0.24s; }
+    .reveal.delay-3 { transition-delay: 0.36s; }
+    .reveal.delay-4 { transition-delay: 0.48s; }
+    .reveal-scale { transform: translateY(30px) scale(0.96); }
+    .reveal-scale.in-view { transform: translateY(0) scale(1); }
+
+    /* ---------- Hero ---------- */
+    .hero-panel .panel-content { text-align: center; }
+    .hero-title {
+        font-family: 'Playfair Display', serif;
+        font-weight: 600;
+        font-size: clamp(3rem, 9vw, 7.5rem);
+        line-height: 1.02;
+        letter-spacing: 0.01em;
+    }
+    .hero-title em { font-style: italic; color: var(--gold); font-weight: 500; }
+    .hero-sub {
+        margin: 26px auto 0;
+        max-width: 560px;
+        font-size: 1.05rem;
+        font-weight: 300;
+        color: var(--ink-dim);
+        line-height: 1.7;
+    }
+    .hero-cta-row {
+        margin-top: 44px;
+        display: flex;
+        justify-content: center;
+        gap: 18px;
+        flex-wrap: wrap;
+    }
+    .btn-gold, .btn-ghost {
+        display: inline-block;
+        padding: 16px 36px;
+        font-size: 0.82rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        border-radius: 999px;
+        transition: transform 0.3s ease, background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+    .btn-gold { background: var(--gold); color: #171512; }
+    .btn-gold:hover { transform: translateY(-2px); }
+    .btn-ghost { border: 1px solid var(--hair); color: var(--ink); }
+    .btn-ghost:hover { border-color: var(--gold-soft); color: var(--gold); }
+
+    .scroll-cue {
+        position: absolute;
+        bottom: 40px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.68rem;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+    }
+    .scroll-cue::after {
+        content: '';
+        width: 1px;
+        height: 40px;
+        background: linear-gradient(var(--gold-soft), transparent);
+        animation: cueMove 2s ease-in-out infinite;
+    }
+    @keyframes cueMove {
+        0% { transform: scaleY(0.3); opacity: 0.3; transform-origin: top; }
+        50% { transform: scaleY(1); opacity: 1; transform-origin: top; }
+        100% { transform: scaleY(0.3); opacity: 0.3; transform-origin: bottom; }
+    }
+
+    /* ---------- About ---------- */
+    .about-panel .panel-content {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 64px;
+        align-items: center;
+        text-align: left;
+    }
+    .section-title {
+        font-family: 'Playfair Display', serif;
+        font-weight: 600;
+        font-size: clamp(2.2rem, 4.4vw, 3.6rem);
+        line-height: 1.1;
+        margin-bottom: 26px;
+    }
+    .about-copy p {
+        font-weight: 300;
+        color: var(--ink-dim);
+        font-size: 1.02rem;
+        line-height: 1.85;
+        margin-bottom: 18px;
+        max-width: 46ch;
+    }
+    .about-figures {
+        display: flex;
+        gap: 40px;
+        margin-top: 34px;
+    }
+    .about-figures div { border-top: 1px solid var(--hair); padding-top: 14px; }
+    .about-figures strong {
+        display: block;
+        font-family: 'Playfair Display', serif;
+        font-size: 1.8rem;
+        color: var(--gold);
+    }
+    .about-figures span {
+        font-size: 0.72rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+    }
+    .about-frame {
+        position: relative;
+        aspect-ratio: 4 / 5;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .about-frame img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.02); }
+    .about-frame::after {
+        content: '';
+        position: absolute; inset: 0;
+        box-shadow: inset 0 0 0 1px var(--hair);
+    }
+
+    /* ---------- Rooms ---------- */
+    .rooms-panel { padding-top: 60px; padding-bottom: 60px; }
+    .rooms-panel .panel-content { text-align: center; }
+    .rooms-header { max-width: 640px; margin: 0 auto 56px; }
+    .rooms-header p { color: var(--ink-dim); font-weight: 300; margin-top: 16px; line-height: 1.7; }
+    .room-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 26px;
+        text-align: left;
+    }
+    .room-card {
+        position: relative;
+        border-radius: 6px;
+        overflow: hidden;
+        aspect-ratio: 3 / 4;
+        cursor: default;
+    }
+    .room-card img {
+        width: 100%; height: 100%; object-fit: cover;
+        transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .room-card:hover img { transform: scale(1.08); }
+    .room-card-shade {
+        position: absolute; inset: 0;
+        background: linear-gradient(180deg, rgba(10,10,11,0) 35%, rgba(10,10,11,0.92) 100%);
+    }
+    .room-card-body {
+        position: absolute; left: 0; right: 0; bottom: 0;
+        padding: 26px 24px;
+    }
+    .room-card-body .room-tag {
+        font-size: 0.68rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--gold-soft);
+        margin-bottom: 8px;
+        display: block;
+    }
+    .room-card-body h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    .room-card-body p {
+        font-size: 0.9rem;
+        color: var(--ink-dim);
+        font-weight: 300;
+        line-height: 1.55;
+    }
+    .rooms-footer-link { margin-top: 46px; display: inline-block; }
+
+    /* ---------- Peshawar / Landmarks ---------- */
+    .landmarks-panel .panel-content { text-align: left; }
+    .landmarks-header { max-width: 640px; margin-bottom: 54px; }
+    .landmarks-header p { color: var(--ink-dim); font-weight: 300; margin-top: 16px; line-height: 1.8; }
+    .landmark-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 30px;
+    }
+    .landmark-item { border-top: 1px solid var(--hair); padding-top: 20px; }
+    .landmark-item .landmark-index {
+        font-family: 'Playfair Display', serif;
+        font-style: italic;
+        color: var(--gold);
+        font-size: 1.1rem;
+        display: block;
+        margin-bottom: 12px;
+    }
+    .landmark-item h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.35rem;
+        margin-bottom: 10px;
+        font-weight: 600;
+    }
+    .landmark-item p {
+        font-size: 0.92rem;
+        font-weight: 300;
+        color: var(--ink-dim);
+        line-height: 1.7;
+    }
+
+    /* ---------- Footer ---------- */
+    .footer-panel { align-items: flex-end; padding-bottom: 0; }
+    .footer-panel .panel-overlay { background: linear-gradient(180deg, rgba(8,8,9,0.4) 0%, rgba(8,8,9,0.97) 70%, #08090a 100%); }
+    .footer-inner {
+        width: 100%;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 90px 0 34px;
+    }
+    .footer-top {
+        display: grid;
+        grid-template-columns: 1.3fr 1fr 1fr;
+        gap: 50px;
+        padding-bottom: 50px;
+        border-bottom: 1px solid var(--hair);
+    }
+    .footer-brand {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.6rem;
+        margin-bottom: 14px;
+    }
+    .footer-top p { color: var(--ink-dim); font-weight: 300; font-size: 0.95rem; line-height: 1.7; max-width: 34ch; }
+    .footer-col h4 {
+        font-size: 0.72rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+        margin-bottom: 18px;
+    }
+    .footer-col a, .footer-col address {
+        display: block;
+        font-style: normal;
+        font-weight: 300;
+        color: var(--ink-dim);
+        margin-bottom: 12px;
+        font-size: 0.95rem;
+        transition: color 0.2s ease;
+    }
+    .footer-col a:hover { color: var(--gold); }
+    .footer-bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 14px;
+        padding-top: 26px;
+        font-size: 0.78rem;
+        color: var(--ink-faint);
+    }
+    .footer-bottom a { color: var(--ink-faint); margin-left: 20px; }
+    .footer-bottom a:hover { color: var(--gold); }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 900px) {
+        .cine-links { position: fixed; top: 0; right: 0; bottom: 0; width: 78%; max-width: 340px;
+            background: rgba(10,10,11,0.98); flex-direction: column; align-items: flex-start;
+            justify-content: center; gap: 26px; padding: 40px; transform: translateX(100%);
+            transition: transform 0.4s ease; }
+        .cine-links.open { transform: translateX(0); }
+        .nav-burger { display: flex; z-index: 501; }
+        .about-panel .panel-content { grid-template-columns: 1fr; }
+        .about-frame { order: -1; aspect-ratio: 16/10; }
+        .room-grid, .landmark-grid { grid-template-columns: 1fr; }
+        .footer-top { grid-template-columns: 1fr; gap: 34px; }
+        .snap-container { scroll-snap-type: y proximity; }
+        .panel { padding: 100px 7vw 60px; }
+    }
+</style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-brand">
-                <img src="images/logo-mark.png" alt="Horizon Inn" class="nav-logo">
-                <span>Horizon Inn</span>
-            </div>
-            <button type="button" class="theme-toggle" role="switch" aria-checked="false" aria-label="Toggle light/dark theme" style="margin-left: auto; margin-right: 14px;">
-                <i class="fas fa-moon theme-toggle-icon moon"></i>
-                <i class="fas fa-sun theme-toggle-icon sun"></i>
-                <span class="theme-toggle-knob"></span>
-            </button>
-            <button class="nav-toggle" id="navToggle">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-            <!-- Guest-facing only. Staff/investor entry points live in the footer —
-                 10 items overflowed the 1200px container (the brand and "Invest With
-                 Us" both wrapped onto extra lines), and guests never need them. -->
-            <ul class="nav-menu" id="navMenu">
-                <li><a href="#rooms">Rooms</a></li>
-                <li><a href="#gallery">Gallery</a></li>
-                <li><a href="#invest-with-us">Events</a></li>
-                <li><a href="#reviews">Reviews</a></li>
-                <li><a href="#contact">Contact</a></li>
-                <li><a href="#booking" class="nav-cta">Book Now</a></li>
-            </ul>
+
+    <nav class="cine-nav" id="cineNav">
+        <div class="cine-brand">
+            <img src="images/logo-mark.png" alt="Horizon Inn">
+            <span>Horizon Inn</span>
+        </div>
+        <button class="nav-burger" id="navBurger" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="cine-links" id="cineLinks">
+            <a href="#about">The Experience</a>
+            <a href="#rooms">Rooms</a>
+            <a href="#peshawar">Peshawar</a>
+            <a href="#footer-contact">Contact</a>
+            <a href="book.html#booking" class="nav-book">Book Now</a>
         </div>
     </nav>
 
-    <div class="offers-banner" id="offersBanner" style="display: none;">
-        <i class="fas fa-tag"></i>
-        <span id="offersBannerText"></span>
-    </div>
+    <main class="snap-container" id="snapContainer">
 
-    <!-- Hero Section -->
-    <section id="home" class="hero">
-        <div class="hero-bg" id="heroBg"></div>
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
-            <span class="eyebrow hero-in hero-in-1" id="heroEyebrow">Est. 2026 &middot; Boutique Hospitality</span>
-            <h1 class="hero-in hero-in-2" id="heroHeading">Welcome to <em>Horizon Inn</em></h1>
-            <p class="hero-in hero-in-3" id="heroSubtext">Experience luxury and tranquility like never before</p>
-
-            <!-- Availability search, placed in the hero rather than buried in the
-                 booking section further down the page: checking dates is the single
-                 action most guests arrive wanting to take. It doesn't book anything
-                 itself — it pre-fills and jumps to the full booking form below, so
-                 there's one source of truth for a reservation. -->
-            <form class="hero-search hero-in hero-in-4" id="heroSearchForm">
-                <div class="hero-search-field">
-                    <label for="heroCheckin">Check-in</label>
-                    <input type="date" id="heroCheckin" required>
-                </div>
-                <div class="hero-search-field">
-                    <label for="heroCheckout">Check-out</label>
-                    <input type="date" id="heroCheckout" required>
-                </div>
-                <div class="hero-search-field">
-                    <label for="heroGuests">Guests</label>
-                    <select id="heroGuests">
-                        <option value="1">1 Guest</option>
-                        <option value="2" selected>2 Guests</option>
-                        <option value="3">3 Guests</option>
-                        <option value="4">4 Guests</option>
-                    </select>
-                </div>
-                <button type="submit" class="hero-search-btn">Check Availability</button>
-            </form>
-            <a href="#rooms" class="hero-secondary-link hero-in hero-in-5">or browse our rooms &rarr;</a>
-        </div>
-        <a href="#about" class="scroll-cue" aria-label="Scroll down"><i class="fas fa-chevron-down"></i></a>
-    </section>
-
-    <!-- Social Proof Bar -->
-    <div class="social-proof-bar" id="socialProofBar" style="display: none;">
-        <div class="container">
-            <div class="social-proof-grid" id="socialProofGrid"></div>
-        </div>
-    </div>
-
-    <!-- About Section -->
-    <section class="about" id="about">
-        <div class="container">
-            <h2>About Horizon Inn</h2>
-            <div class="about-grid">
-                <div class="about-card reveal">
-                    <i class="fas fa-star"></i>
-                    <h3>Premium Amenities</h3>
-                    <p>Luxurious facilities and world-class service at your fingertips.</p>
-                </div>
-                <div class="about-card reveal">
-                    <i class="fas fa-users"></i>
-                    <h3>Expert Staff</h3>
-                    <p>Our dedicated team ensures an unforgettable experience.</p>
-                </div>
-                <div class="about-card reveal">
-                    <i class="fas fa-wifi"></i>
-                    <h3>Modern Technology</h3>
-                    <p>Stay connected with high-speed Wi-Fi and smart room systems.</p>
-                </div>
-                <div class="about-card reveal">
-                    <i class="fas fa-utensils"></i>
-                    <h3>Fine Dining</h3>
-                    <p>Gourmet meals prepared by our renowned chefs.</p>
+        <!-- Hero -->
+        <section class="panel hero-panel" id="hero">
+            <div class="panel-bg" data-parallax style="background-image:url('https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=2000&q=80');"></div>
+            <div class="panel-overlay"></div>
+            <div class="panel-content">
+                <span class="eyebrow reveal">Est. 2026 &middot; Peshawar, Pakistan</span>
+                <h1 class="hero-title reveal delay-1">Horizon Inn <em>Peshawar</em></h1>
+                <p class="hero-sub reveal delay-2">A boutique guest house where quiet luxury meets the warmth of the city's oldest streets — considered rooms, a courtyard fire pit, and service that remembers your name.</p>
+                <div class="hero-cta-row reveal delay-3">
+                    <a href="book.html#booking" class="btn-gold">Book Now</a>
+                    <a href="#about" class="btn-ghost">The Experience</a>
                 </div>
             </div>
-        </div>
-    </section>
+            <div class="scroll-cue">Scroll</div>
+        </section>
 
-    <!-- Rooms Section -->
-    <section id="rooms" class="rooms">
-        <div class="container">
-            <h2>Our Luxurious <em>Rooms</em></h2>
-            <div class="rooms-grid" id="roomsGrid">
-                <div class="room-card skeleton"></div>
-                <div class="room-card skeleton"></div>
-                <div class="room-card skeleton"></div>
-            </div>
-            <div class="rooms-carousel-dots" id="roomsCarouselDots"></div>
-        </div>
-    </section>
-
-    <!-- Gallery Section.
-         Every card below opens a click-to-enlarge lightbox already. To turn
-         any one of them into a video preview card (hover-to-play muted
-         clip, a play-button badge, full playback with sound in the
-         lightbox), just add data-video="images/gallery/your-clip.mp4" to
-         that .gallery-item div — script.js picks it up automatically, no
-         other change needed. Cards with no data-video stay plain photos. -->
-    <section id="gallery" class="gallery">
-        <div class="container">
-            <h2>Around <em>Horizon Inn</em></h2>
-            <p class="gallery-intro">A few real moments from our courtyard, terrace and meeting room &mdash; no stock photos here.</p>
-            <div class="gallery-grid">
-                <div class="gallery-item gallery-lounge reveal">
-                    <img src="images/gallery/courtyard-lounge.jpg" alt="Courtyard lounge area lit up at dusk" loading="lazy">
-                    <span class="gallery-caption">The Courtyard</span>
-                </div>
-                <div class="gallery-item gallery-tree reveal">
-                    <img src="images/gallery/tree-lights.jpg" alt="String lights in a tree above potted plants" loading="lazy">
-                    <span class="gallery-caption">Evening Light</span>
-                </div>
-                <div class="gallery-item gallery-meet reveal">
-                    <img src="images/gallery/meeting-room.jpg" alt="Glass-walled meeting room with pergola lighting" loading="lazy">
-                    <span class="gallery-caption">The Meeting Room</span>
-                </div>
-                <div class="gallery-item gallery-fire reveal">
-                    <img src="images/gallery/firepit-gathering.jpg" alt="Guest relaxing by the courtyard fire pit" loading="lazy">
-                    <span class="gallery-caption">Fireside</span>
-                </div>
-                <div class="gallery-item gallery-patio reveal">
-                    <img src="images/gallery/courtyard-patio.jpg" alt="Courtyard patio seating under string lights" loading="lazy">
-                    <span class="gallery-caption">The Patio</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Guest Reviews -->
-    <section id="reviews" class="reviews-section">
-        <div class="container">
-            <h2>What Our Guests Say</h2>
-            <p class="gallery-intro">Real feedback from real stays.</p>
-            <div class="review-grid" id="reviewGrid">
-                <p style="text-align: center; grid-column: 1 / -1; color: var(--text-light);">Loading reviews&hellip;</p>
-            </div>
-            <div class="review-cta">
-                <button type="button" class="cta-button" id="openReviewFormBtn">Leave a Review</button>
-            </div>
-            <form id="reviewForm" class="review-form" style="display: none;">
-                <div class="form-group">
-                    <label>Your Name</label>
-                    <input type="text" id="reviewGuestName" required>
-                </div>
-                <div class="form-group">
-                    <label>Rating</label>
-                    <div class="star-picker" id="starPicker">
-                        <i class="fas fa-star" data-value="1"></i>
-                        <i class="fas fa-star" data-value="2"></i>
-                        <i class="fas fa-star" data-value="3"></i>
-                        <i class="fas fa-star" data-value="4"></i>
-                        <i class="fas fa-star" data-value="5"></i>
+        <!-- About / Experience -->
+        <section class="panel about-panel" id="about">
+            <div class="panel-content">
+                <div class="about-copy">
+                    <span class="eyebrow reveal">The Experience</span>
+                    <h2 class="section-title reveal delay-1">Stillness, considered<br>in every detail.</h2>
+                    <p class="reveal delay-2">Horizon Inn was built on a simple idea — that a guest house can hold the calm of a private retreat and the character of the city around it at once. Every room is dressed in warm, unfussy materials; every evening ends around the courtyard fire pit.</p>
+                    <p class="reveal delay-3">Ten minutes from Peshawar's old city, close enough to wander and far enough to rest, this is a stay designed for people who notice the details others skip.</p>
+                    <div class="about-figures reveal delay-4">
+                        <div><strong>24/7</strong><span>Front Desk</span></div>
+                        <div><strong>4.8</strong><span>Guest Rating</span></div>
+                        <div><strong>10 min</strong><span>To Old City</span></div>
                     </div>
-                    <input type="hidden" id="reviewRating" value="0" required>
                 </div>
-                <div class="form-group">
-                    <label>Your Review</label>
-                    <textarea id="reviewComment" rows="4" placeholder="Tell us about your stay&hellip;"></textarea>
+                <div class="about-frame reveal-scale reveal delay-2">
+                    <img src="https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=1200&q=80" alt="Horizon Inn lounge and lobby" loading="lazy">
                 </div>
-                <button type="submit" class="submit-btn">Submit Review</button>
-                <p class="form-message" id="reviewFormMessage"></p>
-            </form>
-        </div>
-    </section>
-
-    <!-- Crescent Grove Event & Hospitality Complex — Facility Showcase.
-         Equity/profit-share investment pitch, the ROI calculator, and the
-         "Upcoming Expansion" investor teaser were removed from this
-         public page for legal reasons (that content must not be presented
-         to unauthenticated site visitors). The bookable-venue showcase
-         below is ordinary event-space rental content, not an investment
-         offer, so it stays. Investor-facing tools remain fully available
-         inside the authenticated investor portal and the admin dashboard. -->
-    <section id="invest-with-us" class="crescent-zone">
-        <div class="container">
-            <h2 style="text-align: center;">Crescent Grove Facilities <span class="coming-soon-pill">Opening Soon</span></h2>
-            <p class="section-intro">Four spaces, each available individually or as a full-complex buyout for exclusive events &mdash; opening soon.</p>
-            <div class="facility-grid" id="facilityGrid">
-                <p style="color: #9ca3af; text-align: center; grid-column: 1 / -1;">Loading facilities&hellip;</p>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Booking Section -->
-    <section id="booking" class="booking">
-        <div class="container">
-            <h2>Book Your Stay</h2>
-            <div class="booking-form-wrapper reveal">
-                <form class="booking-form" id="bookingForm">
-
-                    <fieldset class="form-fieldset">
-                        <legend>Guest Details</legend>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="name">Full Name *</label>
-                                <input type="text" id="name" name="name" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="email">Email Address *</label>
-                                <input type="email" id="email" name="email" required>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="phone">Phone Number *</label>
-                                <input type="tel" id="phone" name="phone" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="cnic">CNIC / Passport Number *</label>
-                                <input type="text" id="cnic" name="cnic" placeholder="e.g. 12345-1234567-1" required>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="maritalStatus">Marital Status *</label>
-                                <select id="maritalStatus" name="maritalStatus" required>
-                                    <option value="">Select</option>
-                                    <option value="Single">Single</option>
-                                    <option value="Married">Married</option>
-                                    <option value="Divorced">Divorced</option>
-                                    <option value="Widowed">Widowed</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="guests">Number of Guests *</label>
-                                <input type="number" id="guests" name="guests" min="1" max="4" required>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group" style="grid-column: 1 / -1;">
-                                <label for="address">Permanent / Home Address</label>
-                                <input type="text" id="address" name="address" placeholder="Optional, for your guest record">
-                            </div>
-                        </div>
-                    </fieldset>
-
-                    <fieldset class="form-fieldset">
-                        <legend>Stay Details</legend>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="roomId">Room Type *</label>
-                                <select id="roomId" name="roomId" required>
-                                    <option value="">Loading rooms...</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="purposeOfStay">Purpose of Stay</label>
-                                <select id="purposeOfStay" name="purposeOfStay">
-                                    <option value="">Select</option>
-                                    <option value="Leisure/Tourism">Leisure / Tourism</option>
-                                    <option value="Business">Business</option>
-                                    <option value="Family Visit">Family Visit</option>
-                                    <option value="Medical">Medical</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="checkin">Check-in Date *</label>
-                                <input type="date" id="checkin" name="checkin" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="checkout">Check-out Date *</label>
-                                <input type="date" id="checkout" name="checkout" required>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="arrivalTime">Expected Arrival Time</label>
-                                <input type="time" id="arrivalTime" name="arrivalTime">
-                            </div>
-                            <div class="form-group">
-                                <label for="vehicleNumber">Vehicle Number (if any)</label>
-                                <input type="text" id="vehicleNumber" name="vehicleNumber" placeholder="e.g. LEA-1234">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="arrivalFrom">Arriving From (City/Address) *</label>
-                                <input type="text" id="arrivalFrom" name="arrivalFrom" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="departureTo">Departing To (City/Address) *</label>
-                                <input type="text" id="departureTo" name="departureTo" required>
-                            </div>
-                        </div>
-                    </fieldset>
-
-                    <fieldset class="form-fieldset">
-                        <legend>Payment</legend>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="paymentMethod">Payment Method *</label>
-                                <select id="paymentMethod" name="paymentMethod" required>
-                                    <option value="pay_at_property">Pay at Property</option>
-                                    <option value="bank_transfer">Bank Transfer (Advance)</option>
-                                    <option value="easypaisa">EasyPaisa (Advance)</option>
-                                    <option value="jazzcash">JazzCash (Advance)</option>
-                                </select>
-                            </div>
-                            <div class="form-group" id="transactionIdGroup" style="display: none;">
-                                <label for="transactionId">Transaction ID *</label>
-                                <input type="text" id="transactionId" name="transactionId" placeholder="From your payment receipt">
-                            </div>
-                        </div>
-                        <div class="payment-instructions" id="paymentInstructions" style="display: none;"></div>
-                        <p class="payment-security-note" id="paymentSecurityNote" style="display: none;">
-                            <i class="fas fa-shield-halved"></i> For your security, only send payments to the official Horizon Inn accounts shown above. Horizon Inn is not responsible for payments sent to any other account.
-                        </p>
-                    </fieldset>
-
-                    <fieldset class="form-fieldset">
-                        <legend>Enhance Your Stay (optional)</legend>
-                        <div class="addon-grid">
-                            <label class="addon-option">
-                                <input type="checkbox" name="addon" value="breakfast_upgrade">
-                                <span>Breakfast Upgrade <strong>+Rs. 800</strong></span>
-                            </label>
-                            <label class="addon-option">
-                                <input type="checkbox" name="addon" value="airport_pickup">
-                                <span>Airport Pickup <strong>+Rs. 2,500</strong></span>
-                            </label>
-                            <label class="addon-option">
-                                <input type="checkbox" name="addon" value="late_checkout">
-                                <span>Late Check-out (until 3 PM) <strong>+Rs. 1,000</strong></span>
-                            </label>
-                            <label class="addon-option">
-                                <input type="checkbox" name="addon" value="crescent_dinner">
-                                <span>Crescent Grove Candlelight Dinner for Two <strong>+Rs. 6,500</strong></span>
-                            </label>
-                        </div>
-                    </fieldset>
-
-                    <fieldset class="form-fieldset">
-                        <legend>Promo / Gift Voucher / Referral Code</legend>
-                        <div class="form-group">
-                            <label for="discountCode">Have a code?</label>
-                            <input type="text" id="discountCode" name="discountCode" placeholder="Optional">
-                        </div>
-                    </fieldset>
-
-                    <fieldset class="form-fieldset">
-                        <legend>Special Requests</legend>
-                        <div class="form-group">
-                            <label for="special">Anything else we should know?</label>
-                            <textarea id="special" name="special" rows="4" placeholder="Any special requests or requirements?"></textarea>
-                        </div>
-                    </fieldset>
-
-                    <fieldset class="form-fieldset">
-                        <legend>Terms &amp; Conditions</legend>
-                        <div class="terms-box" id="termsBox">
-                            <p><strong>Check-in / Check-out:</strong> Check-in from 2:00 PM, check-out by 12:00 PM. Early check-in or late check-out is subject to availability.</p>
-                            <p><strong>Identification:</strong> A valid CNIC or passport matching the booking details is required from every guest at check-in.</p>
-                            <p><strong>Cancellation Policy:</strong> Cancellations made 24 hours or more before check-in are fully refundable. Cancellations within 24 hours, or no-shows, are non-refundable.</p>
-                            <p><strong>Damage Policy:</strong> Guests are responsible for any damage to the room or property beyond normal wear and tear, and will be charged for repair or replacement.</p>
-                            <p><strong>House Rules:</strong> No smoking indoors. Quiet hours are from 11:00 PM to 7:00 AM. Only registered guests are permitted in guest rooms. Pets are not allowed unless pre-approved.</p>
-                        </div>
-                        <div class="form-group checkbox-group">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="termsAccepted" name="termsAccepted" required>
-                                <span>I have read and agree to the Terms &amp; Conditions above *</span>
-                            </label>
-                        </div>
-                    </fieldset>
-
-                    <button type="submit" class="submit-btn">Complete Booking</button>
-                    <p class="form-message" id="bookingMessage"></p>
-                </form>
-            </div>
-        </div>
-    </section>
-
-    <!-- Contact Section -->
-    <section id="contact" class="contact">
-        <div class="container">
-            <h2>Get In Touch</h2>
-            <div class="contact-wrapper reveal">
-                <div class="contact-info">
-                    <div class="info-item">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <div>
-                            <h4>Address</h4>
-                            <p id="contactAddress">123 Sunset Boulevard<br>Mountain View, CA 94043</p>
+        <!-- Room Highlights -->
+        <section class="panel rooms-panel" id="rooms">
+            <div class="panel-content">
+                <div class="rooms-header">
+                    <span class="eyebrow reveal">Rooms &amp; Suites</span>
+                    <h2 class="section-title reveal delay-1">Three ways to stay.</h2>
+                    <p class="reveal delay-2">A glimpse of the collection — full availability, real rates, and instant booking live on our booking page.</p>
+                </div>
+                <div class="room-grid">
+                    <div class="room-card reveal delay-1">
+                        <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80" alt="Elegant King Room" loading="lazy">
+                        <div class="room-card-shade"></div>
+                        <div class="room-card-body">
+                            <span class="room-tag">Signature</span>
+                            <h3>Elegant King Room</h3>
+                            <p>Warm oak tones, a reading corner, and a bed dressed for long, unhurried mornings.</p>
                         </div>
                     </div>
-                    <div class="info-item">
-                        <i class="fas fa-phone"></i>
-                        <div>
-                            <h4>Phone</h4>
-                            <p id="contactPhone">+1 (555) 123-4567</p>
+                    <div class="room-card reveal delay-2">
+                        <img src="https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=900&q=80" alt="Garden View Suite" loading="lazy">
+                        <div class="room-card-shade"></div>
+                        <div class="room-card-body">
+                            <span class="room-tag">Suite</span>
+                            <h3>Garden View Suite</h3>
+                            <p>A private sitting area opening onto the courtyard — ideal for slower, longer stays.</p>
                         </div>
                     </div>
-                    <div class="info-item">
-                        <i class="fas fa-envelope"></i>
-                        <div>
-                            <h4>Email</h4>
-                            <p id="contactEmailDisplay">info@horizoninn.com</p>
+                    <div class="room-card reveal delay-3">
+                        <img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=900&q=80" alt="Executive Twin Room" loading="lazy">
+                        <div class="room-card-shade"></div>
+                        <div class="room-card-body">
+                            <span class="room-tag">Twin</span>
+                            <h3>Executive Twin Room</h3>
+                            <p>Two beds, one calm space — built for colleagues, siblings, or friends travelling together.</p>
                         </div>
                     </div>
-                    <div class="info-item">
-                        <i class="fas fa-clock"></i>
-                        <div>
-                            <h4>Hours</h4>
-                            <p id="contactHours">24/7 Service Available</p>
-                        </div>
-                    </div>
-                    <div class="info-item" id="contactFacebookItem" style="display: none;">
-                        <i class="fab fa-facebook"></i>
-                        <div>
-                            <h4>Follow Us</h4>
-                            <p><a id="contactFacebookLink" href="#" target="_blank" rel="noopener">Horizon Inn on Facebook</a></p>
-                        </div>
-                    </div>
-
-                    <form class="contact-form" id="contactForm">
-                        <div class="form-group">
-                            <label for="contactName">Name *</label>
-                            <input type="text" id="contactName" name="name" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="contactEmail">Email *</label>
-                            <input type="email" id="contactEmail" name="email" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="contactMessage">Message *</label>
-                            <textarea id="contactMessage" name="message" rows="4" required></textarea>
-                        </div>
-                        <button type="submit" class="submit-btn">Send Message</button>
-                        <p class="form-message" id="contactFormMessage"></p>
-                    </form>
                 </div>
-
-                <div class="map-container">
-                    <iframe id="contactMapEmbed" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3169.0620556597346!2d-122.08393432345069!3d37.42242897127838!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x808fba02425a9ddf%3A0x60a3057bc10d138f!2s123%20Sesame%20St%2C%20Mountain%20View%2C%20CA%2094043!5e0!3m2!1sen!2sus!4v1696892741234" width="100%" height="400" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-                    <a id="contactMapLink" href="#" target="_blank" rel="noopener" class="map-directions-link" style="display: none;">
-                        <i class="fas fa-location-arrow"></i> Get Directions on Google Maps
-                    </a>
-                </div>
+                <a href="book.html#rooms" class="btn-ghost rooms-footer-link reveal delay-4">View All Rooms &amp; Live Rates</a>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>Horizon Inn</h4>
-                    <p>Your gateway to luxury and comfort.</p>
+        <!-- Local Peshawar -->
+        <section class="panel landmarks-panel" id="peshawar">
+            <div class="panel-bg" data-parallax style="background-image:url('https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=2000&q=80'); opacity:0.22;"></div>
+            <div class="panel-overlay"></div>
+            <div class="panel-content">
+                <div class="landmarks-header">
+                    <span class="eyebrow reveal">Beyond The Courtyard</span>
+                    <h2 class="section-title reveal delay-1">A city worth stepping<br>outside for.</h2>
+                    <p class="reveal delay-2">Peshawar is one of South Asia's oldest living cities — and Horizon Inn sits close enough to reach its landmarks without losing the quiet of home.</p>
                 </div>
-                <div class="footer-section">
-                    <h4>Quick Links</h4>
-                    <ul>
-                        <li><a href="#home">Home</a></li>
-                        <li><a href="#rooms">Rooms</a></li>
-                        <li><a href="#booking">Booking</a></li>
-                        <li><a href="#contact">Contact</a></li>
-                        <li><a href="manage-booking.html">Manage My Booking</a></li>
-                        <li><a href="gift-voucher.html">Gift Vouchers</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Legal</h4>
-                    <ul>
-                        <li><a href="privacy.html">Privacy Policy</a></li>
-                        <li><a href="terms.html">Terms of Service</a></li>
-                        <li><a href="cancellation-policy.html">Cancellation &amp; Refunds</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Events &amp; Staff</h4>
-                    <ul>
-                        <li><a href="#invest-with-us">Events &amp; Venues</a></li>
-                        <li><a href="admin.html">Staff Login</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Follow Us</h4>
-                    <div class="social-links">
-                        <a href="#"><i class="fab fa-facebook"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                <div class="landmark-grid">
+                    <div class="landmark-item reveal delay-1">
+                        <span class="landmark-index">01</span>
+                        <h3>Qissa Khwani Bazaar</h3>
+                        <p>The legendary "Bazaar of Storytellers" — centuries of trade, tea houses, and history in one narrow street.</p>
+                    </div>
+                    <div class="landmark-item reveal delay-2">
+                        <span class="landmark-index">02</span>
+                        <h3>Bala Hisar Fort</h3>
+                        <p>A commanding Mughal-era fortress overlooking the old city, still standing sentry after generations.</p>
+                    </div>
+                    <div class="landmark-item reveal delay-3">
+                        <span class="landmark-index">03</span>
+                        <h3>Peshawar Museum</h3>
+                        <p>One of Pakistan's finest collections of Gandharan art and frontier history, a short drive from the door.</p>
                     </div>
                 </div>
             </div>
-            <div class="footer-bottom">
-                <p>&copy; 2026 Horizon Inn. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
+        </section>
 
-    <!-- Facility detail modal -->
-    <div class="facility-modal-overlay" id="facilityModalOverlay">
-        <div class="facility-modal-box">
-            <button type="button" class="facility-modal-close" id="facilityModalCloseBtn"><i class="fas fa-xmark"></i></button>
-            <div class="facility-modal-gallery" id="facilityModalGallery"></div>
-            <div class="facility-modal-content">
-                <h3 id="facilityModalName"></h3>
-                <div class="facility-modal-meta">
-                    <span><i class="fas fa-ruler-combined"></i> <span id="facilityModalSize"></span></span>
-                    <span><i class="fas fa-users"></i> <span id="facilityModalCapacity"></span></span>
-                    <span><i class="fas fa-tag"></i> <span id="facilityModalRate"></span></span>
+        <!-- Footer -->
+        <footer class="panel footer-panel" id="footer-contact">
+            <div class="panel-bg" data-parallax style="background-image:url('https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=2000&q=80'); opacity:0.18;"></div>
+            <div class="panel-overlay"></div>
+            <div class="panel-content footer-inner">
+                <div class="footer-top">
+                    <div>
+                        <div class="footer-brand">Horizon Inn</div>
+                        <p>A boutique guest house in Peshawar — considered rooms, a courtyard fire pit, and service built around you.</p>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Contact</h4>
+                        <address>Peshawar, Khyber Pakhtunkhwa, Pakistan</address>
+                        <a href="tel:+92910000000">+92 91 000 0000</a>
+                        <a href="mailto:info@horizoninnpeshawar.com">info@horizoninnpeshawar.com</a>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Explore</h4>
+                        <a href="book.html">Book Your Stay</a>
+                        <a href="book.html#rooms">Rooms &amp; Rates</a>
+                        <a href="book.html#gallery">Gallery</a>
+                        <a href="admin.html">Staff Login</a>
+                    </div>
                 </div>
-                <p id="facilityModalDescription" style="color: #c7cad1; font-size: 0.9rem; margin-bottom: 18px;"></p>
-                <div class="amenity-tags" id="facilityModalAmenities"></div>
-
-                <h4 style="font-family: 'Playfair Display', serif; margin-bottom: 10px;">Food &amp; Beverage Add-Ons</h4>
-                <div class="catering-tabs" id="cateringTabs"></div>
-                <div id="cateringItemsList"></div>
-
-                <a href="#booking" class="facility-modal-cta" id="facilityModalCta">Register Interest &mdash; Opening Soon</a>
+                <div class="footer-bottom">
+                    <span>&copy; <span id="year"></span> Horizon Inn Peshawar. All rights reserved.</span>
+                    <span>
+                        <a href="privacy.html">Privacy</a>
+                        <a href="terms.html">Terms</a>
+                        <a href="cancellation-policy.html">Cancellation Policy</a>
+                    </span>
+                </div>
             </div>
-        </div>
-    </div>
+        </footer>
 
-    <!-- WhatsApp click-to-chat -->
-    <a href="#" class="whatsapp-float-btn" id="whatsappFloatBtn" style="display: none;" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
-        <i class="fab fa-whatsapp"></i>
-    </a>
+    </main>
 
-    <!-- Sticky booking CTA bar -->
-    <div class="sticky-cta-bar" id="stickyCtaBar">
-        <div class="sticky-cta-info">
-            <span class="sticky-cta-label">Rooms from</span>
-            <span class="sticky-cta-price" id="stickyCtaPrice">&mdash;</span>
-            <span class="sticky-cta-label">/ night</span>
-        </div>
-        <a href="#booking" class="cta-button sticky-cta-btn">Book Now</a>
-    </div>
-
-    <!-- Exit-intent offer -->
-    <div class="exit-intent-overlay" id="exitIntentOverlay">
-        <div class="exit-intent-box">
-            <button type="button" class="exit-close" id="exitIntentCloseBtn"><i class="fas fa-xmark"></i></button>
-            <h3>Before you go&hellip;</h3>
-            <p style="color: var(--text-light); font-size: 0.92rem;">Here's 5% off your stay if you book today.</p>
-            <div class="exit-intent-code">WELCOME5</div>
-            <p style="font-size: 0.8rem; color: var(--text-light);">Enter this code in the "Promo / Gift Voucher / Referral Code" field at checkout.</p>
-            <a href="#booking" class="cta-button" id="exitIntentBookBtn">Book Now</a>
-        </div>
-    </div>
-
-    <!-- Gallery / video preview lightbox -->
-    <div class="media-lightbox-overlay" id="mediaLightboxOverlay">
-        <button type="button" class="media-lightbox-close" id="mediaLightboxClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
-        <div class="media-lightbox-content" id="mediaLightboxContent"></div>
-    </div>
-
-    <script src="script.js"></script>
     <!-- CHAT WIDGET START -->
     <div id="chat-widget" style="position:fixed; bottom:20px; right:20px; z-index:9999;">
       <button id="chat-toggle" style="width:60px; height:60px; border-radius:50%; background:#1c1c1c; color:white; border:none; font-size:30px; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer;">💬</button>
@@ -633,7 +617,7 @@
     </div>
     <style>
       /* Chat widget is always a white/light surface — scoped override so
-         the site-wide dark-theme placeholder color doesn't wash it out. */
+         the page's dark palette doesn't wash it out. */
       #chat-input::placeholder { color: #888; opacity: 1; }
     </style>
     <script>
@@ -696,5 +680,52 @@
       };
     </script>
     <!-- CHAT WIDGET END -->
+
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        var snapContainer = document.getElementById('snapContainer');
+        var nav = document.getElementById('cineNav');
+        var burger = document.getElementById('navBurger');
+        var links = document.getElementById('cineLinks');
+
+        // Nav goes solid once we've scrolled past the hero.
+        snapContainer.addEventListener('scroll', function () {
+            nav.classList.toggle('scrolled', snapContainer.scrollTop > 40);
+        });
+
+        burger.addEventListener('click', function () {
+            links.classList.toggle('open');
+        });
+        links.querySelectorAll('a').forEach(function (a) {
+            a.addEventListener('click', function () { links.classList.remove('open'); });
+        });
+
+        // Fade/slide-up reveal as each section scrolls into view.
+        var revealEls = document.querySelectorAll('.reveal');
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('in-view');
+                }
+            });
+        }, { root: snapContainer, threshold: 0.2 });
+        revealEls.forEach(function (el) { observer.observe(el); });
+
+        // Gentle parallax drift on each panel's background image.
+        var parallaxEls = document.querySelectorAll('[data-parallax]');
+        function updateParallax() {
+            parallaxEls.forEach(function (el) {
+                var rect = el.parentElement.getBoundingClientRect();
+                var offset = rect.top * 0.12;
+                el.style.transform = 'translateY(' + offset + 'px)';
+            });
+        }
+        snapContainer.addEventListener('scroll', function () {
+            window.requestAnimationFrame(updateParallax);
+        });
+        updateParallax();
+    </script>
+
 </body>
 </html>

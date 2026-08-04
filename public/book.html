@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Your Stay - Horizon Inn Peshawar</title>
+    <meta name="description" content="Horizon Inn is a boutique guest house in Peshawar offering luxury rooms, a courtyard fire pit, and the Crescent Grove Event &amp; Hospitality Complex for meetings, celebrations, and private events. Book direct for the best rates.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://horizon-inn.onrender.com/book.html">
+
+    <meta property="og:type" content="lodging">
+    <meta property="og:site_name" content="Horizon Inn">
+    <meta property="og:title" content="Horizon Inn - Luxury Guest House &amp; Event Complex in Peshawar">
+    <meta property="og:description" content="Boutique rooms, a courtyard fire pit, and the Crescent Grove Event &amp; Hospitality Complex — book direct in Peshawar.">
+    <meta property="og:image" content="https://horizon-inn.onrender.com/images/gallery/courtyard-lounge.jpg">
+    <meta property="og:url" content="https://horizon-inn.onrender.com/book.html">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Horizon Inn - Luxury Guest House &amp; Event Complex in Peshawar">
+    <meta name="twitter:description" content="Boutique rooms, a courtyard fire pit, and the Crescent Grove Event &amp; Hospitality Complex — book direct in Peshawar.">
+    <meta name="twitter:image" content="https://horizon-inn.onrender.com/images/gallery/courtyard-lounge.jpg">
+
+    <script type="application/ld+json" id="structuredData">{}</script>
+    <link rel="icon" type="image/png" href="images/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="glass-theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="theme-toggle.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/anime@3.2.1/lib/anime.min.js"></script>
+    <script src="animation-config.js"></script>
+    <script src="animation-engine.js"></script>
+    <script src="micro-interactions.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <img src="images/logo-mark.png" alt="Horizon Inn" class="nav-logo">
+                <span>Horizon Inn</span>
+            </div>
+            <button type="button" class="theme-toggle" role="switch" aria-checked="false" aria-label="Toggle light/dark theme" style="margin-left: auto; margin-right: 14px;">
+                <i class="fas fa-moon theme-toggle-icon moon"></i>
+                <i class="fas fa-sun theme-toggle-icon sun"></i>
+                <span class="theme-toggle-knob"></span>
+            </button>
+            <button class="nav-toggle" id="navToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <!-- Guest-facing only. Staff/investor entry points live in the footer —
+                 10 items overflowed the 1200px container (the brand and "Invest With
+                 Us" both wrapped onto extra lines), and guests never need them. -->
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="#rooms">Rooms</a></li>
+                <li><a href="#gallery">Gallery</a></li>
+                <li><a href="#invest-with-us">Events</a></li>
+                <li><a href="#reviews">Reviews</a></li>
+                <li><a href="#contact">Contact</a></li>
+                <li><a href="#booking" class="nav-cta">Book Now</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="offers-banner" id="offersBanner" style="display: none;">
+        <i class="fas fa-tag"></i>
+        <span id="offersBannerText"></span>
+    </div>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-bg" id="heroBg"></div>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <span class="eyebrow hero-in hero-in-1" id="heroEyebrow">Est. 2026 &middot; Boutique Hospitality</span>
+            <h1 class="hero-in hero-in-2" id="heroHeading">Welcome to <em>Horizon Inn</em></h1>
+            <p class="hero-in hero-in-3" id="heroSubtext">Experience luxury and tranquility like never before</p>
+
+            <!-- Availability search, placed in the hero rather than buried in the
+                 booking section further down the page: checking dates is the single
+                 action most guests arrive wanting to take. It doesn't book anything
+                 itself — it pre-fills and jumps to the full booking form below, so
+                 there's one source of truth for a reservation. -->
+            <form class="hero-search hero-in hero-in-4" id="heroSearchForm">
+                <div class="hero-search-field">
+                    <label for="heroCheckin">Check-in</label>
+                    <input type="date" id="heroCheckin" required>
+                </div>
+                <div class="hero-search-field">
+                    <label for="heroCheckout">Check-out</label>
+                    <input type="date" id="heroCheckout" required>
+                </div>
+                <div class="hero-search-field">
+                    <label for="heroGuests">Guests</label>
+                    <select id="heroGuests">
+                        <option value="1">1 Guest</option>
+                        <option value="2" selected>2 Guests</option>
+                        <option value="3">3 Guests</option>
+                        <option value="4">4 Guests</option>
+                    </select>
+                </div>
+                <button type="submit" class="hero-search-btn">Check Availability</button>
+            </form>
+            <a href="#rooms" class="hero-secondary-link hero-in hero-in-5">or browse our rooms &rarr;</a>
+        </div>
+        <a href="#about" class="scroll-cue" aria-label="Scroll down"><i class="fas fa-chevron-down"></i></a>
+    </section>
+
+    <!-- Social Proof Bar -->
+    <div class="social-proof-bar" id="socialProofBar" style="display: none;">
+        <div class="container">
+            <div class="social-proof-grid" id="socialProofGrid"></div>
+        </div>
+    </div>
+
+    <!-- About Section -->
+    <section class="about" id="about">
+        <div class="container">
+            <h2>About Horizon Inn</h2>
+            <div class="about-grid">
+                <div class="about-card reveal">
+                    <i class="fas fa-star"></i>
+                    <h3>Premium Amenities</h3>
+                    <p>Luxurious facilities and world-class service at your fingertips.</p>
+                </div>
+                <div class="about-card reveal">
+                    <i class="fas fa-users"></i>
+                    <h3>Expert Staff</h3>
+                    <p>Our dedicated team ensures an unforgettable experience.</p>
+                </div>
+                <div class="about-card reveal">
+                    <i class="fas fa-wifi"></i>
+                    <h3>Modern Technology</h3>
+                    <p>Stay connected with high-speed Wi-Fi and smart room systems.</p>
+                </div>
+                <div class="about-card reveal">
+                    <i class="fas fa-utensils"></i>
+                    <h3>Fine Dining</h3>
+                    <p>Gourmet meals prepared by our renowned chefs.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Rooms Section -->
+    <section id="rooms" class="rooms">
+        <div class="container">
+            <h2>Our Luxurious <em>Rooms</em></h2>
+            <div class="rooms-grid" id="roomsGrid">
+                <div class="room-card skeleton"></div>
+                <div class="room-card skeleton"></div>
+                <div class="room-card skeleton"></div>
+            </div>
+            <div class="rooms-carousel-dots" id="roomsCarouselDots"></div>
+        </div>
+    </section>
+
+    <!-- Gallery Section.
+         Every card below opens a click-to-enlarge lightbox already. To turn
+         any one of them into a video preview card (hover-to-play muted
+         clip, a play-button badge, full playback with sound in the
+         lightbox), just add data-video="images/gallery/your-clip.mp4" to
+         that .gallery-item div — script.js picks it up automatically, no
+         other change needed. Cards with no data-video stay plain photos. -->
+    <section id="gallery" class="gallery">
+        <div class="container">
+            <h2>Around <em>Horizon Inn</em></h2>
+            <p class="gallery-intro">A few real moments from our courtyard, terrace and meeting room &mdash; no stock photos here.</p>
+            <div class="gallery-grid">
+                <div class="gallery-item gallery-lounge reveal">
+                    <img src="images/gallery/courtyard-lounge.jpg" alt="Courtyard lounge area lit up at dusk" loading="lazy">
+                    <span class="gallery-caption">The Courtyard</span>
+                </div>
+                <div class="gallery-item gallery-tree reveal">
+                    <img src="images/gallery/tree-lights.jpg" alt="String lights in a tree above potted plants" loading="lazy">
+                    <span class="gallery-caption">Evening Light</span>
+                </div>
+                <div class="gallery-item gallery-meet reveal">
+                    <img src="images/gallery/meeting-room.jpg" alt="Glass-walled meeting room with pergola lighting" loading="lazy">
+                    <span class="gallery-caption">The Meeting Room</span>
+                </div>
+                <div class="gallery-item gallery-fire reveal">
+                    <img src="images/gallery/firepit-gathering.jpg" alt="Guest relaxing by the courtyard fire pit" loading="lazy">
+                    <span class="gallery-caption">Fireside</span>
+                </div>
+                <div class="gallery-item gallery-patio reveal">
+                    <img src="images/gallery/courtyard-patio.jpg" alt="Courtyard patio seating under string lights" loading="lazy">
+                    <span class="gallery-caption">The Patio</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Guest Reviews -->
+    <section id="reviews" class="reviews-section">
+        <div class="container">
+            <h2>What Our Guests Say</h2>
+            <p class="gallery-intro">Real feedback from real stays.</p>
+            <div class="review-grid" id="reviewGrid">
+                <p style="text-align: center; grid-column: 1 / -1; color: var(--text-light);">Loading reviews&hellip;</p>
+            </div>
+            <div class="review-cta">
+                <button type="button" class="cta-button" id="openReviewFormBtn">Leave a Review</button>
+            </div>
+            <form id="reviewForm" class="review-form" style="display: none;">
+                <div class="form-group">
+                    <label>Your Name</label>
+                    <input type="text" id="reviewGuestName" required>
+                </div>
+                <div class="form-group">
+                    <label>Rating</label>
+                    <div class="star-picker" id="starPicker">
+                        <i class="fas fa-star" data-value="1"></i>
+                        <i class="fas fa-star" data-value="2"></i>
+                        <i class="fas fa-star" data-value="3"></i>
+                        <i class="fas fa-star" data-value="4"></i>
+                        <i class="fas fa-star" data-value="5"></i>
+                    </div>
+                    <input type="hidden" id="reviewRating" value="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Your Review</label>
+                    <textarea id="reviewComment" rows="4" placeholder="Tell us about your stay&hellip;"></textarea>
+                </div>
+                <button type="submit" class="submit-btn">Submit Review</button>
+                <p class="form-message" id="reviewFormMessage"></p>
+            </form>
+        </div>
+    </section>
+
+    <!-- Crescent Grove Event & Hospitality Complex — Facility Showcase.
+         Equity/profit-share investment pitch, the ROI calculator, and the
+         "Upcoming Expansion" investor teaser were removed from this
+         public page for legal reasons (that content must not be presented
+         to unauthenticated site visitors). The bookable-venue showcase
+         below is ordinary event-space rental content, not an investment
+         offer, so it stays. Investor-facing tools remain fully available
+         inside the authenticated investor portal and the admin dashboard. -->
+    <section id="invest-with-us" class="crescent-zone">
+        <div class="container">
+            <h2 style="text-align: center;">Crescent Grove Facilities <span class="coming-soon-pill">Opening Soon</span></h2>
+            <p class="section-intro">Four spaces, each available individually or as a full-complex buyout for exclusive events &mdash; opening soon.</p>
+            <div class="facility-grid" id="facilityGrid">
+                <p style="color: #9ca3af; text-align: center; grid-column: 1 / -1;">Loading facilities&hellip;</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Booking Section -->
+    <section id="booking" class="booking">
+        <div class="container">
+            <h2>Book Your Stay</h2>
+            <div class="booking-form-wrapper reveal">
+                <form class="booking-form" id="bookingForm">
+
+                    <fieldset class="form-fieldset">
+                        <legend>Guest Details</legend>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="name">Full Name *</label>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email Address *</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="phone">Phone Number *</label>
+                                <input type="tel" id="phone" name="phone" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="cnic">CNIC / Passport Number *</label>
+                                <input type="text" id="cnic" name="cnic" placeholder="e.g. 12345-1234567-1" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="maritalStatus">Marital Status *</label>
+                                <select id="maritalStatus" name="maritalStatus" required>
+                                    <option value="">Select</option>
+                                    <option value="Single">Single</option>
+                                    <option value="Married">Married</option>
+                                    <option value="Divorced">Divorced</option>
+                                    <option value="Widowed">Widowed</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="guests">Number of Guests *</label>
+                                <input type="number" id="guests" name="guests" min="1" max="4" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label for="address">Permanent / Home Address</label>
+                                <input type="text" id="address" name="address" placeholder="Optional, for your guest record">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="form-fieldset">
+                        <legend>Stay Details</legend>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="roomId">Room Type *</label>
+                                <select id="roomId" name="roomId" required>
+                                    <option value="">Loading rooms...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="purposeOfStay">Purpose of Stay</label>
+                                <select id="purposeOfStay" name="purposeOfStay">
+                                    <option value="">Select</option>
+                                    <option value="Leisure/Tourism">Leisure / Tourism</option>
+                                    <option value="Business">Business</option>
+                                    <option value="Family Visit">Family Visit</option>
+                                    <option value="Medical">Medical</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="checkin">Check-in Date *</label>
+                                <input type="date" id="checkin" name="checkin" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="checkout">Check-out Date *</label>
+                                <input type="date" id="checkout" name="checkout" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="arrivalTime">Expected Arrival Time</label>
+                                <input type="time" id="arrivalTime" name="arrivalTime">
+                            </div>
+                            <div class="form-group">
+                                <label for="vehicleNumber">Vehicle Number (if any)</label>
+                                <input type="text" id="vehicleNumber" name="vehicleNumber" placeholder="e.g. LEA-1234">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="arrivalFrom">Arriving From (City/Address) *</label>
+                                <input type="text" id="arrivalFrom" name="arrivalFrom" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="departureTo">Departing To (City/Address) *</label>
+                                <input type="text" id="departureTo" name="departureTo" required>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="form-fieldset">
+                        <legend>Payment</legend>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="paymentMethod">Payment Method *</label>
+                                <select id="paymentMethod" name="paymentMethod" required>
+                                    <option value="pay_at_property">Pay at Property</option>
+                                    <option value="bank_transfer">Bank Transfer (Advance)</option>
+                                    <option value="easypaisa">EasyPaisa (Advance)</option>
+                                    <option value="jazzcash">JazzCash (Advance)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="transactionIdGroup" style="display: none;">
+                                <label for="transactionId">Transaction ID *</label>
+                                <input type="text" id="transactionId" name="transactionId" placeholder="From your payment receipt">
+                            </div>
+                        </div>
+                        <div class="payment-instructions" id="paymentInstructions" style="display: none;"></div>
+                        <p class="payment-security-note" id="paymentSecurityNote" style="display: none;">
+                            <i class="fas fa-shield-halved"></i> For your security, only send payments to the official Horizon Inn accounts shown above. Horizon Inn is not responsible for payments sent to any other account.
+                        </p>
+                    </fieldset>
+
+                    <fieldset class="form-fieldset">
+                        <legend>Enhance Your Stay (optional)</legend>
+                        <div class="addon-grid">
+                            <label class="addon-option">
+                                <input type="checkbox" name="addon" value="breakfast_upgrade">
+                                <span>Breakfast Upgrade <strong>+Rs. 800</strong></span>
+                            </label>
+                            <label class="addon-option">
+                                <input type="checkbox" name="addon" value="airport_pickup">
+                                <span>Airport Pickup <strong>+Rs. 2,500</strong></span>
+                            </label>
+                            <label class="addon-option">
+                                <input type="checkbox" name="addon" value="late_checkout">
+                                <span>Late Check-out (until 3 PM) <strong>+Rs. 1,000</strong></span>
+                            </label>
+                            <label class="addon-option">
+                                <input type="checkbox" name="addon" value="crescent_dinner">
+                                <span>Crescent Grove Candlelight Dinner for Two <strong>+Rs. 6,500</strong></span>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="form-fieldset">
+                        <legend>Promo / Gift Voucher / Referral Code</legend>
+                        <div class="form-group">
+                            <label for="discountCode">Have a code?</label>
+                            <input type="text" id="discountCode" name="discountCode" placeholder="Optional">
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="form-fieldset">
+                        <legend>Special Requests</legend>
+                        <div class="form-group">
+                            <label for="special">Anything else we should know?</label>
+                            <textarea id="special" name="special" rows="4" placeholder="Any special requests or requirements?"></textarea>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="form-fieldset">
+                        <legend>Terms &amp; Conditions</legend>
+                        <div class="terms-box" id="termsBox">
+                            <p><strong>Check-in / Check-out:</strong> Check-in from 2:00 PM, check-out by 12:00 PM. Early check-in or late check-out is subject to availability.</p>
+                            <p><strong>Identification:</strong> A valid CNIC or passport matching the booking details is required from every guest at check-in.</p>
+                            <p><strong>Cancellation Policy:</strong> Cancellations made 24 hours or more before check-in are fully refundable. Cancellations within 24 hours, or no-shows, are non-refundable.</p>
+                            <p><strong>Damage Policy:</strong> Guests are responsible for any damage to the room or property beyond normal wear and tear, and will be charged for repair or replacement.</p>
+                            <p><strong>House Rules:</strong> No smoking indoors. Quiet hours are from 11:00 PM to 7:00 AM. Only registered guests are permitted in guest rooms. Pets are not allowed unless pre-approved.</p>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="termsAccepted" name="termsAccepted" required>
+                                <span>I have read and agree to the Terms &amp; Conditions above *</span>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <button type="submit" class="submit-btn">Complete Booking</button>
+                    <p class="form-message" id="bookingMessage"></p>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <h2>Get In Touch</h2>
+            <div class="contact-wrapper reveal">
+                <div class="contact-info">
+                    <div class="info-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>
+                            <h4>Address</h4>
+                            <p id="contactAddress">123 Sunset Boulevard<br>Mountain View, CA 94043</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-phone"></i>
+                        <div>
+                            <h4>Phone</h4>
+                            <p id="contactPhone">+1 (555) 123-4567</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-envelope"></i>
+                        <div>
+                            <h4>Email</h4>
+                            <p id="contactEmailDisplay">info@horizoninn.com</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <h4>Hours</h4>
+                            <p id="contactHours">24/7 Service Available</p>
+                        </div>
+                    </div>
+                    <div class="info-item" id="contactFacebookItem" style="display: none;">
+                        <i class="fab fa-facebook"></i>
+                        <div>
+                            <h4>Follow Us</h4>
+                            <p><a id="contactFacebookLink" href="#" target="_blank" rel="noopener">Horizon Inn on Facebook</a></p>
+                        </div>
+                    </div>
+
+                    <form class="contact-form" id="contactForm">
+                        <div class="form-group">
+                            <label for="contactName">Name *</label>
+                            <input type="text" id="contactName" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contactEmail">Email *</label>
+                            <input type="email" id="contactEmail" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contactMessage">Message *</label>
+                            <textarea id="contactMessage" name="message" rows="4" required></textarea>
+                        </div>
+                        <button type="submit" class="submit-btn">Send Message</button>
+                        <p class="form-message" id="contactFormMessage"></p>
+                    </form>
+                </div>
+
+                <div class="map-container">
+                    <iframe id="contactMapEmbed" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3169.0620556597346!2d-122.08393432345069!3d37.42242897127838!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x808fba02425a9ddf%3A0x60a3057bc10d138f!2s123%20Sesame%20St%2C%20Mountain%20View%2C%20CA%2094043!5e0!3m2!1sen!2sus!4v1696892741234" width="100%" height="400" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    <a id="contactMapLink" href="#" target="_blank" rel="noopener" class="map-directions-link" style="display: none;">
+                        <i class="fas fa-location-arrow"></i> Get Directions on Google Maps
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Horizon Inn</h4>
+                    <p>Your gateway to luxury and comfort.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#rooms">Rooms</a></li>
+                        <li><a href="#booking">Booking</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                        <li><a href="manage-booking.html">Manage My Booking</a></li>
+                        <li><a href="gift-voucher.html">Gift Vouchers</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="privacy.html">Privacy Policy</a></li>
+                        <li><a href="terms.html">Terms of Service</a></li>
+                        <li><a href="cancellation-policy.html">Cancellation &amp; Refunds</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Events &amp; Staff</h4>
+                    <ul>
+                        <li><a href="#invest-with-us">Events &amp; Venues</a></li>
+                        <li><a href="admin.html">Staff Login</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Follow Us</h4>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Horizon Inn. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Facility detail modal -->
+    <div class="facility-modal-overlay" id="facilityModalOverlay">
+        <div class="facility-modal-box">
+            <button type="button" class="facility-modal-close" id="facilityModalCloseBtn"><i class="fas fa-xmark"></i></button>
+            <div class="facility-modal-gallery" id="facilityModalGallery"></div>
+            <div class="facility-modal-content">
+                <h3 id="facilityModalName"></h3>
+                <div class="facility-modal-meta">
+                    <span><i class="fas fa-ruler-combined"></i> <span id="facilityModalSize"></span></span>
+                    <span><i class="fas fa-users"></i> <span id="facilityModalCapacity"></span></span>
+                    <span><i class="fas fa-tag"></i> <span id="facilityModalRate"></span></span>
+                </div>
+                <p id="facilityModalDescription" style="color: #c7cad1; font-size: 0.9rem; margin-bottom: 18px;"></p>
+                <div class="amenity-tags" id="facilityModalAmenities"></div>
+
+                <h4 style="font-family: 'Playfair Display', serif; margin-bottom: 10px;">Food &amp; Beverage Add-Ons</h4>
+                <div class="catering-tabs" id="cateringTabs"></div>
+                <div id="cateringItemsList"></div>
+
+                <a href="#booking" class="facility-modal-cta" id="facilityModalCta">Register Interest &mdash; Opening Soon</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- WhatsApp click-to-chat -->
+    <a href="#" class="whatsapp-float-btn" id="whatsappFloatBtn" style="display: none;" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+    <!-- Sticky booking CTA bar -->
+    <div class="sticky-cta-bar" id="stickyCtaBar">
+        <div class="sticky-cta-info">
+            <span class="sticky-cta-label">Rooms from</span>
+            <span class="sticky-cta-price" id="stickyCtaPrice">&mdash;</span>
+            <span class="sticky-cta-label">/ night</span>
+        </div>
+        <a href="#booking" class="cta-button sticky-cta-btn">Book Now</a>
+    </div>
+
+    <!-- Exit-intent offer -->
+    <div class="exit-intent-overlay" id="exitIntentOverlay">
+        <div class="exit-intent-box">
+            <button type="button" class="exit-close" id="exitIntentCloseBtn"><i class="fas fa-xmark"></i></button>
+            <h3>Before you go&hellip;</h3>
+            <p style="color: var(--text-light); font-size: 0.92rem;">Here's 5% off your stay if you book today.</p>
+            <div class="exit-intent-code">WELCOME5</div>
+            <p style="font-size: 0.8rem; color: var(--text-light);">Enter this code in the "Promo / Gift Voucher / Referral Code" field at checkout.</p>
+            <a href="#booking" class="cta-button" id="exitIntentBookBtn">Book Now</a>
+        </div>
+    </div>
+
+    <!-- Gallery / video preview lightbox -->
+    <div class="media-lightbox-overlay" id="mediaLightboxOverlay">
+        <button type="button" class="media-lightbox-close" id="mediaLightboxClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
+        <div class="media-lightbox-content" id="mediaLightboxContent"></div>
+    </div>
+
+    <script src="script.js"></script>
+    <!-- CHAT WIDGET START -->
+    <div id="chat-widget" style="position:fixed; bottom:20px; right:20px; z-index:9999;">
+      <button id="chat-toggle" style="width:60px; height:60px; border-radius:50%; background:#1c1c1c; color:white; border:none; font-size:30px; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer;">💬</button>
+      <div id="chat-window" style="display:none; width:320px; height:450px; background:#fff; color:#1c1c1c; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.15); position:absolute; bottom:80px; right:0; padding:16px; flex-direction:column; border:1px solid #eee;">
+        <div id="chat-messages" style="flex:1; overflow-y:auto; margin-bottom:10px; font-size:14px; line-height:1.5; color:#1c1c1c;"></div>
+        <div style="display:flex; gap:8px;">
+          <input id="chat-input" style="flex:1; padding:10px; border:1px solid #ddd; border-radius:20px; outline:none; background:#fff; color:#1c1c1c;" placeholder="Ask about rooms...">
+          <button id="chat-send" style="padding:10px 16px; background:#1c1c1c; color:white; border:none; border-radius:20px; cursor:pointer;">Send</button>
+        </div>
+      </div>
+    </div>
+    <style>
+      /* Chat widget is always a white/light surface — scoped override so
+         the site-wide dark-theme placeholder color doesn't wash it out. */
+      #chat-input::placeholder { color: #888; opacity: 1; }
+    </style>
+    <script>
+      // Bubble text is inserted via textContent, never innerHTML — the
+      // chatbot's reply is external, untrusted input, and must not be able
+      // to inject markup/scripts into the page.
+      function chatAppendBubble(text, side) {
+        const msgs = document.getElementById('chat-messages');
+        const bubble = document.createElement('div');
+        bubble.textContent = text;
+        bubble.style.margin = '6px 0';
+        bubble.style.padding = '8px 12px';
+        bubble.style.borderRadius = '12px';
+        bubble.style.display = 'inline-block';
+        bubble.style.clear = 'both';
+        bubble.style.color = '#1c1c1c';
+        if (side === 'user') {
+          bubble.style.textAlign = 'right';
+          bubble.style.background = '#f0f0f0';
+          bubble.style.float = 'right';
+        } else {
+          bubble.style.textAlign = 'left';
+          bubble.style.background = 'white';
+          bubble.style.border = '1px solid #eee';
+        }
+        msgs.appendChild(bubble);
+        return bubble;
+      }
+      document.getElementById('chat-toggle').onclick = function() {
+        var w = document.getElementById('chat-window');
+        w.style.display = (w.style.display === 'none') ? 'flex' : 'none';
+      };
+      document.getElementById('chat-send').onclick = function() {
+        var input = document.getElementById('chat-input');
+        var text = input.value.trim();
+        if (!text) return;
+        chatAppendBubble(text, 'user');
+        input.value = '';
+        const thinking = chatAppendBubble('Thinking...', 'bot');
+        thinking.style.color = '#888';
+        thinking.style.border = 'none';
+        thinking.style.background = 'transparent';
+        fetch('/api/chat', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({text: text})
+        })
+        .then(res => res.json().then(data => ({ ok: res.ok, data })))
+        .then(({ ok, data }) => {
+          thinking.remove();
+          chatAppendBubble(ok ? data.reply : (data.error || "Sorry, something went wrong."), 'bot');
+        })
+        .catch(() => {
+          thinking.remove();
+          chatAppendBubble("Sorry, I couldn't reach support right now.", 'bot');
+        });
+      };
+      document.getElementById('chat-input').onkeydown = function(e) {
+        if(e.key === 'Enter') document.getElementById('chat-send').click();
+      };
+    </script>
+    <!-- CHAT WIDGET END -->
+</body>
+</html>
