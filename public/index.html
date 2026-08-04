@@ -623,14 +623,19 @@
     <!-- CHAT WIDGET START -->
     <div id="chat-widget" style="position:fixed; bottom:20px; right:20px; z-index:9999;">
       <button id="chat-toggle" style="width:60px; height:60px; border-radius:50%; background:#1c1c1c; color:white; border:none; font-size:30px; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer;">💬</button>
-      <div id="chat-window" style="display:none; width:320px; height:450px; background:white; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.15); position:absolute; bottom:80px; right:0; padding:16px; flex-direction:column; border:1px solid #eee;">
-        <div id="chat-messages" style="flex:1; overflow-y:auto; margin-bottom:10px; font-size:14px; line-height:1.5;"></div>
+      <div id="chat-window" style="display:none; width:320px; height:450px; background:#fff; color:#1c1c1c; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.15); position:absolute; bottom:80px; right:0; padding:16px; flex-direction:column; border:1px solid #eee;">
+        <div id="chat-messages" style="flex:1; overflow-y:auto; margin-bottom:10px; font-size:14px; line-height:1.5; color:#1c1c1c;"></div>
         <div style="display:flex; gap:8px;">
-          <input id="chat-input" style="flex:1; padding:10px; border:1px solid #ddd; border-radius:20px; outline:none;" placeholder="Ask about rooms...">
+          <input id="chat-input" style="flex:1; padding:10px; border:1px solid #ddd; border-radius:20px; outline:none; background:#fff; color:#1c1c1c;" placeholder="Ask about rooms...">
           <button id="chat-send" style="padding:10px 16px; background:#1c1c1c; color:white; border:none; border-radius:20px; cursor:pointer;">Send</button>
         </div>
       </div>
     </div>
+    <style>
+      /* Chat widget is always a white/light surface — scoped override so
+         the site-wide dark-theme placeholder color doesn't wash it out. */
+      #chat-input::placeholder { color: #888; opacity: 1; }
+    </style>
     <script>
       // Bubble text is inserted via textContent, never innerHTML — the
       // chatbot's reply is external, untrusted input, and must not be able
@@ -644,6 +649,7 @@
         bubble.style.borderRadius = '12px';
         bubble.style.display = 'inline-block';
         bubble.style.clear = 'both';
+        bubble.style.color = '#1c1c1c';
         if (side === 'user') {
           bubble.style.textAlign = 'right';
           bubble.style.background = '#f0f0f0';
