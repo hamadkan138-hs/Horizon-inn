@@ -22,9 +22,9 @@
 
 <style>
     :root {
-        --dusk: #141b29;
-        --dusk-2: #1c2434;
-        --dusk-3: #2a3549;
+        --dusk: #1a1511;
+        --dusk-2: #251e17;
+        --dusk-3: #37291c;
         --brass: #c9914f;
         --brass-soft: rgba(201, 145, 79, 0.85);
         --ember: #e2694a;
@@ -38,7 +38,11 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body {
-        background: var(--dusk); color: var(--ink);
+        background:
+            radial-gradient(90% 60% at 15% -10%, rgba(201, 145, 79, 0.09) 0%, transparent 55%),
+            radial-gradient(70% 50% at 100% 20%, rgba(226, 105, 74, 0.05) 0%, transparent 60%),
+            var(--dusk);
+        color: var(--ink);
         font-family: 'Work Sans', sans-serif; font-weight: 400;
         overflow-x: hidden; -webkit-font-smoothing: antialiased;
     }
@@ -61,7 +65,7 @@
         padding: 30px 5vw; transition: background 0.4s ease, padding 0.4s ease, border-color 0.4s ease;
         border-bottom: 1px solid transparent;
     }
-    .nav.scrolled { background: rgba(20, 27, 41, 0.88); backdrop-filter: blur(10px); padding: 18px 5vw; border-bottom-color: var(--hair); }
+    .nav.scrolled { background: rgba(37, 30, 23, 0.88); backdrop-filter: blur(10px); padding: 18px 5vw; border-bottom-color: var(--hair); }
     .brand { display: flex; align-items: center; gap: 12px; }
     .brand img { height: 28px; width: auto; }
     .brand span { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.2rem; letter-spacing: 0.02em; }
@@ -77,10 +81,10 @@
 
     /* ---------- Buttons ---------- */
     .btn { display: inline-flex; align-items: center; gap: 10px; padding: 17px 34px; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; border-radius: 999px; font-weight: 600; transition: transform 0.3s ease, background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
-    .btn-primary { background: var(--brass); color: #171208; }
+    .btn-primary { background: linear-gradient(155deg, #d8a865, var(--brass)); color: #171208; }
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -10px rgba(201, 145, 79, 0.55); }
     .btn-ghost { border: 1px solid var(--hair-strong); color: var(--ink); }
-    .btn-ghost:hover { border-color: var(--brass-soft); color: var(--brass); }
+    .btn-ghost:hover { border-color: var(--brass-soft); color: var(--brass); background: rgba(201, 145, 79, 0.06); }
 
     /* ---------- Reveal ---------- */
     .reveal { opacity: 0; transform: translateY(38px); transition: opacity 1s cubic-bezier(.16,1,.3,1), transform 1s cubic-bezier(.16,1,.3,1); }
@@ -94,7 +98,7 @@
     }
     .hero-bg { position: absolute; inset: -5%; background-image: var(--hero-img); background-size: cover; background-position: center 40%; animation: kenburns 28s ease-in-out infinite alternate; }
     @keyframes kenburns { from { transform: scale(1.02); } to { transform: scale(1.14) translateY(-1.5%); } }
-    .hero-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20,27,41,0.22) 0%, rgba(15,20,31,0.3) 45%, rgba(13,17,26,0.94) 100%), linear-gradient(90deg, rgba(13,17,26,0.5) 0%, rgba(13,17,26,0) 50%); }
+    .hero-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(37,30,23,0.22) 0%, rgba(31,25,19,0.3) 45%, rgba(26,21,17,0.94) 100%), linear-gradient(90deg, rgba(26,21,17,0.5) 0%, rgba(26,21,17,0) 50%); }
     .hero-tag {
         position: absolute; top: 130px; right: 6vw; z-index: 2;
         writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg);
@@ -102,7 +106,7 @@
         padding: 18px 10px; border-left: 1px solid var(--hair-strong);
     }
     .hero-content { position: relative; z-index: 2; max-width: 900px; padding-left: 5vw; margin-left: -1.5vw; }
-    .hero-title { font-family: 'Fraunces', serif; font-weight: 700; font-size: clamp(3.4rem, 9.6vw, 7.4rem); line-height: 0.96; letter-spacing: -0.01em; margin: 22px 0 26px; }
+    .hero-title { font-family: 'Fraunces', serif; font-weight: 700; font-size: clamp(3.4rem, 9.6vw, 7.4rem); line-height: 0.96; letter-spacing: -0.01em; margin: 28px 0 32px; }
     .hero-title em { font-style: italic; font-weight: 500; color: var(--brass); }
     .hero-title .line { display: block; overflow: hidden; margin-left: -0.5vw; padding-left: 0.5vw; }
     .hero-title .line span { display: block; transform: translateY(100%); animation: lineUp 1.1s cubic-bezier(.16,1,.3,1) forwards; }
@@ -110,7 +114,7 @@
     .hero-title .line:nth-child(2) span { animation-delay: .32s; }
     @keyframes lineUp { to { transform: translateY(0); } }
     .hero-sub { max-width: 44ch; font-size: 1.06rem; color: var(--ink-dim); line-height: 1.75; opacity: 0; animation: fadeUp 1s cubic-bezier(.16,1,.3,1) forwards; animation-delay: .6s; }
-    .hero-cta { display: flex; gap: 16px; margin-top: 38px; flex-wrap: wrap; opacity: 0; animation: fadeUp 1s cubic-bezier(.16,1,.3,1) forwards; animation-delay: .78s; }
+    .hero-cta { display: flex; gap: 16px; margin-top: 46px; flex-wrap: wrap; opacity: 0; animation: fadeUp 1s cubic-bezier(.16,1,.3,1) forwards; animation-delay: .78s; }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     .scroll-cue { position: absolute; bottom: 40px; left: 5vw; z-index: 2; display: flex; align-items: center; gap: 12px; font-size: 0.68rem; letter-spacing: 0.26em; text-transform: uppercase; color: var(--ink-faint); }
     .scroll-cue .track { width: 1px; height: 44px; background: var(--hair-strong); position: relative; overflow: hidden; }
@@ -155,7 +159,7 @@
     .room-card.wide { width: min(84vw, 520px); }
     .room-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.1s cubic-bezier(.16,1,.3,1); }
     .room-card:hover img { transform: scale(1.06); }
-    .room-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20,27,41,0) 38%, rgba(13,17,26,0.94) 100%); }
+    .room-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(37,30,23,0) 38%, rgba(26,21,17,0.94) 100%); }
     .room-price { position: absolute; top: 20px; right: 20px; background: var(--brass); color: #171208; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.02em; padding: 8px 14px; border-radius: 999px; }
     .room-body { position: absolute; left: 0; right: 0; bottom: 0; padding: 28px 26px; }
     .room-body .tag { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--brass-soft); }
@@ -167,14 +171,18 @@
         display: flex; align-items: center; padding: 40px;
     }
     .quote-card p { font-family: 'Fraunces', serif; font-style: italic; font-weight: 500; font-size: 1.4rem; line-height: 1.45; color: var(--ink); }
-    .carousel-hint { padding: 0 5vw; margin-top: 26px; font-size: 0.76rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+    .carousel-foot { display: flex; align-items: center; justify-content: space-between; padding: 0 5vw; margin-top: 26px; }
+    .carousel-hint { font-size: 0.76rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+    .carousel-dots { display: flex; gap: 8px; }
+    .carousel-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--hair-strong); transition: background 0.3s ease, transform 0.3s ease; }
+    .carousel-dots span.active { background: var(--brass); transform: scale(1.3); }
 
     /* ---------- Meeting Hall — off-center plaque ---------- */
     .plaque-section { position: relative; min-height: 92vh; display: flex; align-items: center; overflow: hidden; }
     .plaque-bg { position: absolute; inset: 0; }
     .plaque-bg img { width: 100%; height: 100%; object-fit: cover; }
-    .plaque-shade { position: absolute; inset: 0; background: linear-gradient(100deg, rgba(13,17,26,0.88) 0%, rgba(13,17,26,0.5) 42%, rgba(13,17,26,0.75) 100%); }
-    .plaque-card { position: relative; z-index: 2; max-width: 480px; margin-left: 14vw; background: rgba(20,27,41,0.68); backdrop-filter: blur(10px); border: 1px solid var(--hair-strong); border-radius: 2px; padding: 48px 44px; }
+    .plaque-shade { position: absolute; inset: 0; background: linear-gradient(100deg, rgba(26,21,17,0.88) 0%, rgba(26,21,17,0.5) 42%, rgba(26,21,17,0.75) 100%); }
+    .plaque-card { position: relative; z-index: 2; max-width: 480px; margin-left: 14vw; background: rgba(37,30,23,0.68); backdrop-filter: blur(10px); border: 1px solid var(--hair-strong); border-radius: 2px; padding: 48px 44px; }
     .plaque-card h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(1.7rem, 2.8vw, 2.3rem); margin: 18px 0 20px; }
     .plaque-card p { color: var(--ink-dim); line-height: 1.8; font-size: 0.98rem; max-width: 36ch; margin-bottom: 30px; }
 
@@ -182,10 +190,10 @@
     .cafe-section { position: relative; padding-top: 40px; }
     .cafe-media { position: relative; aspect-ratio: 21/10; overflow: hidden; margin: 0 5vw; border-radius: 2px; }
     .cafe-media img { width: 100%; height: 100%; object-fit: cover; }
-    .cafe-media::after { content: ''; position: absolute; inset: 0; background: radial-gradient(120% 100% at 15% 20%, rgba(13,17,26,0.05) 0%, rgba(13,17,26,0.55) 100%); }
+    .cafe-media::after { content: ''; position: absolute; inset: 0; background: radial-gradient(120% 100% at 15% 20%, rgba(26,21,17,0.05) 0%, rgba(26,21,17,0.55) 100%); }
     .cafe-copy-float {
         position: relative; z-index: 2; max-width: 440px; margin: -90px 0 40px 8vw;
-        background: rgba(20,27,41,0.86); backdrop-filter: blur(12px); border: 1px solid var(--hair-strong);
+        background: rgba(37,30,23,0.86); backdrop-filter: blur(12px); border: 1px solid var(--hair-strong);
         border-radius: 2px; padding: 38px 40px; box-shadow: 0 30px 60px -20px rgba(0,0,0,0.55);
     }
     .cafe-copy-float h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.7rem; margin: 16px 0 14px; }
@@ -196,9 +204,6 @@
 
     /* ---------- Peshawar marquee (layered) ---------- */
     .marquee-wrap { position: relative; overflow: hidden; padding: 70px 0; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
-    .marquee-bg { position: absolute; inset: 0; opacity: 0.16; }
-    .marquee-bg img { width: 100%; height: 100%; object-fit: cover; }
-    .marquee-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, var(--dusk) 0%, rgba(20,27,41,0.4) 50%, var(--dusk) 100%); }
     .marquee-track { position: relative; display: flex; gap: 70px; width: max-content; animation: scroll-left 40s linear infinite; }
     .marquee-track.back { position: absolute; top: 76px; left: 0; opacity: 0.32; animation-duration: 62s; animation-direction: reverse; }
     .marquee-wrap:hover .marquee-track { animation-play-state: paused; }
@@ -214,7 +219,7 @@
         overflow: hidden; padding: 0 0 100px; text-align: right;
     }
     .closing-bg { position: absolute; inset: -5%; background-image: var(--closing-img); background-size: cover; background-position: center 45%; animation: kenburns 30s ease-in-out infinite alternate-reverse; }
-    .closing-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20,27,41,0.22) 0%, rgba(15,20,31,0.3) 45%, rgba(13,17,26,0.94) 100%), linear-gradient(270deg, rgba(13,17,26,0.5) 0%, rgba(13,17,26,0) 50%); }
+    .closing-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(37,30,23,0.22) 0%, rgba(31,25,19,0.3) 45%, rgba(26,21,17,0.94) 100%), linear-gradient(270deg, rgba(26,21,17,0.5) 0%, rgba(26,21,17,0) 50%); }
     .closing-content { position: relative; z-index: 2; max-width: 780px; padding-right: 5vw; }
     .closing-content h2 { font-family: 'Fraunces', serif; font-weight: 700; font-size: clamp(2.6rem, 6.6vw, 5.2rem); line-height: 1.02; }
     .closing-content h2 em { font-style: italic; font-weight: 500; color: var(--brass); }
@@ -245,8 +250,13 @@
         .collage { grid-template-columns: 1fr; padding: 20px 6vw 150px; }
         .collage-copy { padding: 40px 0 0; margin-top: 0; }
         .collage-chip { width: 58%; }
-        .plaque-card { margin-left: 6vw; margin-right: 6vw; max-width: none; }
-        .cafe-copy-float { margin: -60px 6vw 30px; max-width: none; }
+        .plaque-section { min-height: auto; padding: 90px 0; }
+        .plaque-card { margin-left: 6vw; margin-right: 6vw; max-width: none; padding: 32px 26px; }
+        .plaque-card h3 { font-size: 1.6rem; }
+        .plaque-card p { font-size: 0.94rem; max-width: none; }
+        .cafe-copy-float { margin: -60px 6vw 30px; max-width: none; padding: 28px 26px; }
+        .room-price { top: 14px; right: 14px; font-size: 0.72rem; padding: 6px 12px; }
+        .carousel { padding: 6px 5vw 16px; }
         .closing { justify-content: flex-start; text-align: left; padding-bottom: 70px; }
         .closing-content { padding-right: 0; padding-left: 5vw; text-align: left; }
         .closing-content p { margin-left: 0; }
@@ -283,7 +293,7 @@
     </nav>
 
     <!-- Hero — broken grid: headline bleeds off the left edge, rotated eyebrow floats over the frame -->
-    <section class="hero" style="--hero-img:url('https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=2200&q=80')">
+    <section class="hero" style="--hero-img:url('images/hero.jpg')">
         <div class="hero-bg"></div>
         <div class="hero-shade"></div>
         <div class="hero-tag">Peshawar &middot; Est. 2026</div>
@@ -316,9 +326,9 @@
         </div>
         <div class="collage">
             <div class="collage-media reveal">
-                <img src="https://images.unsplash.com/photo-1519791883288-dc8bd696e667?auto=format&fit=crop&w=1400&q=80" alt="Courtyard fire pit at night">
+                <img src="images/gallery/firepit-gathering.jpg" alt="Courtyard fire pit at night">
                 <div class="collage-chip reveal d2">
-                    <img src="https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=700&q=80" alt="Lawn seating at dusk">
+                    <img src="images/gallery/tree-lights.jpg" alt="Lawn seating at dusk">
                 </div>
             </div>
             <div class="collage-copy reveal d1">
@@ -338,13 +348,13 @@
         </div>
         <div class="carousel reveal d1" id="carousel">
             <div class="room-card">
-                <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80" alt="Elegant King Room">
+                <img src="images/deluxe-room.jpg" alt="Elegant King Room">
                 <div class="room-shade"></div>
                 <div class="room-price">PKR 20,000</div>
                 <div class="room-body"><span class="tag">Signature</span><h3>Elegant King Room</h3><p>Warm oak tones and a reading corner, built for unhurried mornings.</p></div>
             </div>
             <div class="room-card wide">
-                <img src="https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1100&q=80" alt="Garden View Suite">
+                <img src="images/luxury-suite.jpg" alt="Garden View Suite">
                 <div class="room-shade"></div>
                 <div class="room-price">PKR 48,000</div>
                 <div class="room-body"><span class="tag">Suite</span><h3>Garden View Suite</h3><p>A private sitting area opening onto the courtyard and lawn below.</p></div>
@@ -353,25 +363,28 @@
                 <p>&ldquo;Every room looks toward the fire pit.&rdquo;</p>
             </div>
             <div class="room-card">
-                <img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=900&q=80" alt="Executive Twin Room">
+                <img src="images/deluxe-twin-room-1.jpg" alt="Executive Twin Room">
                 <div class="room-shade"></div>
                 <div class="room-price">PKR 32,000</div>
                 <div class="room-body"><span class="tag">Twin</span><h3>Executive Twin Room</h3><p>Two beds, one calm space, for friends travelling together.</p></div>
             </div>
             <div class="room-card wide">
-                <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1100&q=80" alt="The Horizon Suite">
+                <img src="images/presidential-suite.jpg" alt="The Horizon Suite">
                 <div class="room-shade"></div>
                 <div class="room-price">PKR 80,000</div>
                 <div class="room-body"><span class="tag">Top Tier</span><h3>The Horizon Suite</h3><p>The largest room in the house — steps from the fire pit, private terrace.</p></div>
             </div>
         </div>
-        <p class="carousel-hint">&larr; Drag to explore &rarr;</p>
+        <div class="carousel-foot">
+            <p class="carousel-hint">&larr; Drag to explore &rarr;</p>
+            <div class="carousel-dots" id="carouselDots"></div>
+        </div>
     </section>
 
     <!-- Corporate Meeting Hall — off-center plaque, restrained motion, generous breathing room before it -->
     <section class="plaque-section" id="meetings" style="margin-top:60px;">
         <div class="plaque-bg">
-            <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1800&q=80" alt="Horizon Inn meeting hall with natural light">
+            <img src="images/gallery/meeting-room.jpg" alt="Horizon Inn meeting hall with natural light">
         </div>
         <div class="plaque-shade"></div>
         <div class="plaque-card reveal">
@@ -389,7 +402,7 @@
             <h2 class="section-title">The Café.</h2>
         </div>
         <div class="cafe-media reveal d1">
-            <img src="https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&w=1800&q=80" alt="Horizon Inn café interior">
+            <img src="images/gallery/cafe-placeholder.jpg" alt="Café placeholder — real Horizon Inn café photos coming soon">
         </div>
         <div class="cafe-copy-float reveal d2">
             <span class="eyebrow">Open to All Guests</span>
@@ -397,15 +410,16 @@
             <p>Breakfast on the terrace, tea on request at any hour — the kind of hospitality Peshawar has practiced for centuries, at guest-house scale.</p>
         </div>
         <div class="cafe-strip reveal d3">
-            <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=500&q=80" alt="Coffee detail">
-            <img src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=500&q=80" alt="Pastry detail">
-            <img src="https://images.unsplash.com/photo-1481833761820-0509d3217039?auto=format&fit=crop&w=500&q=80" alt="Terrace seating">
+            <img src="images/gallery/cafe-detail-1.jpg" alt="Coffee detail (placeholder)">
+            <img src="images/gallery/cafe-detail-2.jpg" alt="Pastry detail (placeholder)">
+            <img src="images/gallery/cafe-detail-3.jpg" alt="Evening café ambiance (placeholder)">
         </div>
     </section>
 
-    <!-- Peshawar — layered, counter-scrolling marquee over a low-opacity image -->
+    <!-- Peshawar — layered, counter-scrolling marquee over the warm textured background
+         (no stock "bazaar" photo here — a generic South Asian market stock image isn't
+         honestly Peshawar, and the brief is about real photography, not more stock). -->
     <section class="marquee-wrap">
-        <div class="marquee-bg"><img src="https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=1800&q=80" alt=""></div>
         <div class="marquee-track back" aria-hidden="true">
             <div class="marquee-item"><h4>Sethi Mohalla</h4><p>Merchant-era havelis with carved facades.</p></div><span class="sep">&#10022;</span>
             <div class="marquee-item"><h4>Bala Hisar Fort</h4><p>A Mughal-era fortress over the old city.</p></div><span class="sep">&#10022;</span>
@@ -429,7 +443,7 @@
     </section>
 
     <!-- Closing CTA — hero reprise, mirrored right instead of left -->
-    <section class="closing" style="--closing-img:url('https://images.unsplash.com/photo-1519791883288-dc8bd696e667?auto=format&fit=crop&w=2200&q=80')">
+    <section class="closing" style="--closing-img:url('images/gallery/courtyard-lounge.jpg')">
         <div class="closing-bg"></div>
         <div class="closing-shade"></div>
         <div class="closing-content">
@@ -577,6 +591,27 @@
             });
         }, { threshold: 0.18 });
         revealEls.forEach(function (el) { io.observe(el); });
+
+        // Room carousel — dot indicator so the mobile scroll strip reads as
+        // "there are more rooms" rather than an oddly-cut-off row.
+        var carousel = document.getElementById('carousel');
+        var dotsWrap = document.getElementById('carouselDots');
+        if (carousel && dotsWrap) {
+            var items = carousel.children;
+            for (var i = 0; i < items.length; i++) {
+                var d = document.createElement('span');
+                if (i === 0) d.classList.add('active');
+                dotsWrap.appendChild(d);
+            }
+            var dots = dotsWrap.querySelectorAll('span');
+            carousel.addEventListener('scroll', function () {
+                window.requestAnimationFrame(function () {
+                    var itemWidth = items[0].offsetWidth + 24;
+                    var idx = Math.round(carousel.scrollLeft / itemWidth);
+                    dots.forEach(function (dot, i) { dot.classList.toggle('active', i === idx); });
+                });
+            });
+        }
     </script>
 
 </body>
