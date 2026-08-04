@@ -620,5 +620,75 @@
     </div>
 
     <script src="script.js"></script>
+    <!-- CHAT WIDGET START -->
+    <div id="chat-widget" style="position:fixed; bottom:20px; right:20px; z-index:9999;">
+      <button id="chat-toggle" style="width:60px; height:60px; border-radius:50%; background:#1c1c1c; color:white; border:none; font-size:30px; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer;">💬</button>
+      <div id="chat-window" style="display:none; width:320px; height:450px; background:white; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.15); position:absolute; bottom:80px; right:0; padding:16px; flex-direction:column; border:1px solid #eee;">
+        <div id="chat-messages" style="flex:1; overflow-y:auto; margin-bottom:10px; font-size:14px; line-height:1.5;"></div>
+        <div style="display:flex; gap:8px;">
+          <input id="chat-input" style="flex:1; padding:10px; border:1px solid #ddd; border-radius:20px; outline:none;" placeholder="Ask about rooms...">
+          <button id="chat-send" style="padding:10px 16px; background:#1c1c1c; color:white; border:none; border-radius:20px; cursor:pointer;">Send</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      // Bubble text is inserted via textContent, never innerHTML — the
+      // chatbot's reply is external, untrusted input, and must not be able
+      // to inject markup/scripts into the page.
+      function chatAppendBubble(text, side) {
+        const msgs = document.getElementById('chat-messages');
+        const bubble = document.createElement('div');
+        bubble.textContent = text;
+        bubble.style.margin = '6px 0';
+        bubble.style.padding = '8px 12px';
+        bubble.style.borderRadius = '12px';
+        bubble.style.display = 'inline-block';
+        bubble.style.clear = 'both';
+        if (side === 'user') {
+          bubble.style.textAlign = 'right';
+          bubble.style.background = '#f0f0f0';
+          bubble.style.float = 'right';
+        } else {
+          bubble.style.textAlign = 'left';
+          bubble.style.background = 'white';
+          bubble.style.border = '1px solid #eee';
+        }
+        msgs.appendChild(bubble);
+        return bubble;
+      }
+      document.getElementById('chat-toggle').onclick = function() {
+        var w = document.getElementById('chat-window');
+        w.style.display = (w.style.display === 'none') ? 'flex' : 'none';
+      };
+      document.getElementById('chat-send').onclick = function() {
+        var input = document.getElementById('chat-input');
+        var text = input.value.trim();
+        if (!text) return;
+        chatAppendBubble(text, 'user');
+        input.value = '';
+        const thinking = chatAppendBubble('Thinking...', 'bot');
+        thinking.style.color = '#888';
+        thinking.style.border = 'none';
+        thinking.style.background = 'transparent';
+        fetch('https://hotel-chatbot-j71d.onrender.com/chat', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({text: text})
+        })
+        .then(res => res.json())
+        .then(data => {
+          thinking.remove();
+          chatAppendBubble(data.reply, 'bot');
+        })
+        .catch(() => {
+          thinking.remove();
+          chatAppendBubble("Sorry, I couldn't reach support right now.", 'bot');
+        });
+      };
+      document.getElementById('chat-input').onkeydown = function(e) {
+        if(e.key === 'Enter') document.getElementById('chat-send').click();
+      };
+    </script>
+    <!-- CHAT WIDGET END -->
 </body>
 </html>
