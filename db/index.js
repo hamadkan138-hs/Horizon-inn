@@ -622,6 +622,24 @@ function init() {
         )
       `);
 
+      // Append-only record of every stay extension — who extended it, from/to
+      // which checkout date, how much it added to room_amount, and how it was
+      // triggered (staff manually extending vs. resolving an overdue-checkout
+      // alert). Never updated or deleted, same as booking_status_log.
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS booking_extensions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          booking_id INTEGER NOT NULL REFERENCES bookings(id),
+          previous_checkout TEXT NOT NULL,
+          new_checkout TEXT NOT NULL,
+          nights_added INTEGER NOT NULL,
+          amount_added REAL NOT NULL,
+          reason TEXT NOT NULL DEFAULT '',
+          extended_by TEXT NOT NULL DEFAULT '',
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+
       await db.execute(`
         CREATE TABLE IF NOT EXISTS venue_bookings (
           id INTEGER PRIMARY KEY AUTOINCREMENT,

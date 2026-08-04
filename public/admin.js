@@ -108,6 +108,11 @@ async function showDashboard() {
     loadBookings();
     loadMessages();
     updateNotifyBell();
+
+    loadOverdueCheckouts();
+    if (!window._overdueCheckoutPoll) {
+        window._overdueCheckoutPoll = setInterval(loadOverdueCheckouts, 20000);
+    }
 }
 
 /* ---------------- Tabs with Fade Transition -------- */
@@ -356,7 +361,10 @@ function bookingStatusCellHtml(b) {
         return `<span class="status-pill ${b.status}">${STATUS_LABELS[b.status]}</span>`;
     }
     if (b.status === 'checked_in') {
-        return `<button type="button" class="action-btn confirm checkout-btn" data-id="${b.id}">Checkout</button>`;
+        return `
+            <button type="button" class="action-btn confirm checkout-btn" data-id="${b.id}">Checkout</button>
+            <button type="button" class="action-btn details-toggle extend-btn" data-id="${b.id}" style="margin-top: 4px;">Extend Stay</button>
+        `;
     }
     const options = [b.status, ...(STATUS_TRANSITIONS[b.status] || [])];
     return `
@@ -763,6 +771,13 @@ function applyBookingFilters() {
         });
     });
 
+    body.querySelectorAll('.extend-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            const booking = allBookings.find((b) => String(b.id) === String(btn.dataset.id));
+            if (booking) await extendBookingStay(booking, btn);
+        });
+    });
+
     body.querySelectorAll('.details-toggle[data-target]').forEach((btn) => {
         btn.addEventListener('click', () => {
             const row = document.getElementById(btn.dataset.target);
@@ -785,6 +800,103 @@ document.getElementById('bookingsPrevPage').addEventListener('click', () => { bo
 document.getElementById('bookingsNextPage').addEventListener('click', () => { bookingsPage += 1; applyBookingFilters(); });
 
 /* ---------------- Checkout ---------------- */
+/* ---------------- Overdue checkouts (polled alert, no auto-charge) ---------------- */
+let overdueBookingsCache = [];
+
+async function loadOverdueCheckouts() {
+    const banner = document.getElementById('overdueCheckoutBanner');
+    if (!banner) return;
+    try {
+        const data = await apiGet('/api/bookings/overdue-checkouts');
+        overdueBookingsCache = data.overdue || [];
+        if (!overdueBookingsCache.length) {
+            banner.style.display = 'none';
+            banner.innerHTML = '';
+            return;
+        }
+        banner.style.display = 'block';
+        banner.innerHTML = `
+            <div class="overdue-banner">
+                <div class="overdue-banner-title">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    ${overdueBookingsCache.length} guest${overdueBookingsCache.length > 1 ? 's' : ''} past checkout, still checked in
+                </div>
+                ${overdueBookingsCache.map((b) => `
+                    <div class="overdue-row">
+                        <div class="overdue-row-info">
+                            <strong>${escapeHtml(b.name)}</strong> — ${escapeHtml(b.room_name)}${b.physical_room_number ? ` (Room ${escapeHtml(b.physical_room_number)})` : ''}
+                            <small>Was due out ${b.checkout}</small>
+                        </div>
+                        <div class="overdue-row-actions">
+                            <button type="button" class="action-btn confirm overdue-extend-btn" data-id="${b.id}">Extend Stay</button>
+                            <button type="button" class="action-btn overdue-latefee-btn" data-id="${b.id}">Add Late Fee</button>
+                            <button type="button" class="action-btn details-toggle overdue-view-btn" data-id="${b.id}">View Booking</button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        banner.querySelectorAll('.overdue-extend-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const booking = overdueBookingsCache.find((b) => String(b.id) === String(btn.dataset.id));
+                if (booking) await extendBookingStay(booking, btn);
+            });
+        });
+        banner.querySelectorAll('.overdue-latefee-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const booking = overdueBookingsCache.find((b) => String(b.id) === String(btn.dataset.id));
+                if (!booking) return;
+                const amountInput = prompt(`Late checkout fee for ${booking.name}:`, '1000');
+                if (amountInput === null) return;
+                const amount = Number(amountInput);
+                if (!amount || amount <= 0) { alert('Enter a valid amount.'); return; }
+                btn.disabled = true;
+                try {
+                    await apiSend('POST', `/api/bookings/${booking.id}/charges`, {
+                        description: 'Late Checkout Fee', amount, category: 'other'
+                    });
+                    alert('Late checkout fee added.');
+                    allBookings = [];
+                    loadBookings();
+                } catch (err) { alert(err.message); } finally { btn.disabled = false; }
+            });
+        });
+        banner.querySelectorAll('.overdue-view-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                document.querySelector('.admin-tab[data-tab="bookings"]')?.click();
+                document.getElementById('bookingSearch').value = '';
+                setTimeout(() => {
+                    const toggleBtn = document.querySelector(`.details-toggle[data-target="details-${btn.dataset.id}"]`);
+                    if (toggleBtn) toggleBtn.click();
+                    toggleBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+            });
+        });
+    } catch (err) { /* silent — this is a background poll, not a user action */ }
+}
+
+async function extendBookingStay(booking, triggerBtn) {
+    const nightsInput = prompt(`Extend ${booking.name}'s stay in ${booking.room_name} by how many nights?\nCurrent check-out: ${booking.checkout}`, '1');
+    if (nightsInput === null) return; // cancelled
+    const nights = Number(nightsInput);
+    if (!Number.isInteger(nights) || nights < 1 || nights > 30) {
+        alert('Enter a whole number of nights between 1 and 30.');
+        return;
+    }
+    if (triggerBtn) triggerBtn.disabled = true;
+    try {
+        const result = await apiSend('POST', `/api/bookings/${booking.id}/extend`, { nights });
+        alert(`Stay extended by ${result.nightsAdded} night(s). New check-out: ${result.booking.checkout}. Added ${money(result.amountAdded)} to the bill (new total: ${money(result.totals.total)}).`);
+        allBookings = [];
+        loadBookings();
+        loadOverdueCheckouts();
+    } catch (err) {
+        alert(err.message);
+    } finally {
+        if (triggerBtn) triggerBtn.disabled = false;
+    }
+}
+
 function openCheckoutModal(booking) {
     if (!booking) return;
     const paidTotal = Number(booking.paid_total || 0);

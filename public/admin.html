@@ -80,6 +80,11 @@
                 </button>
             </div>
 
+            <!-- Guests past checkout who haven't actually checked out — polled
+                 every 20s. No booking is ever auto-extended or auto-charged;
+                 this only ever surfaces an alert for staff to act on. -->
+            <div id="overdueCheckoutBanner" style="display: none;"></div>
+
             <div class="admin-tabs" id="adminTabs">
                 <!-- Core Operations -->
                 <button class="admin-tab active" data-tab="overview"><i class="fas fa-house"></i> Overview</button>

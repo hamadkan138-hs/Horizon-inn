@@ -484,6 +484,104 @@ router.patch('/:id/invoice-fields', adminAuth, requireRole('admin', 'staff'), as
   }
 });
 
+// Checked-in guests whose stay has run past checkout without an actual
+// checkout — surfaced to staff as an alert to resolve manually (extend the
+// stay, add a late-checkout fee, or check them out). Declared before GET
+// /:id so Express doesn't swallow this path as an :id param.
+const CHECKOUT_CUTOFF_HOUR = 12; // 24h, hotel-local (Asia/Karachi)
+
+function karachiNow() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Karachi',
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hour12: false
+  }).formatToParts(new Date());
+  const get = (type) => parts.find((p) => p.type === type).value;
+  return { date: `${get('year')}-${get('month')}-${get('day')}`, hour: Number(get('hour')) };
+}
+
+router.get('/overdue-checkouts', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
+  try {
+    const { date: today, hour } = karachiNow();
+    const result = await db.execute({
+      sql: `
+        SELECT bookings.*, rooms.name AS room_name,
+               physical_rooms.room_number AS physical_room_number
+        FROM bookings
+        JOIN rooms ON rooms.id = bookings.room_id
+        LEFT JOIN physical_rooms ON physical_rooms.id = bookings.physical_room_id
+        WHERE bookings.status = 'checked_in'
+          AND (bookings.checkout < ? OR (bookings.checkout = ? AND ? >= ?))
+        ORDER BY bookings.checkout ASC
+      `,
+      args: [today, today, hour, CHECKOUT_CUTOFF_HOUR]
+    });
+    res.json({ overdue: result.rows, checkedAt: new Date().toISOString(), cutoffHour: CHECKOUT_CUTOFF_HOUR });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load overdue checkouts' });
+  }
+});
+
+// Extend a checked-in guest's stay by N nights — re-validates the room is
+// actually free for the extra night(s), prices them at the rate in effect
+// starting from the current checkout date, adds that to room_amount, and
+// logs an immutable record. Deliberately does not touch a checked_out
+// booking (assertBookingUnlocked) — once a guest has actually left, that's
+// a new booking, not an extension.
+router.post('/:id/extend', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
+  try {
+    const nights = Number(req.body.nights);
+    if (!Number.isInteger(nights) || nights < 1 || nights > 30) {
+      return res.status(400).json({ error: 'nights must be a whole number between 1 and 30' });
+    }
+
+    const existing = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
+    const booking = existing.rows[0];
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+    assertBookingUnlocked(booking);
+    if (booking.status !== 'checked_in') {
+      return res.status(400).json({ error: `Only a checked-in booking can be extended (this one is ${booking.status}).` });
+    }
+
+    const roomResult = await db.execute({ sql: 'SELECT * FROM rooms WHERE id = ?', args: [booking.room_id] });
+    const room = roomResult.rows[0];
+
+    const previousCheckout = booking.checkout;
+    const newCheckout = new Date(`${previousCheckout}T00:00:00Z`);
+    newCheckout.setUTCDate(newCheckout.getUTCDate() + nights);
+    const newCheckoutStr = newCheckout.toISOString().slice(0, 10);
+
+    const available = await isRoomAvailable(room, previousCheckout, newCheckoutStr, booking.id);
+    if (!available) {
+      return res.status(409).json({ error: 'This room is already booked for the requested extension dates — check with the guest before offering another room, or shorten the extension.' });
+    }
+
+    const additionalAmount = await computeTotalAmount(room, previousCheckout, newCheckoutStr, booking.guests);
+
+    await db.execute({
+      sql: 'UPDATE bookings SET checkout = ?, room_amount = room_amount + ? WHERE id = ?',
+      args: [newCheckoutStr, additionalAmount, req.params.id]
+    });
+    await db.execute({
+      sql: `
+        INSERT INTO booking_extensions (booking_id, previous_checkout, new_checkout, nights_added, amount_added, reason, extended_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `,
+      args: [req.params.id, previousCheckout, newCheckoutStr, nights, additionalAmount, req.body.reason || '', req.user.username]
+    });
+
+    const totals = await recomputeBookingTotal(req.params.id);
+    const updated = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
+    res.json({ booking: updated.rows[0], nightsAdded: nights, amountAdded: additionalAmount, totals });
+  } catch (err) {
+    if (err instanceof BookingLockedError) return res.status(err.status).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: 'Failed to extend stay. Nothing was changed — please try again.' });
+  }
+});
+
 // Single booking with room + payment history + extra charges (admin) — used by invoice view
 router.get('/:id', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
   try {
