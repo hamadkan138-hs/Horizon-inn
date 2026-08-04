@@ -3,606 +3,475 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Horizon Inn Peshawar — A Cinematic Stay</title>
-    <meta name="description" content="Horizon Inn is a boutique guest house in Peshawar — elegant rooms, a courtyard fire pit, and easy reach of the city's storied bazaars and forts. Book direct for the best rates.">
+    <title>Horizon Inn Peshawar — A Fire That Doesn't Go Out</title>
+    <meta name="description" content="Horizon Inn is a boutique guest house in Peshawar — private lawn, courtyard fire pit, a corporate meeting hall, and a café. Book direct for the best rates.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://horizon-inn.onrender.com/">
     <link rel="icon" type="image/png" href="images/favicon.png">
 
     <meta property="og:type" content="lodging">
     <meta property="og:site_name" content="Horizon Inn">
-    <meta property="og:title" content="Horizon Inn Peshawar — A Cinematic Stay">
-    <meta property="og:description" content="Boutique rooms, a courtyard fire pit, and the storied streets of Peshawar — book direct.">
+    <meta property="og:title" content="Horizon Inn Peshawar — A Fire That Doesn't Go Out">
+    <meta property="og:description" content="Boutique rooms, a private lawn, a courtyard fire pit — book direct in Peshawar.">
     <meta property="og:image" content="https://horizon-inn.onrender.com/images/gallery/courtyard-lounge.jpg">
     <meta property="og:url" content="https://horizon-inn.onrender.com/">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
     :root {
-        --bg: #0a0a0b;
-        --panel: #131315;
-        --ink: #f4f1ec;
-        --ink-dim: rgba(244, 241, 236, 0.68);
-        --ink-faint: rgba(244, 241, 236, 0.42);
-        --gold: #c9a15a;
-        --gold-soft: rgba(201, 161, 90, 0.85);
-        --hair: rgba(244, 241, 236, 0.14);
+        --dusk: #141b29;
+        --dusk-2: #1c2434;
+        --dusk-3: #2a3549;
+        --brass: #c9914f;
+        --brass-soft: rgba(201, 145, 79, 0.85);
+        --ember: #e2694a;
+        --ink: #f2ece0;
+        --ink-dim: rgba(242, 236, 224, 0.66);
+        --ink-faint: rgba(242, 236, 224, 0.4);
+        --hair: rgba(242, 236, 224, 0.14);
+        --hair-strong: rgba(242, 236, 224, 0.24);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
     html { scroll-behavior: smooth; }
-
     body {
-        background: var(--bg);
-        color: var(--ink);
-        font-family: 'Inter', sans-serif;
-        overflow-x: hidden;
+        background: var(--dusk); color: var(--ink);
+        font-family: 'Work Sans', sans-serif; font-weight: 400;
+        overflow-x: hidden; -webkit-font-smoothing: antialiased;
     }
-
     a { color: inherit; text-decoration: none; }
     img { display: block; max-width: 100%; }
-
-    ::selection { background: var(--gold); color: #171512; }
-
-    /* ---------- Nav ---------- */
-    .cine-nav {
-        position: fixed;
-        top: 0; left: 0; right: 0;
-        z-index: 500;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 26px 5vw;
-        transition: background 0.4s ease, padding 0.4s ease, box-shadow 0.4s ease;
-    }
-    .cine-nav.scrolled {
-        background: rgba(10, 10, 11, 0.86);
-        backdrop-filter: blur(10px);
-        padding: 16px 5vw;
-        box-shadow: 0 1px 0 var(--hair);
-    }
-    .cine-brand {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-family: 'Playfair Display', serif;
-        font-size: 1.15rem;
-        letter-spacing: 0.04em;
-    }
-    .cine-brand img { height: 30px; width: auto; }
-    .cine-links {
-        display: flex;
-        align-items: center;
-        gap: 34px;
-        font-size: 0.78rem;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-    }
-    .cine-links a { opacity: 0.75; transition: opacity 0.25s ease; }
-    .cine-links a:hover { opacity: 1; }
-    .cine-links .nav-book {
-        opacity: 1;
-        border: 1px solid var(--gold-soft);
-        color: var(--gold);
-        padding: 10px 20px;
-        border-radius: 999px;
-        transition: background 0.25s ease, color 0.25s ease;
-    }
-    .cine-links .nav-book:hover { background: var(--gold); color: #171512; }
-    .nav-burger {
-        display: none;
-        flex-direction: column;
-        gap: 5px;
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 6px;
-    }
-    .nav-burger span { width: 22px; height: 1px; background: var(--ink); display: block; }
-
-    /* ---------- Scroll-snap panels ---------- */
-    .snap-container {
-        height: 100vh;
-        overflow-y: scroll;
-        scroll-snap-type: y mandatory;
-        scroll-behavior: smooth;
-    }
-    .panel {
-        position: relative;
-        min-height: 100vh;
-        scroll-snap-align: start;
-        scroll-snap-stop: always;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        padding: 0 6vw;
-    }
-    .panel-bg {
-        position: absolute;
-        inset: -6% -6%;
-        background-size: cover;
-        background-position: center;
-        will-change: transform;
-    }
-    .panel-overlay {
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(180deg, rgba(8,8,9,0.55) 0%, rgba(8,8,9,0.78) 55%, rgba(8,8,9,0.95) 100%);
-    }
-    .panel-content {
-        position: relative;
-        z-index: 2;
-        width: 100%;
-        max-width: 1180px;
-        margin: 0 auto;
-    }
+    ::selection { background: var(--brass); color: #171208; }
+    :focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
 
     .eyebrow {
-        display: inline-block;
-        font-size: 0.78rem;
-        letter-spacing: 0.32em;
-        text-transform: uppercase;
-        color: var(--gold-soft);
-        margin-bottom: 22px;
+        display: inline-flex; align-items: center; gap: 10px;
+        font-weight: 600; font-size: 0.72rem; letter-spacing: 0.28em; text-transform: uppercase;
+        color: var(--brass-soft);
+    }
+    .eyebrow::before { content: ''; width: 22px; height: 1px; background: var(--brass-soft); }
+
+    /* ---------- Nav ---------- */
+    .nav {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 500;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 30px 5vw; transition: background 0.4s ease, padding 0.4s ease, border-color 0.4s ease;
+        border-bottom: 1px solid transparent;
+    }
+    .nav.scrolled { background: rgba(20, 27, 41, 0.88); backdrop-filter: blur(10px); padding: 18px 5vw; border-bottom-color: var(--hair); }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand img { height: 28px; width: auto; }
+    .brand span { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.2rem; letter-spacing: 0.02em; }
+    .nav-links { display: flex; align-items: center; gap: 36px; font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; }
+    .nav-links a:not(.nav-cta) { position: relative; padding-bottom: 4px; opacity: 0.82; transition: opacity 0.25s ease; }
+    .nav-links a:not(.nav-cta)::after { content: ''; position: absolute; left: 0; bottom: 0; height: 1px; width: 0; background: var(--brass); transition: width 0.3s ease; }
+    .nav-links a:not(.nav-cta):hover { opacity: 1; }
+    .nav-links a:not(.nav-cta):hover::after { width: 100%; }
+    .nav-cta { border: 1px solid var(--brass-soft); color: var(--brass); padding: 11px 22px; border-radius: 999px; transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease; }
+    .nav-cta:hover { background: var(--brass); color: #171208; transform: translateY(-1px); }
+    .burger { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 8px; z-index: 501; }
+    .burger span { width: 22px; height: 1px; background: var(--ink); display: block; }
+
+    /* ---------- Buttons ---------- */
+    .btn { display: inline-flex; align-items: center; gap: 10px; padding: 17px 34px; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; border-radius: 999px; font-weight: 600; transition: transform 0.3s ease, background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
+    .btn-primary { background: var(--brass); color: #171208; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -10px rgba(201, 145, 79, 0.55); }
+    .btn-ghost { border: 1px solid var(--hair-strong); color: var(--ink); }
+    .btn-ghost:hover { border-color: var(--brass-soft); color: var(--brass); }
+
+    /* ---------- Reveal ---------- */
+    .reveal { opacity: 0; transform: translateY(38px); transition: opacity 1s cubic-bezier(.16,1,.3,1), transform 1s cubic-bezier(.16,1,.3,1); }
+    .reveal.in { opacity: 1; transform: translateY(0); }
+    .d1 { transition-delay: .1s; } .d2 { transition-delay: .2s; } .d3 { transition-delay: .3s; } .d4 { transition-delay: .4s; }
+
+    /* ---------- Hero (broken grid) ---------- */
+    .hero {
+        position: relative; min-height: 100dvh; display: flex; align-items: flex-end;
+        overflow: hidden; padding: 0 0 100px;
+    }
+    .hero-bg { position: absolute; inset: -5%; background-image: var(--hero-img); background-size: cover; background-position: center 40%; animation: kenburns 28s ease-in-out infinite alternate; }
+    @keyframes kenburns { from { transform: scale(1.02); } to { transform: scale(1.14) translateY(-1.5%); } }
+    .hero-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20,27,41,0.22) 0%, rgba(15,20,31,0.3) 45%, rgba(13,17,26,0.94) 100%), linear-gradient(90deg, rgba(13,17,26,0.5) 0%, rgba(13,17,26,0) 50%); }
+    .hero-tag {
+        position: absolute; top: 130px; right: 6vw; z-index: 2;
+        writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg);
+        font-size: 0.72rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--ink-faint);
+        padding: 18px 10px; border-left: 1px solid var(--hair-strong);
+    }
+    .hero-content { position: relative; z-index: 2; max-width: 900px; padding-left: 5vw; margin-left: -1.5vw; }
+    .hero-title { font-family: 'Fraunces', serif; font-weight: 700; font-size: clamp(3.4rem, 9.6vw, 7.4rem); line-height: 0.96; letter-spacing: -0.01em; margin: 22px 0 26px; }
+    .hero-title em { font-style: italic; font-weight: 500; color: var(--brass); }
+    .hero-title .line { display: block; overflow: hidden; margin-left: -0.5vw; padding-left: 0.5vw; }
+    .hero-title .line span { display: block; transform: translateY(100%); animation: lineUp 1.1s cubic-bezier(.16,1,.3,1) forwards; }
+    .hero-title .line:nth-child(1) span { animation-delay: .15s; }
+    .hero-title .line:nth-child(2) span { animation-delay: .32s; }
+    @keyframes lineUp { to { transform: translateY(0); } }
+    .hero-sub { max-width: 44ch; font-size: 1.06rem; color: var(--ink-dim); line-height: 1.75; opacity: 0; animation: fadeUp 1s cubic-bezier(.16,1,.3,1) forwards; animation-delay: .6s; }
+    .hero-cta { display: flex; gap: 16px; margin-top: 38px; flex-wrap: wrap; opacity: 0; animation: fadeUp 1s cubic-bezier(.16,1,.3,1) forwards; animation-delay: .78s; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .scroll-cue { position: absolute; bottom: 40px; left: 5vw; z-index: 2; display: flex; align-items: center; gap: 12px; font-size: 0.68rem; letter-spacing: 0.26em; text-transform: uppercase; color: var(--ink-faint); }
+    .scroll-cue .track { width: 1px; height: 44px; background: var(--hair-strong); position: relative; overflow: hidden; }
+    .scroll-cue .track::after { content: ''; position: absolute; top: -44px; left: 0; width: 1px; height: 44px; background: var(--brass); animation: cue 2.2s ease-in-out infinite; }
+    @keyframes cue { to { top: 44px; } }
+
+    /* ---------- Overlap positioning strip ---------- */
+    .overlap-strip { position: relative; z-index: 3; display: flex; justify-content: flex-end; padding: 0 6vw; margin-top: -78px; margin-bottom: -78px; }
+    .overlap-card {
+        max-width: 460px; background: rgba(28, 36, 52, 0.82); backdrop-filter: blur(14px);
+        border: 1px solid var(--hair-strong); border-radius: 2px; padding: 34px 38px;
+        font-family: 'Fraunces', serif; font-weight: 500; font-style: italic; font-size: 1.25rem; line-height: 1.5;
+        box-shadow: 0 30px 60px -20px rgba(0,0,0,0.5);
     }
 
-    /* ---------- Reveal-on-scroll ---------- */
-    .reveal {
-        opacity: 0;
-        transform: translateY(46px);
-        transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1.1s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .reveal.in-view { opacity: 1; transform: translateY(0); }
-    .reveal.delay-1 { transition-delay: 0.12s; }
-    .reveal.delay-2 { transition-delay: 0.24s; }
-    .reveal.delay-3 { transition-delay: 0.36s; }
-    .reveal.delay-4 { transition-delay: 0.48s; }
-    .reveal-scale { transform: translateY(30px) scale(0.96); }
-    .reveal-scale.in-view { transform: translateY(0) scale(1); }
+    /* ---------- Section shell ---------- */
+    .section { position: relative; padding: 170px 5vw 150px; }
+    .section-head { max-width: 620px; margin-bottom: 64px; }
+    .section-title { font-family: 'Fraunces', serif; font-weight: 700; font-size: clamp(2.1rem, 4.2vw, 3.4rem); line-height: 1.08; margin-top: 20px; }
+    .section-lede { margin-top: 20px; color: var(--ink-dim); font-size: 1.02rem; line-height: 1.75; max-width: 52ch; }
 
-    /* ---------- Hero ---------- */
-    .hero-panel .panel-content { text-align: center; }
-    .hero-title {
-        font-family: 'Playfair Display', serif;
-        font-weight: 600;
-        font-size: clamp(3rem, 9vw, 7.5rem);
-        line-height: 1.02;
-        letter-spacing: 0.01em;
+    /* ---------- Lawn collage split (asymmetric, overlapping) ---------- */
+    .collage { position: relative; display: grid; grid-template-columns: 62fr 38fr; align-items: center; gap: 0; padding: 40px 6vw 120px; }
+    .collage-media { position: relative; aspect-ratio: 4/5; overflow: hidden; border-radius: 2px; }
+    .collage-media img { width: 100%; height: 100%; object-fit: cover; }
+    .collage-chip {
+        position: absolute; width: 46%; aspect-ratio: 4/3; right: -8%; bottom: -8%;
+        overflow: hidden; border-radius: 2px; border: 1px solid var(--brass-soft);
+        box-shadow: 0 30px 60px -18px rgba(0,0,0,0.6); transform: rotate(-2.4deg); z-index: 2;
     }
-    .hero-title em { font-style: italic; color: var(--gold); font-weight: 500; }
-    .hero-sub {
-        margin: 26px auto 0;
-        max-width: 560px;
-        font-size: 1.05rem;
-        font-weight: 300;
-        color: var(--ink-dim);
-        line-height: 1.7;
-    }
-    .hero-cta-row {
-        margin-top: 44px;
-        display: flex;
-        justify-content: center;
-        gap: 18px;
-        flex-wrap: wrap;
-    }
-    .btn-gold, .btn-ghost {
-        display: inline-block;
-        padding: 16px 36px;
-        font-size: 0.82rem;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        border-radius: 999px;
-        transition: transform 0.3s ease, background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-    }
-    .btn-gold { background: var(--gold); color: #171512; }
-    .btn-gold:hover { transform: translateY(-2px); }
-    .btn-ghost { border: 1px solid var(--hair); color: var(--ink); }
-    .btn-ghost:hover { border-color: var(--gold-soft); color: var(--gold); }
+    .collage-chip img { width: 100%; height: 100%; object-fit: cover; }
+    .collage-copy { padding: 0 0 0 7vw; align-self: start; margin-top: 14%; }
+    .collage-copy h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(1.8rem, 3vw, 2.6rem); margin: 18px 0 20px; }
+    .collage-copy p { color: var(--ink-dim); line-height: 1.8; font-size: 1rem; max-width: 38ch; }
 
-    .scroll-cue {
-        position: absolute;
-        bottom: 40px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 2;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
-        font-size: 0.68rem;
-        letter-spacing: 0.28em;
-        text-transform: uppercase;
-        color: var(--ink-faint);
+    /* ---------- Room carousel (bleeding, varied widths, price tags) ---------- */
+    .carousel-section { padding-left: 0; padding-right: 0; }
+    .carousel-section .section-head { padding: 0 5vw; }
+    .carousel { display: flex; gap: 24px; overflow-x: auto; scroll-snap-type: x proximity; padding: 6px 5vw 10px; scrollbar-width: none; }
+    .carousel::-webkit-scrollbar { display: none; }
+    .room-card { position: relative; flex: 0 0 auto; width: min(70vw, 400px); aspect-ratio: 3/4; border-radius: 2px; overflow: hidden; scroll-snap-align: start; }
+    .room-card.wide { width: min(84vw, 520px); }
+    .room-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.1s cubic-bezier(.16,1,.3,1); }
+    .room-card:hover img { transform: scale(1.06); }
+    .room-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20,27,41,0) 38%, rgba(13,17,26,0.94) 100%); }
+    .room-price { position: absolute; top: 20px; right: 20px; background: var(--brass); color: #171208; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.02em; padding: 8px 14px; border-radius: 999px; }
+    .room-body { position: absolute; left: 0; right: 0; bottom: 0; padding: 28px 26px; }
+    .room-body .tag { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--brass-soft); }
+    .room-body h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.5rem; margin: 10px 0 8px; }
+    .room-body p { font-size: 0.9rem; color: var(--ink-dim); line-height: 1.55; max-width: 30ch; }
+    .quote-card {
+        position: relative; flex: 0 0 auto; width: min(60vw, 340px); aspect-ratio: 3/4; scroll-snap-align: start;
+        border-radius: 2px; background: linear-gradient(155deg, var(--dusk-3), var(--dusk-2)); border: 1px solid var(--hair-strong);
+        display: flex; align-items: center; padding: 40px;
     }
-    .scroll-cue::after {
-        content: '';
-        width: 1px;
-        height: 40px;
-        background: linear-gradient(var(--gold-soft), transparent);
-        animation: cueMove 2s ease-in-out infinite;
-    }
-    @keyframes cueMove {
-        0% { transform: scaleY(0.3); opacity: 0.3; transform-origin: top; }
-        50% { transform: scaleY(1); opacity: 1; transform-origin: top; }
-        100% { transform: scaleY(0.3); opacity: 0.3; transform-origin: bottom; }
-    }
+    .quote-card p { font-family: 'Fraunces', serif; font-style: italic; font-weight: 500; font-size: 1.4rem; line-height: 1.45; color: var(--ink); }
+    .carousel-hint { padding: 0 5vw; margin-top: 26px; font-size: 0.76rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
 
-    /* ---------- About ---------- */
-    .about-panel .panel-content {
-        display: grid;
-        grid-template-columns: 1.1fr 0.9fr;
-        gap: 64px;
-        align-items: center;
-        text-align: left;
-    }
-    .section-title {
-        font-family: 'Playfair Display', serif;
-        font-weight: 600;
-        font-size: clamp(2.2rem, 4.4vw, 3.6rem);
-        line-height: 1.1;
-        margin-bottom: 26px;
-    }
-    .about-copy p {
-        font-weight: 300;
-        color: var(--ink-dim);
-        font-size: 1.02rem;
-        line-height: 1.85;
-        margin-bottom: 18px;
-        max-width: 46ch;
-    }
-    .about-figures {
-        display: flex;
-        gap: 40px;
-        margin-top: 34px;
-    }
-    .about-figures div { border-top: 1px solid var(--hair); padding-top: 14px; }
-    .about-figures strong {
-        display: block;
-        font-family: 'Playfair Display', serif;
-        font-size: 1.8rem;
-        color: var(--gold);
-    }
-    .about-figures span {
-        font-size: 0.72rem;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: var(--ink-faint);
-    }
-    .about-frame {
-        position: relative;
-        aspect-ratio: 4 / 5;
-        border-radius: 4px;
-        overflow: hidden;
-    }
-    .about-frame img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.02); }
-    .about-frame::after {
-        content: '';
-        position: absolute; inset: 0;
-        box-shadow: inset 0 0 0 1px var(--hair);
-    }
+    /* ---------- Meeting Hall — off-center plaque ---------- */
+    .plaque-section { position: relative; min-height: 92vh; display: flex; align-items: center; overflow: hidden; }
+    .plaque-bg { position: absolute; inset: 0; }
+    .plaque-bg img { width: 100%; height: 100%; object-fit: cover; }
+    .plaque-shade { position: absolute; inset: 0; background: linear-gradient(100deg, rgba(13,17,26,0.88) 0%, rgba(13,17,26,0.5) 42%, rgba(13,17,26,0.75) 100%); }
+    .plaque-card { position: relative; z-index: 2; max-width: 480px; margin-left: 14vw; background: rgba(20,27,41,0.68); backdrop-filter: blur(10px); border: 1px solid var(--hair-strong); border-radius: 2px; padding: 48px 44px; }
+    .plaque-card h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(1.7rem, 2.8vw, 2.3rem); margin: 18px 0 20px; }
+    .plaque-card p { color: var(--ink-dim); line-height: 1.8; font-size: 0.98rem; max-width: 36ch; margin-bottom: 30px; }
 
-    /* ---------- Rooms ---------- */
-    .rooms-panel { padding-top: 60px; padding-bottom: 60px; }
-    .rooms-panel .panel-content { text-align: center; }
-    .rooms-header { max-width: 640px; margin: 0 auto 56px; }
-    .rooms-header p { color: var(--ink-dim); font-weight: 300; margin-top: 16px; line-height: 1.7; }
-    .room-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 26px;
-        text-align: left;
+    /* ---------- Café — soft overlap, no diagonal ---------- */
+    .cafe-section { position: relative; padding-top: 40px; }
+    .cafe-media { position: relative; aspect-ratio: 21/10; overflow: hidden; margin: 0 5vw; border-radius: 2px; }
+    .cafe-media img { width: 100%; height: 100%; object-fit: cover; }
+    .cafe-media::after { content: ''; position: absolute; inset: 0; background: radial-gradient(120% 100% at 15% 20%, rgba(13,17,26,0.05) 0%, rgba(13,17,26,0.55) 100%); }
+    .cafe-copy-float {
+        position: relative; z-index: 2; max-width: 440px; margin: -90px 0 40px 8vw;
+        background: rgba(20,27,41,0.86); backdrop-filter: blur(12px); border: 1px solid var(--hair-strong);
+        border-radius: 2px; padding: 38px 40px; box-shadow: 0 30px 60px -20px rgba(0,0,0,0.55);
     }
-    .room-card {
-        position: relative;
-        border-radius: 6px;
-        overflow: hidden;
-        aspect-ratio: 3 / 4;
-        cursor: default;
-    }
-    .room-card img {
-        width: 100%; height: 100%; object-fit: cover;
-        transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .room-card:hover img { transform: scale(1.08); }
-    .room-card-shade {
-        position: absolute; inset: 0;
-        background: linear-gradient(180deg, rgba(10,10,11,0) 35%, rgba(10,10,11,0.92) 100%);
-    }
-    .room-card-body {
-        position: absolute; left: 0; right: 0; bottom: 0;
-        padding: 26px 24px;
-    }
-    .room-card-body .room-tag {
-        font-size: 0.68rem;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        color: var(--gold-soft);
-        margin-bottom: 8px;
-        display: block;
-    }
-    .room-card-body h3 {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin-bottom: 8px;
-    }
-    .room-card-body p {
-        font-size: 0.9rem;
-        color: var(--ink-dim);
-        font-weight: 300;
-        line-height: 1.55;
-    }
-    .rooms-footer-link { margin-top: 46px; display: inline-block; }
+    .cafe-copy-float h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.7rem; margin: 16px 0 14px; }
+    .cafe-copy-float p { color: var(--ink-dim); line-height: 1.75; font-size: 0.96rem; }
+    .cafe-strip { display: flex; gap: 18px; padding: 0 5vw; margin-top: 40px; overflow-x: auto; scrollbar-width: none; }
+    .cafe-strip::-webkit-scrollbar { display: none; }
+    .cafe-strip img { flex: 0 0 auto; width: 200px; height: 150px; object-fit: cover; border-radius: 2px; }
 
-    /* ---------- Peshawar / Landmarks ---------- */
-    .landmarks-panel .panel-content { text-align: left; }
-    .landmarks-header { max-width: 640px; margin-bottom: 54px; }
-    .landmarks-header p { color: var(--ink-dim); font-weight: 300; margin-top: 16px; line-height: 1.8; }
-    .landmark-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 30px;
+    /* ---------- Peshawar marquee (layered) ---------- */
+    .marquee-wrap { position: relative; overflow: hidden; padding: 70px 0; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
+    .marquee-bg { position: absolute; inset: 0; opacity: 0.16; }
+    .marquee-bg img { width: 100%; height: 100%; object-fit: cover; }
+    .marquee-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, var(--dusk) 0%, rgba(20,27,41,0.4) 50%, var(--dusk) 100%); }
+    .marquee-track { position: relative; display: flex; gap: 70px; width: max-content; animation: scroll-left 40s linear infinite; }
+    .marquee-track.back { position: absolute; top: 76px; left: 0; opacity: 0.32; animation-duration: 62s; animation-direction: reverse; }
+    .marquee-wrap:hover .marquee-track { animation-play-state: paused; }
+    @keyframes scroll-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    .marquee-item { display: flex; align-items: baseline; gap: 22px; white-space: nowrap; }
+    .marquee-item h4 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 500; font-size: 1.9rem; color: var(--ink); }
+    .marquee-item p { font-size: 0.92rem; color: var(--ink-faint); max-width: 34ch; white-space: normal; }
+    .marquee-item .sep { color: var(--brass-soft); font-size: 1.4rem; }
+
+    /* ---------- Closing CTA (hero reprise, mirrored) ---------- */
+    .closing {
+        position: relative; min-height: 100dvh; display: flex; align-items: flex-end; justify-content: flex-end;
+        overflow: hidden; padding: 0 0 100px; text-align: right;
     }
-    .landmark-item { border-top: 1px solid var(--hair); padding-top: 20px; }
-    .landmark-item .landmark-index {
-        font-family: 'Playfair Display', serif;
-        font-style: italic;
-        color: var(--gold);
-        font-size: 1.1rem;
-        display: block;
-        margin-bottom: 12px;
-    }
-    .landmark-item h3 {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.35rem;
-        margin-bottom: 10px;
-        font-weight: 600;
-    }
-    .landmark-item p {
-        font-size: 0.92rem;
-        font-weight: 300;
-        color: var(--ink-dim);
-        line-height: 1.7;
-    }
+    .closing-bg { position: absolute; inset: -5%; background-image: var(--closing-img); background-size: cover; background-position: center 45%; animation: kenburns 30s ease-in-out infinite alternate-reverse; }
+    .closing-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20,27,41,0.22) 0%, rgba(15,20,31,0.3) 45%, rgba(13,17,26,0.94) 100%), linear-gradient(270deg, rgba(13,17,26,0.5) 0%, rgba(13,17,26,0) 50%); }
+    .closing-content { position: relative; z-index: 2; max-width: 780px; padding-right: 5vw; }
+    .closing-content h2 { font-family: 'Fraunces', serif; font-weight: 700; font-size: clamp(2.6rem, 6.6vw, 5.2rem); line-height: 1.02; }
+    .closing-content h2 em { font-style: italic; font-weight: 500; color: var(--brass); }
+    .closing-content p { margin: 24px 0 36px; color: var(--ink-dim); font-size: 1.02rem; line-height: 1.75; max-width: 42ch; margin-left: auto; }
+    .closing-cta { display: flex; gap: 16px; justify-content: flex-end; flex-wrap: wrap; }
 
     /* ---------- Footer ---------- */
-    .footer-panel { align-items: flex-end; padding-bottom: 0; }
-    .footer-panel .panel-overlay { background: linear-gradient(180deg, rgba(8,8,9,0.4) 0%, rgba(8,8,9,0.97) 70%, #08090a 100%); }
-    .footer-inner {
-        width: 100%;
-        max-width: 1180px;
-        margin: 0 auto;
-        padding: 90px 0 34px;
-    }
-    .footer-top {
-        display: grid;
-        grid-template-columns: 1.3fr 1fr 1fr;
-        gap: 50px;
-        padding-bottom: 50px;
-        border-bottom: 1px solid var(--hair);
-    }
-    .footer-brand {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.6rem;
-        margin-bottom: 14px;
-    }
-    .footer-top p { color: var(--ink-dim); font-weight: 300; font-size: 0.95rem; line-height: 1.7; max-width: 34ch; }
-    .footer-col h4 {
-        font-size: 0.72rem;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        color: var(--ink-faint);
-        margin-bottom: 18px;
-    }
-    .footer-col a, .footer-col address {
-        display: block;
-        font-style: normal;
-        font-weight: 300;
-        color: var(--ink-dim);
-        margin-bottom: 12px;
-        font-size: 0.95rem;
-        transition: color 0.2s ease;
-    }
-    .footer-col a:hover { color: var(--gold); }
-    .footer-bottom {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 14px;
-        padding-top: 26px;
-        font-size: 0.78rem;
-        color: var(--ink-faint);
-    }
-    .footer-bottom a { color: var(--ink-faint); margin-left: 20px; }
-    .footer-bottom a:hover { color: var(--gold); }
+    footer { padding: 90px 5vw 36px; }
+    .footer-top { display: grid; grid-template-columns: 1.5fr 0.9fr 0.9fr 0.7fr; gap: 50px; padding-bottom: 54px; border-bottom: 1px solid var(--hair); }
+    .footer-brand { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.5rem; margin-bottom: 16px; }
+    .footer-top > div > p { color: var(--ink-dim); line-height: 1.75; font-size: 0.96rem; max-width: 32ch; }
+    .footer-col h5 { font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 20px; }
+    .footer-col a, .footer-col address { display: block; font-style: normal; color: var(--ink-dim); margin-bottom: 13px; font-size: 0.95rem; transition: color 0.2s ease; }
+    .footer-col a:hover { color: var(--brass); }
+    .footer-bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding-top: 28px; font-size: 0.78rem; color: var(--ink-faint); }
+    .footer-bottom .legal a { color: var(--ink-faint); margin-left: 22px; }
+    .footer-bottom .legal a:hover { color: var(--brass); }
 
     /* ---------- Responsive ---------- */
     @media (max-width: 900px) {
-        .cine-links { position: fixed; top: 0; right: 0; bottom: 0; width: 78%; max-width: 340px;
-            background: rgba(10,10,11,0.98); flex-direction: column; align-items: flex-start;
-            justify-content: center; gap: 26px; padding: 40px; transform: translateX(100%);
-            transition: transform 0.4s ease; }
-        .cine-links.open { transform: translateX(0); }
-        .nav-burger { display: flex; z-index: 501; }
-        .about-panel .panel-content { grid-template-columns: 1fr; }
-        .about-frame { order: -1; aspect-ratio: 16/10; }
-        .room-grid, .landmark-grid { grid-template-columns: 1fr; }
-        .footer-top { grid-template-columns: 1fr; gap: 34px; }
-        .snap-container { scroll-snap-type: y proximity; }
-        .panel { padding: 100px 7vw 60px; }
+        .nav-links { position: fixed; top: 0; right: 0; bottom: 0; width: 80%; max-width: 340px; background: var(--dusk-2); flex-direction: column; align-items: flex-start; justify-content: center; gap: 28px; padding: 40px; transform: translateX(100%); transition: transform 0.4s ease; border-left: 1px solid var(--hair); }
+        .nav-links.open { transform: translateX(0); }
+        .burger { display: flex; }
+        .hero-tag { display: none; }
+        .hero-content { margin-left: 0; }
+        .overlap-strip { justify-content: center; margin-top: -50px; margin-bottom: -50px; padding: 0 6vw; }
+        .overlap-card { max-width: 100%; }
+        .collage { grid-template-columns: 1fr; padding: 20px 6vw 150px; }
+        .collage-copy { padding: 40px 0 0; margin-top: 0; }
+        .collage-chip { width: 58%; }
+        .plaque-card { margin-left: 6vw; margin-right: 6vw; max-width: none; }
+        .cafe-copy-float { margin: -60px 6vw 30px; max-width: none; }
+        .closing { justify-content: flex-start; text-align: left; padding-bottom: 70px; }
+        .closing-content { padding-right: 0; padding-left: 5vw; text-align: left; }
+        .closing-content p { margin-left: 0; }
+        .closing-cta { justify-content: flex-start; }
+        .footer-top { grid-template-columns: 1fr 1fr; gap: 34px; }
+        .section { padding: 110px 6vw 100px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .hero-bg, .closing-bg { animation: none; }
+        .hero-title .line span { animation: none; transform: none; }
+        .hero-sub, .hero-cta { animation: none; opacity: 1; }
+        .marquee-track { animation: none; }
+        .reveal { opacity: 1; transform: none; transition: none; }
     }
 </style>
 </head>
 <body>
 
-    <nav class="cine-nav" id="cineNav">
-        <div class="cine-brand">
+    <nav class="nav" id="nav">
+        <div class="brand">
             <img src="images/logo-mark.png" alt="Horizon Inn">
             <span>Horizon Inn</span>
         </div>
-        <button class="nav-burger" id="navBurger" aria-label="Toggle menu">
+        <button class="burger" id="burger" aria-label="Toggle menu" aria-expanded="false">
             <span></span><span></span><span></span>
         </button>
-        <div class="cine-links" id="cineLinks">
-            <a href="#about">The Experience</a>
+        <div class="nav-links" id="navLinks">
+            <a href="#lawn">The Lawn</a>
             <a href="#rooms">Rooms</a>
-            <a href="#peshawar">Peshawar</a>
-            <a href="#footer-contact">Contact</a>
-            <a href="book.html#booking" class="nav-book">Book Now</a>
+            <a href="#meetings">Meetings</a>
+            <a href="#cafe">Café</a>
+            <a href="book.html#booking" class="nav-cta">Book Now</a>
         </div>
     </nav>
 
-    <main class="snap-container" id="snapContainer">
+    <!-- Hero — broken grid: headline bleeds off the left edge, rotated eyebrow floats over the frame -->
+    <section class="hero" style="--hero-img:url('https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=2200&q=80')">
+        <div class="hero-bg"></div>
+        <div class="hero-shade"></div>
+        <div class="hero-tag">Peshawar &middot; Est. 2026</div>
+        <div class="hero-content">
+            <span class="eyebrow">Boutique &middot; PKR 20,000&ndash;80,000</span>
+            <h1 class="hero-title">
+                <span class="line"><span>Quiet luxury,</span></span>
+                <span class="line"><span>held in <em>firelight.</em></span></span>
+            </h1>
+            <p class="hero-sub">A private lawn, a courtyard fire pit, and rooms built for the kind of stay that doesn't feel like a hotel. Ten minutes from Peshawar's old city.</p>
+            <div class="hero-cta">
+                <a href="book.html#booking" class="btn btn-primary">Book Your Stay</a>
+                <a href="#lawn" class="btn btn-ghost">See the Courtyard</a>
+            </div>
+        </div>
+        <div class="scroll-cue"><span class="track"></span><span>Scroll</span></div>
+    </section>
 
-        <!-- Hero -->
-        <section class="panel hero-panel" id="hero">
-            <div class="panel-bg" data-parallax style="background-image:url('https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=2000&q=80');"></div>
-            <div class="panel-overlay"></div>
-            <div class="panel-content">
-                <span class="eyebrow reveal">Est. 2026 &middot; Peshawar, Pakistan</span>
-                <h1 class="hero-title reveal delay-1">Horizon Inn <em>Peshawar</em></h1>
-                <p class="hero-sub reveal delay-2">A boutique guest house where quiet luxury meets the warmth of the city's oldest streets — considered rooms, a courtyard fire pit, and service that remembers your name.</p>
-                <div class="hero-cta-row reveal delay-3">
-                    <a href="book.html#booking" class="btn-gold">Book Now</a>
-                    <a href="#about" class="btn-ghost">The Experience</a>
+    <!-- Overlap strip — floats half-on-hero, half-on-next-section -->
+    <div class="overlap-strip">
+        <div class="overlap-card reveal">&ldquo;Boutique rooms. A private lawn. One fire that doesn't go out.&rdquo;</div>
+    </div>
+
+    <!-- The Lawn & Courtyard — asymmetric collage, not a 50/50 split -->
+    <section class="section" id="lawn" style="padding-top:60px;">
+        <div class="section-head reveal">
+            <span class="eyebrow">After Dark</span>
+            <h2 class="section-title">The courtyard fire pit,<br>most evenings.</h2>
+            <p class="section-lede">Where the day's arrivals trade notes on the bazaar, the fort, and where to eat next — the actual heart of a stay here.</p>
+        </div>
+        <div class="collage">
+            <div class="collage-media reveal">
+                <img src="https://images.unsplash.com/photo-1519791883288-dc8bd696e667?auto=format&fit=crop&w=1400&q=80" alt="Courtyard fire pit at night">
+                <div class="collage-chip reveal d2">
+                    <img src="https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=700&q=80" alt="Lawn seating at dusk">
                 </div>
             </div>
-            <div class="scroll-cue">Scroll</div>
-        </section>
-
-        <!-- About / Experience -->
-        <section class="panel about-panel" id="about">
-            <div class="panel-content">
-                <div class="about-copy">
-                    <span class="eyebrow reveal">The Experience</span>
-                    <h2 class="section-title reveal delay-1">Stillness, considered<br>in every detail.</h2>
-                    <p class="reveal delay-2">Horizon Inn was built on a simple idea — that a guest house can hold the calm of a private retreat and the character of the city around it at once. Every room is dressed in warm, unfussy materials; every evening ends around the courtyard fire pit.</p>
-                    <p class="reveal delay-3">Ten minutes from Peshawar's old city, close enough to wander and far enough to rest, this is a stay designed for people who notice the details others skip.</p>
-                    <div class="about-figures reveal delay-4">
-                        <div><strong>24/7</strong><span>Front Desk</span></div>
-                        <div><strong>4.8</strong><span>Guest Rating</span></div>
-                        <div><strong>10 min</strong><span>To Old City</span></div>
-                    </div>
-                </div>
-                <div class="about-frame reveal-scale reveal delay-2">
-                    <img src="https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=1200&q=80" alt="Horizon Inn lounge and lobby" loading="lazy">
-                </div>
+            <div class="collage-copy reveal d1">
+                <span class="eyebrow">The Lawn</span>
+                <h3>Space to actually exhale.</h3>
+                <p>A private lawn wraps the fire pit — low seating, string light, room to spread out. It's become the reason guests linger an extra night.</p>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Room Highlights -->
-        <section class="panel rooms-panel" id="rooms">
-            <div class="panel-content">
-                <div class="rooms-header">
-                    <span class="eyebrow reveal">Rooms &amp; Suites</span>
-                    <h2 class="section-title reveal delay-1">Three ways to stay.</h2>
-                    <p class="reveal delay-2">A glimpse of the collection — full availability, real rates, and instant booking live on our booking page.</p>
-                </div>
-                <div class="room-grid">
-                    <div class="room-card reveal delay-1">
-                        <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80" alt="Elegant King Room" loading="lazy">
-                        <div class="room-card-shade"></div>
-                        <div class="room-card-body">
-                            <span class="room-tag">Signature</span>
-                            <h3>Elegant King Room</h3>
-                            <p>Warm oak tones, a reading corner, and a bed dressed for long, unhurried mornings.</p>
-                        </div>
-                    </div>
-                    <div class="room-card reveal delay-2">
-                        <img src="https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=900&q=80" alt="Garden View Suite" loading="lazy">
-                        <div class="room-card-shade"></div>
-                        <div class="room-card-body">
-                            <span class="room-tag">Suite</span>
-                            <h3>Garden View Suite</h3>
-                            <p>A private sitting area opening onto the courtyard — ideal for slower, longer stays.</p>
-                        </div>
-                    </div>
-                    <div class="room-card reveal delay-3">
-                        <img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=900&q=80" alt="Executive Twin Room" loading="lazy">
-                        <div class="room-card-shade"></div>
-                        <div class="room-card-body">
-                            <span class="room-tag">Twin</span>
-                            <h3>Executive Twin Room</h3>
-                            <p>Two beds, one calm space — built for colleagues, siblings, or friends travelling together.</p>
-                        </div>
-                    </div>
-                </div>
-                <a href="book.html#rooms" class="btn-ghost rooms-footer-link reveal delay-4">View All Rooms &amp; Live Rates</a>
+    <!-- Rooms — bleeding carousel, varied widths, price tags, woven quote card -->
+    <section class="section carousel-section" id="rooms">
+        <div class="section-head reveal">
+            <span class="eyebrow">Rooms &amp; Suites</span>
+            <h2 class="section-title">Four ways to stay.</h2>
+            <p class="section-lede">Drag through the collection. Full availability and instant booking live on the reservation page.</p>
+        </div>
+        <div class="carousel reveal d1" id="carousel">
+            <div class="room-card">
+                <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80" alt="Elegant King Room">
+                <div class="room-shade"></div>
+                <div class="room-price">PKR 20,000</div>
+                <div class="room-body"><span class="tag">Signature</span><h3>Elegant King Room</h3><p>Warm oak tones and a reading corner, built for unhurried mornings.</p></div>
             </div>
-        </section>
-
-        <!-- Local Peshawar -->
-        <section class="panel landmarks-panel" id="peshawar">
-            <div class="panel-bg" data-parallax style="background-image:url('https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=2000&q=80'); opacity:0.22;"></div>
-            <div class="panel-overlay"></div>
-            <div class="panel-content">
-                <div class="landmarks-header">
-                    <span class="eyebrow reveal">Beyond The Courtyard</span>
-                    <h2 class="section-title reveal delay-1">A city worth stepping<br>outside for.</h2>
-                    <p class="reveal delay-2">Peshawar is one of South Asia's oldest living cities — and Horizon Inn sits close enough to reach its landmarks without losing the quiet of home.</p>
-                </div>
-                <div class="landmark-grid">
-                    <div class="landmark-item reveal delay-1">
-                        <span class="landmark-index">01</span>
-                        <h3>Qissa Khwani Bazaar</h3>
-                        <p>The legendary "Bazaar of Storytellers" — centuries of trade, tea houses, and history in one narrow street.</p>
-                    </div>
-                    <div class="landmark-item reveal delay-2">
-                        <span class="landmark-index">02</span>
-                        <h3>Bala Hisar Fort</h3>
-                        <p>A commanding Mughal-era fortress overlooking the old city, still standing sentry after generations.</p>
-                    </div>
-                    <div class="landmark-item reveal delay-3">
-                        <span class="landmark-index">03</span>
-                        <h3>Peshawar Museum</h3>
-                        <p>One of Pakistan's finest collections of Gandharan art and frontier history, a short drive from the door.</p>
-                    </div>
-                </div>
+            <div class="room-card wide">
+                <img src="https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1100&q=80" alt="Garden View Suite">
+                <div class="room-shade"></div>
+                <div class="room-price">PKR 48,000</div>
+                <div class="room-body"><span class="tag">Suite</span><h3>Garden View Suite</h3><p>A private sitting area opening onto the courtyard and lawn below.</p></div>
             </div>
-        </section>
-
-        <!-- Footer -->
-        <footer class="panel footer-panel" id="footer-contact">
-            <div class="panel-bg" data-parallax style="background-image:url('https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=2000&q=80'); opacity:0.18;"></div>
-            <div class="panel-overlay"></div>
-            <div class="panel-content footer-inner">
-                <div class="footer-top">
-                    <div>
-                        <div class="footer-brand">Horizon Inn</div>
-                        <p>A boutique guest house in Peshawar — considered rooms, a courtyard fire pit, and service built around you.</p>
-                    </div>
-                    <div class="footer-col">
-                        <h4>Contact</h4>
-                        <address>Peshawar, Khyber Pakhtunkhwa, Pakistan</address>
-                        <a href="tel:+92910000000">+92 91 000 0000</a>
-                        <a href="mailto:info@horizoninnpeshawar.com">info@horizoninnpeshawar.com</a>
-                    </div>
-                    <div class="footer-col">
-                        <h4>Explore</h4>
-                        <a href="book.html">Book Your Stay</a>
-                        <a href="book.html#rooms">Rooms &amp; Rates</a>
-                        <a href="book.html#gallery">Gallery</a>
-                        <a href="admin.html">Staff Login</a>
-                    </div>
-                </div>
-                <div class="footer-bottom">
-                    <span>&copy; <span id="year"></span> Horizon Inn Peshawar. All rights reserved.</span>
-                    <span>
-                        <a href="privacy.html">Privacy</a>
-                        <a href="terms.html">Terms</a>
-                        <a href="cancellation-policy.html">Cancellation Policy</a>
-                    </span>
-                </div>
+            <div class="quote-card">
+                <p>&ldquo;Every room looks toward the fire pit.&rdquo;</p>
             </div>
-        </footer>
+            <div class="room-card">
+                <img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=900&q=80" alt="Executive Twin Room">
+                <div class="room-shade"></div>
+                <div class="room-price">PKR 32,000</div>
+                <div class="room-body"><span class="tag">Twin</span><h3>Executive Twin Room</h3><p>Two beds, one calm space, for friends travelling together.</p></div>
+            </div>
+            <div class="room-card wide">
+                <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1100&q=80" alt="The Horizon Suite">
+                <div class="room-shade"></div>
+                <div class="room-price">PKR 80,000</div>
+                <div class="room-body"><span class="tag">Top Tier</span><h3>The Horizon Suite</h3><p>The largest room in the house — steps from the fire pit, private terrace.</p></div>
+            </div>
+        </div>
+        <p class="carousel-hint">&larr; Drag to explore &rarr;</p>
+    </section>
 
-    </main>
+    <!-- Corporate Meeting Hall — off-center plaque, restrained motion, generous breathing room before it -->
+    <section class="plaque-section" id="meetings" style="margin-top:60px;">
+        <div class="plaque-bg">
+            <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1800&q=80" alt="Horizon Inn meeting hall with natural light">
+        </div>
+        <div class="plaque-shade"></div>
+        <div class="plaque-card reveal">
+            <span class="eyebrow">For Business</span>
+            <h3>A meeting hall that doesn't feel corporate.</h3>
+            <p>Natural light, a courtyard-facing layout, and the same quiet service — built for offsites and small conferences that still want the guest-house feel.</p>
+            <a href="#contact" class="btn btn-ghost">Enquire for Events</a>
+        </div>
+    </section>
+
+    <!-- The Café — soft overlap card, not a diagonal cut -->
+    <section class="cafe-section" id="cafe">
+        <div class="section-head reveal" style="padding:0 5vw; margin-bottom:50px;">
+            <span class="eyebrow">Table &amp; Kitchen</span>
+            <h2 class="section-title">The Café.</h2>
+        </div>
+        <div class="cafe-media reveal d1">
+            <img src="https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&w=1800&q=80" alt="Horizon Inn café interior">
+        </div>
+        <div class="cafe-copy-float reveal d2">
+            <span class="eyebrow">Open to All Guests</span>
+            <h3>Frontier cooking, served slowly.</h3>
+            <p>Breakfast on the terrace, tea on request at any hour — the kind of hospitality Peshawar has practiced for centuries, at guest-house scale.</p>
+        </div>
+        <div class="cafe-strip reveal d3">
+            <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=500&q=80" alt="Coffee detail">
+            <img src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=500&q=80" alt="Pastry detail">
+            <img src="https://images.unsplash.com/photo-1481833761820-0509d3217039?auto=format&fit=crop&w=500&q=80" alt="Terrace seating">
+        </div>
+    </section>
+
+    <!-- Peshawar — layered, counter-scrolling marquee over a low-opacity image -->
+    <section class="marquee-wrap">
+        <div class="marquee-bg"><img src="https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=1800&q=80" alt=""></div>
+        <div class="marquee-track back" aria-hidden="true">
+            <div class="marquee-item"><h4>Sethi Mohalla</h4><p>Merchant-era havelis with carved facades.</p></div><span class="sep">&#10022;</span>
+            <div class="marquee-item"><h4>Bala Hisar Fort</h4><p>A Mughal-era fortress over the old city.</p></div><span class="sep">&#10022;</span>
+            <div class="marquee-item"><h4>Peshawar Museum</h4><p>Gandharan art and frontier history.</p></div><span class="sep">&#10022;</span>
+            <div class="marquee-item"><h4>Qissa Khwani Bazaar</h4><p>The legendary "Bazaar of Storytellers."</p></div><span class="sep">&#10022;</span>
+            <div class="marquee-item"><h4>Sethi Mohalla</h4><p>Merchant-era havelis with carved facades.</p></div><span class="sep">&#10022;</span>
+            <div class="marquee-item"><h4>Bala Hisar Fort</h4><p>A Mughal-era fortress over the old city.</p></div><span class="sep">&#10022;</span>
+            <div class="marquee-item"><h4>Peshawar Museum</h4><p>Gandharan art and frontier history.</p></div><span class="sep">&#10022;</span>
+            <div class="marquee-item"><h4>Qissa Khwani Bazaar</h4><p>The legendary "Bazaar of Storytellers."</p></div><span class="sep">&#10022;</span>
+        </div>
+        <div class="marquee-track" id="marquee">
+            <div class="marquee-item"><h4>Qissa Khwani Bazaar</h4><p>The legendary "Bazaar of Storytellers" — centuries of trade in one narrow street.</p></div><span class="sep">&#10022;</span>
+            <div class="marquee-item"><h4>Bala Hisar Fort</h4><p>A commanding Mughal-era fortress overlooking the old city.</p></div><span class="sep">&#10022;</span>
+            <div class="marquee-item"><h4>Peshawar Museum</h4><p>One of Pakistan's finest collections of Gandharan art.</p></div><span class="sep">&#10022;</span>
+            <div class="marquee-item"><h4>Sethi Mohalla</h4><p>Merchant-era havelis with carved wooden facades, ten minutes away.</p></div><span class="sep">&#10022;</span>
+            <div class="marquee-item"><h4>Qissa Khwani Bazaar</h4><p>The legendary "Bazaar of Storytellers" — centuries of trade in one narrow street.</p></div><span class="sep">&#10022;</span>
+            <div class="marquee-item"><h4>Bala Hisar Fort</h4><p>A commanding Mughal-era fortress overlooking the old city.</p></div><span class="sep">&#10022;</span>
+            <div class="marquee-item"><h4>Peshawar Museum</h4><p>One of Pakistan's finest collections of Gandharan art.</p></div><span class="sep">&#10022;</span>
+            <div class="marquee-item"><h4>Sethi Mohalla</h4><p>Merchant-era havelis with carved wooden facades, ten minutes away.</p></div><span class="sep">&#10022;</span>
+        </div>
+    </section>
+
+    <!-- Closing CTA — hero reprise, mirrored right instead of left -->
+    <section class="closing" style="--closing-img:url('https://images.unsplash.com/photo-1519791883288-dc8bd696e667?auto=format&fit=crop&w=2200&q=80')">
+        <div class="closing-bg"></div>
+        <div class="closing-shade"></div>
+        <div class="closing-content">
+            <span class="eyebrow" style="justify-content:flex-end;">Reserve Direct</span>
+            <h2 class="reveal" style="margin-top:22px;">Come sit by <em>the fire.</em></h2>
+            <p class="reveal d1">Best rates are always here, not on a listing site — and the front desk answers in person, day or night.</p>
+            <div class="closing-cta">
+                <a href="book.html#booking" class="btn btn-primary reveal d2">Check Availability</a>
+            </div>
+        </div>
+    </section>
+
+    <footer id="contact">
+        <div class="footer-top">
+            <div>
+                <div class="footer-brand">Horizon Inn</div>
+                <p>A boutique guest house in Peshawar — private lawn, courtyard fire pit, a meeting hall, and a café.</p>
+            </div>
+            <div class="footer-col">
+                <h5>Contact</h5>
+                <address>Peshawar, Khyber Pakhtunkhwa, Pakistan</address>
+                <a href="tel:+92910000000">+92 91 000 0000</a>
+                <a href="mailto:info@horizoninnpeshawar.com">info@horizoninnpeshawar.com</a>
+            </div>
+            <div class="footer-col">
+                <h5>Explore</h5>
+                <a href="book.html">Book Your Stay</a>
+                <a href="book.html#rooms">Rooms &amp; Rates</a>
+                <a href="book.html#gallery">Gallery</a>
+                <a href="admin.html">Staff Login</a>
+            </div>
+            <div class="footer-col">
+                <h5>Legal</h5>
+                <a href="privacy.html">Privacy</a>
+                <a href="terms.html">Terms</a>
+                <a href="cancellation-policy.html">Cancellation</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>&copy; <span id="year"></span> Horizon Inn Peshawar. All rights reserved.</span>
+        </div>
+    </footer>
 
     <!-- CHAT WIDGET START -->
     <div id="chat-widget" style="position:fixed; bottom:20px; right:20px; z-index:9999;">
@@ -684,47 +553,30 @@
     <script>
         document.getElementById('year').textContent = new Date().getFullYear();
 
-        var snapContainer = document.getElementById('snapContainer');
-        var nav = document.getElementById('cineNav');
-        var burger = document.getElementById('navBurger');
-        var links = document.getElementById('cineLinks');
+        var nav = document.getElementById('nav');
+        var burger = document.getElementById('burger');
+        var links = document.getElementById('navLinks');
 
-        // Nav goes solid once we've scrolled past the hero.
-        snapContainer.addEventListener('scroll', function () {
-            nav.classList.toggle('scrolled', snapContainer.scrollTop > 40);
+        window.addEventListener('scroll', function () {
+            nav.classList.toggle('scrolled', window.scrollY > 40);
         });
 
         burger.addEventListener('click', function () {
-            links.classList.toggle('open');
+            var open = links.classList.toggle('open');
+            burger.setAttribute('aria-expanded', open);
         });
         links.querySelectorAll('a').forEach(function (a) {
             a.addEventListener('click', function () { links.classList.remove('open'); });
         });
 
-        // Fade/slide-up reveal as each section scrolls into view.
+        // Fade/rise reveal as each element scrolls into view.
         var revealEls = document.querySelectorAll('.reveal');
-        var observer = new IntersectionObserver(function (entries) {
+        var io = new IntersectionObserver(function (entries) {
             entries.forEach(function (entry) {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('in-view');
-                }
+                if (entry.isIntersecting) entry.target.classList.add('in');
             });
-        }, { root: snapContainer, threshold: 0.2 });
-        revealEls.forEach(function (el) { observer.observe(el); });
-
-        // Gentle parallax drift on each panel's background image.
-        var parallaxEls = document.querySelectorAll('[data-parallax]');
-        function updateParallax() {
-            parallaxEls.forEach(function (el) {
-                var rect = el.parentElement.getBoundingClientRect();
-                var offset = rect.top * 0.12;
-                el.style.transform = 'translateY(' + offset + 'px)';
-            });
-        }
-        snapContainer.addEventListener('scroll', function () {
-            window.requestAnimationFrame(updateParallax);
-        });
-        updateParallax();
+        }, { threshold: 0.18 });
+        revealEls.forEach(function (el) { io.observe(el); });
     </script>
 
 </body>
