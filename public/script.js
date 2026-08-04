@@ -287,15 +287,19 @@ function iconFor(feature) {
     return found ? found.icon : 'fa-circle-check';
 }
 
+function roomImageSrc(img) {
+    return img.startsWith('/') || img.startsWith('http') ? img : `/images/${img}`;
+}
+
 function galleryHtml(room) {
     const images = room.images && room.images.length ? room.images : null;
     if (!images) {
         return `<div class="room-image" style="background: ${room.gradient};"></div>`;
     }
     if (images.length === 1) {
-        return `<div class="room-image" style="background: url('/images/${images[0]}') center/cover no-repeat;"></div>`;
+        return `<div class="room-image" style="background: url('${roomImageSrc(images[0])}') center/cover no-repeat;"></div>`;
     }
-    const slides = images.map((img, i) => `<div class="gallery-slide ${i === 0 ? 'active' : ''}" style="background-image: url('/images/${img}')"></div>`).join('');
+    const slides = images.map((img, i) => `<div class="gallery-slide ${i === 0 ? 'active' : ''}" style="background-image: url('${roomImageSrc(img)}')"></div>`).join('');
     const dots = images.map((_, i) => `<button type="button" class="gallery-dot ${i === 0 ? 'active' : ''}" data-index="${i}" aria-label="Photo ${i + 1}"></button>`).join('');
     return `
         <div class="room-image room-gallery" data-count="${images.length}">
