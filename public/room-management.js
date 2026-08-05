@@ -82,10 +82,13 @@ function showLogin() {
     stopPolling();
 }
 
+let currentUser = null;
+
 async function showDashboard() {
     try {
-        const me = await apiGet('/api/auth/me');
-        document.getElementById('whoami').textContent = me.username;
+        currentUser = await apiGet('/api/auth/me');
+        document.getElementById('whoami').textContent = currentUser.username;
+        document.getElementById('addRoomBtn').style.display = currentUser.role === 'admin' ? 'inline-flex' : 'none';
         loginPanel.classList.add('hidden');
         dashboard.classList.remove('hidden');
         await loadDashboard(true);
@@ -307,8 +310,10 @@ function slotCardHtml(slot, index) {
 
     const actions = [];
     actions.push(`<button data-action="details" class="flex-1 text-xs font-semibold py-2 rounded-lg glass hover:bg-black/5 dark:hover:bg-white/10">View Details</button>`);
-    if (isOutOfService) {
+    if (isOutOfService && currentUser.role === 'admin') {
         actions.push(`<button data-action="editRoom" class="flex-1 text-xs font-semibold py-2 rounded-lg bg-ink dark:bg-gold text-white dark:text-ink hover:opacity-90">Edit Room</button>`);
+    } else if (isOutOfService) {
+        // no-op: staff gets View Details only for an out-of-service room
     } else if (slot.status === 'available') {
         actions.push(`<button data-action="assign" class="flex-1 text-xs font-semibold py-2 rounded-lg bg-ink dark:bg-gold text-white dark:text-ink hover:opacity-90">Quick Assign</button>`);
     } else {
@@ -766,6 +771,7 @@ function populateRoomFormTypeSelect(selectedId) {
 const inventoryOverlay = document.getElementById('inventoryOverlay');
 
 async function openInventory() {
+    document.getElementById('inventoryAddBtn').style.display = currentUser.role === 'admin' ? 'inline-flex' : 'none';
     inventoryOverlay.classList.remove('hidden');
     inventoryOverlay.classList.add('flex');
     await loadInventory();
@@ -801,8 +807,10 @@ function inventoryRowHtml(r) {
                 </span>
             </td>
             <td class="py-2.5 pr-3 text-right whitespace-nowrap">
-                <button data-edit="${r.id}" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg glass hover:bg-black/5 dark:hover:bg-white/10 mr-1.5">Edit</button>
-                <button data-delete="${r.id}" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-red-400 text-red-500 hover:bg-red-500/10">Delete</button>
+                ${currentUser.role === 'admin' ? `
+                    <button data-edit="${r.id}" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg glass hover:bg-black/5 dark:hover:bg-white/10 mr-1.5">Edit</button>
+                    <button data-delete="${r.id}" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-red-400 text-red-500 hover:bg-red-500/10">Delete</button>
+                ` : `<span class="text-xs text-slate-400 dark:text-slate-500">View only</span>`}
             </td>
         </tr>
     `;

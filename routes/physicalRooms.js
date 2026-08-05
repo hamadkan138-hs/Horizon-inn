@@ -7,7 +7,13 @@ const router = express.Router();
 
 const STATUSES = ['available', 'maintenance', 'inactive'];
 
-router.use(adminAuth, requireRole('admin', 'staff'));
+// Everyone on staff needs to see the room inventory (front desk, kiosk
+// assignment, etc.), but only an admin may add, edit, or delete a physical
+// room — that's a structural change to the property, not day-to-day
+// operations. So auth applies to the whole router, but the broader
+// 'admin', 'staff' role list is only granted per-route below for GET;
+// the write routes require 'admin' on their own.
+router.use(adminAuth);
 
 function parseRoom(row) {
   return {
@@ -49,7 +55,7 @@ const LIST_SQL = `
   ORDER BY rooms.name ASC, physical_rooms.room_number ASC
 `;
 
-router.get('/', async (req, res) => {
+router.get('/', requireRole('admin', 'staff'), async (req, res) => {
   try {
     const result = await db.execute(LIST_SQL);
     res.json(result.rows.map(parseRoom));
@@ -59,7 +65,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', requireRole('admin'), async (req, res) => {
   try {
     const { roomNumber, roomTypeId, floor, priceOverride, amenities, status } = req.body;
 
@@ -109,7 +115,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireRole('admin'), async (req, res) => {
   try {
     const { roomNumber, roomTypeId, floor, priceOverride, amenities, status } = req.body;
 
@@ -167,7 +173,7 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const existing = await db.execute({ sql: 'SELECT id FROM physical_rooms WHERE id = ?', args: [req.params.id] });
     if (!existing.rows[0]) {
