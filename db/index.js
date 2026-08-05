@@ -327,9 +327,9 @@ function init() {
       await addColumnsIfMissing('bookings', ['cancellation_requested_at TEXT']);
 
       const DEFAULT_SETTINGS = {
-        hero_eyebrow: 'Est. 2026 · Boutique Hospitality',
-        hero_heading: 'Welcome to Horizon Inn',
-        hero_subtext: 'Experience luxury and tranquility like never before',
+        hero_eyebrow: 'Peshawar · Est. 2026',
+        hero_heading: 'Quiet luxury, held in <em>firelight</em>',
+        hero_subtext: 'A boutique guest house ten minutes from the old city — considered rooms, a courtyard fire pit, and evenings that slow down on arrival.',
         offers_enabled: '0',
         offers_text: '',
         policies_text: [
@@ -366,6 +366,23 @@ function init() {
         await db.execute({
           sql: 'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO NOTHING',
           args: [key, value]
+        });
+      }
+
+      // One-time content refresh: an existing production row still holding
+      // the very first placeholder hero copy gets carried forward to the new
+      // tagline. Guarded on the old value so it fires at most once and never
+      // clobbers real admin-edited copy — once it's changed (by this or by
+      // an admin), the WHERE no longer matches and this becomes a no-op.
+      const HERO_COPY_REFRESH = [
+        ['hero_eyebrow', 'Est. 2026 · Boutique Hospitality', 'Peshawar · Est. 2026'],
+        ['hero_heading', 'Welcome to Horizon Inn', 'Quiet luxury, held in <em>firelight</em>'],
+        ['hero_subtext', 'Experience luxury and tranquility like never before', 'A boutique guest house ten minutes from the old city — considered rooms, a courtyard fire pit, and evenings that slow down on arrival.']
+      ];
+      for (const [key, oldValue, newValue] of HERO_COPY_REFRESH) {
+        await db.execute({
+          sql: 'UPDATE settings SET value = ? WHERE key = ? AND value = ?',
+          args: [newValue, key, oldValue]
         });
       }
 
