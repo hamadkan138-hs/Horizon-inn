@@ -3,532 +3,624 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Horizon Inn Peshawar — A Fire That Doesn't Go Out</title>
-    <meta name="description" content="Horizon Inn is a boutique guest house in Peshawar — private lawn, courtyard fire pit, a corporate meeting hall, and a café. Book direct for the best rates.">
+    <title>Horizon Inn - Luxury Guest House &amp; Event Complex in Peshawar</title>
+    <meta name="description" content="Horizon Inn is a boutique guest house in Peshawar offering luxury rooms, a courtyard fire pit, and the Crescent Grove Event &amp; Hospitality Complex for meetings, celebrations, and private events. Book direct for the best rates.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://horizon-inn.onrender.com/">
-    <link rel="icon" type="image/png" href="images/favicon.png">
 
     <meta property="og:type" content="lodging">
     <meta property="og:site_name" content="Horizon Inn">
-    <meta property="og:title" content="Horizon Inn Peshawar — A Fire That Doesn't Go Out">
-    <meta property="og:description" content="Boutique rooms, a private lawn, a courtyard fire pit — book direct in Peshawar.">
+    <meta property="og:title" content="Horizon Inn - Luxury Guest House &amp; Event Complex in Peshawar">
+    <meta property="og:description" content="Boutique rooms, a courtyard fire pit, and the Crescent Grove Event &amp; Hospitality Complex — book direct in Peshawar.">
     <meta property="og:image" content="https://horizon-inn.onrender.com/images/gallery/courtyard-lounge.jpg">
     <meta property="og:url" content="https://horizon-inn.onrender.com/">
 
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Horizon Inn - Luxury Guest House &amp; Event Complex in Peshawar">
+    <meta name="twitter:description" content="Boutique rooms, a courtyard fire pit, and the Crescent Grove Event &amp; Hospitality Complex — book direct in Peshawar.">
+    <meta name="twitter:image" content="https://horizon-inn.onrender.com/images/gallery/courtyard-lounge.jpg">
+
+    <script type="application/ld+json" id="structuredData">{}</script>
+    <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-<style>
-    :root {
-        --dusk: #1a1511;
-        --dusk-2: #251e17;
-        --dusk-3: #37291c;
-        --brass: #c9914f;
-        --brass-soft: rgba(201, 145, 79, 0.85);
-        --ember: #e2694a;
-        --ink: #f2ece0;
-        --ink-dim: rgba(242, 236, 224, 0.66);
-        --ink-faint: rgba(242, 236, 224, 0.4);
-        --hair: rgba(242, 236, 224, 0.14);
-        --hair-strong: rgba(242, 236, 224, 0.24);
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-        background:
-            radial-gradient(90% 60% at 15% -10%, rgba(201, 145, 79, 0.09) 0%, transparent 55%),
-            radial-gradient(70% 50% at 100% 20%, rgba(226, 105, 74, 0.05) 0%, transparent 60%),
-            var(--dusk);
-        color: var(--ink);
-        font-family: 'Work Sans', sans-serif; font-weight: 400;
-        overflow-x: hidden; -webkit-font-smoothing: antialiased;
-    }
-    a { color: inherit; text-decoration: none; }
-    img { display: block; max-width: 100%; }
-    ::selection { background: var(--brass); color: #171208; }
-    :focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
-
-    .eyebrow {
-        display: inline-flex; align-items: center; gap: 10px;
-        font-weight: 600; font-size: 0.72rem; letter-spacing: 0.28em; text-transform: uppercase;
-        color: var(--brass-soft);
-    }
-    .eyebrow::before { content: ''; width: 22px; height: 1px; background: var(--brass-soft); }
-
-    /* ---------- Nav ---------- */
-    .nav {
-        position: fixed; top: 0; left: 0; right: 0; z-index: 500;
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 30px 5vw; transition: background 0.4s ease, padding 0.4s ease, border-color 0.4s ease;
-        border-bottom: 1px solid transparent;
-    }
-    .nav.scrolled { background: rgba(37, 30, 23, 0.88); backdrop-filter: blur(10px); padding: 18px 5vw; border-bottom-color: var(--hair); }
-    .brand { display: flex; align-items: center; gap: 12px; }
-    .brand img { height: 28px; width: auto; }
-    .brand span { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.2rem; letter-spacing: 0.02em; }
-    .nav-links { display: flex; align-items: center; gap: 36px; font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; }
-    .nav-links a:not(.nav-cta) { position: relative; padding-bottom: 4px; opacity: 0.82; transition: opacity 0.25s ease; }
-    .nav-links a:not(.nav-cta)::after { content: ''; position: absolute; left: 0; bottom: 0; height: 1px; width: 0; background: var(--brass); transition: width 0.3s ease; }
-    .nav-links a:not(.nav-cta):hover { opacity: 1; }
-    .nav-links a:not(.nav-cta):hover::after { width: 100%; }
-    .nav-cta { border: 1px solid var(--brass-soft); color: var(--brass); padding: 11px 22px; border-radius: 999px; transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease; }
-    .nav-cta:hover { background: var(--brass); color: #171208; transform: translateY(-1px); }
-    .burger { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 8px; z-index: 501; }
-    .burger span { width: 22px; height: 1px; background: var(--ink); display: block; }
-
-    /* ---------- Buttons ---------- */
-    .btn { display: inline-flex; align-items: center; gap: 10px; padding: 17px 34px; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; border-radius: 999px; font-weight: 600; transition: transform 0.3s ease, background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
-    .btn-primary { background: linear-gradient(155deg, #d8a865, var(--brass)); color: #171208; }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -10px rgba(201, 145, 79, 0.55); }
-    .btn-ghost { border: 1px solid var(--hair-strong); color: var(--ink); }
-    .btn-ghost:hover { border-color: var(--brass-soft); color: var(--brass); background: rgba(201, 145, 79, 0.06); }
-
-    /* ---------- Reveal ---------- */
-    .reveal { opacity: 0; transform: translateY(38px); transition: opacity 1s cubic-bezier(.16,1,.3,1), transform 1s cubic-bezier(.16,1,.3,1); }
-    .reveal.in { opacity: 1; transform: translateY(0); }
-    .d1 { transition-delay: .1s; } .d2 { transition-delay: .2s; } .d3 { transition-delay: .3s; } .d4 { transition-delay: .4s; }
-
-    /* ---------- Hero (broken grid) ---------- */
-    .hero {
-        position: relative; min-height: 100dvh; display: flex; align-items: flex-end;
-        overflow: hidden; padding: 0 0 100px;
-    }
-    .hero-bg { position: absolute; inset: -5%; background-image: var(--hero-img); background-size: cover; background-position: center 40%; animation: kenburns 28s ease-in-out infinite alternate; }
-    @keyframes kenburns { from { transform: scale(1.02); } to { transform: scale(1.14) translateY(-1.5%); } }
-    .hero-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(37,30,23,0.22) 0%, rgba(31,25,19,0.3) 45%, rgba(26,21,17,0.94) 100%), linear-gradient(90deg, rgba(26,21,17,0.5) 0%, rgba(26,21,17,0) 50%); }
-    .hero-tag {
-        position: absolute; top: 130px; right: 6vw; z-index: 2;
-        writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg);
-        font-size: 0.72rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--ink-faint);
-        padding: 18px 10px; border-left: 1px solid var(--hair-strong);
-    }
-    .hero-content { position: relative; z-index: 2; max-width: 900px; padding-left: 5vw; margin-left: -1.5vw; }
-
-    /* ---------- Section index counter (top-left, desktop) ---------- */
-    .slide-counter {
-        position: fixed; top: 100px; left: 5vw; z-index: 400;
-        font-size: 0.72rem; letter-spacing: 0.16em; color: var(--ink-faint);
-        font-variant-numeric: tabular-nums; pointer-events: none;
-        opacity: 0; transition: opacity 0.4s ease;
-    }
-    .slide-counter.visible { opacity: 1; }
-    .slide-counter .current { color: var(--brass); font-weight: 600; }
-
-    /* ---------- Scroll-position dot rail (left edge, desktop) ---------- */
-    .scroll-rail {
-        position: fixed; top: 50%; left: 28px; transform: translateY(-50%); z-index: 500;
-        display: flex; flex-direction: column; align-items: center; gap: 14px;
-    }
-    .scroll-rail::before, .scroll-rail::after {
-        content: ''; width: 1px; height: 40px; background: var(--hair-strong);
-    }
-    .scroll-rail-dots { display: flex; flex-direction: column; gap: 16px; }
-    .scroll-rail-dots button {
-        width: 7px; height: 7px; border-radius: 50%; border: none; padding: 0; cursor: pointer;
-        background: var(--hair-strong); transition: background 0.3s ease, transform 0.3s ease;
-        position: relative;
-    }
-    .scroll-rail-dots button.active { background: var(--brass); transform: scale(1.4); }
-    .scroll-rail-dots button .rail-label {
-        position: absolute; left: 18px; top: 50%; transform: translateY(-50%);
-        font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim);
-        white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
-    }
-    .scroll-rail-dots button:hover .rail-label { opacity: 1; }
-    .hero-title { font-family: 'Fraunces', serif; font-weight: 700; font-size: clamp(3.4rem, 9.6vw, 7.4rem); line-height: 0.96; letter-spacing: -0.01em; margin: 28px 0 32px; }
-    .hero-title em { font-style: italic; font-weight: 500; color: var(--brass); }
-    .hero-title .line { display: block; overflow: hidden; margin-left: -0.5vw; padding-left: 0.5vw; }
-    .hero-title .line span { display: block; transform: translateY(100%); animation: lineUp 1.1s cubic-bezier(.16,1,.3,1) forwards; }
-    .hero-title .line:nth-child(1) span { animation-delay: .15s; }
-    .hero-title .line:nth-child(2) span { animation-delay: .32s; }
-    @keyframes lineUp { to { transform: translateY(0); } }
-    .hero-sub { max-width: 44ch; font-size: 1.06rem; color: var(--ink-dim); line-height: 1.75; opacity: 0; animation: fadeUp 1s cubic-bezier(.16,1,.3,1) forwards; animation-delay: .6s; }
-    .hero-cta { display: flex; gap: 16px; margin-top: 46px; flex-wrap: wrap; opacity: 0; animation: fadeUp 1s cubic-bezier(.16,1,.3,1) forwards; animation-delay: .78s; }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    .scroll-cue { position: absolute; bottom: 40px; left: 5vw; z-index: 2; display: flex; align-items: center; gap: 12px; font-size: 0.68rem; letter-spacing: 0.26em; text-transform: uppercase; color: var(--ink-faint); }
-    .scroll-cue .track { width: 1px; height: 44px; background: var(--hair-strong); position: relative; overflow: hidden; }
-    .scroll-cue .track::after { content: ''; position: absolute; top: -44px; left: 0; width: 1px; height: 44px; background: var(--brass); animation: cue 2.2s ease-in-out infinite; }
-    @keyframes cue { to { top: 44px; } }
-
-    /* ---------- Overlap positioning strip ---------- */
-    .overlap-strip { position: relative; z-index: 3; display: flex; justify-content: flex-end; padding: 0 6vw; margin-top: -78px; margin-bottom: -78px; }
-    .overlap-card {
-        max-width: 460px; background: rgba(28, 36, 52, 0.82); backdrop-filter: blur(14px);
-        border: 1px solid var(--hair-strong); border-radius: 2px; padding: 34px 38px;
-        font-family: 'Fraunces', serif; font-weight: 500; font-style: italic; font-size: 1.25rem; line-height: 1.5;
-        box-shadow: 0 30px 60px -20px rgba(0,0,0,0.5);
-    }
-
-    /* ---------- Section shell ---------- */
-    .section { position: relative; padding: 170px 5vw 150px; }
-    .section-head { max-width: 620px; margin-bottom: 64px; }
-    .section-title { font-family: 'Fraunces', serif; font-weight: 700; font-size: clamp(2.1rem, 4.2vw, 3.4rem); line-height: 1.08; margin-top: 20px; }
-    .section-lede { margin-top: 20px; color: var(--ink-dim); font-size: 1.02rem; line-height: 1.75; max-width: 52ch; }
-
-    /* ---------- Lawn collage split (asymmetric, overlapping) ---------- */
-    .collage { position: relative; display: grid; grid-template-columns: 62fr 38fr; align-items: center; gap: 0; padding: 40px 6vw 120px; }
-    .collage-media { position: relative; aspect-ratio: 4/5; overflow: hidden; border-radius: 2px; }
-    .collage-media img { width: 100%; height: 100%; object-fit: cover; }
-    .collage-chip {
-        position: absolute; width: 46%; aspect-ratio: 4/3; right: -8%; bottom: -8%;
-        overflow: hidden; border-radius: 2px; border: 1px solid var(--brass-soft);
-        box-shadow: 0 30px 60px -18px rgba(0,0,0,0.6); transform: rotate(-2.4deg); z-index: 2;
-    }
-    .collage-chip img { width: 100%; height: 100%; object-fit: cover; }
-    .collage-copy { padding: 0 0 0 7vw; align-self: start; margin-top: 14%; }
-    .collage-copy h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(1.8rem, 3vw, 2.6rem); margin: 18px 0 20px; }
-    .collage-copy p { color: var(--ink-dim); line-height: 1.8; font-size: 1rem; max-width: 38ch; }
-
-    /* ---------- Room carousel (bleeding, varied widths, price tags) ---------- */
-    .carousel-section { padding-left: 0; padding-right: 0; }
-    .carousel-section .section-head { padding: 0 5vw; }
-    .carousel { display: flex; gap: 24px; overflow-x: auto; scroll-snap-type: x proximity; padding: 6px 5vw 10px; scrollbar-width: none; }
-    .carousel::-webkit-scrollbar { display: none; }
-    .room-card { position: relative; flex: 0 0 auto; width: min(70vw, 400px); aspect-ratio: 3/4; border-radius: 2px; overflow: hidden; scroll-snap-align: start; }
-    .room-card.wide { width: min(84vw, 520px); }
-    .room-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.1s cubic-bezier(.16,1,.3,1); }
-    .room-card:hover img { transform: scale(1.06); }
-    .room-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(37,30,23,0) 38%, rgba(26,21,17,0.94) 100%); }
-    .room-price { position: absolute; top: 20px; right: 20px; background: var(--brass); color: #171208; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.02em; padding: 8px 14px; border-radius: 999px; }
-    .room-body { position: absolute; left: 0; right: 0; bottom: 0; padding: 28px 26px; }
-    .room-body .tag { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--brass-soft); }
-    .room-body h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.5rem; margin: 10px 0 8px; }
-    .room-body p { font-size: 0.9rem; color: var(--ink-dim); line-height: 1.55; max-width: 30ch; }
-    .quote-card {
-        position: relative; flex: 0 0 auto; width: min(60vw, 340px); aspect-ratio: 3/4; scroll-snap-align: start;
-        border-radius: 2px; background: linear-gradient(155deg, var(--dusk-3), var(--dusk-2)); border: 1px solid var(--hair-strong);
-        display: flex; align-items: center; padding: 40px;
-    }
-    .quote-card p { font-family: 'Fraunces', serif; font-style: italic; font-weight: 500; font-size: 1.4rem; line-height: 1.45; color: var(--ink); }
-    .carousel-foot { display: flex; align-items: center; justify-content: space-between; padding: 0 5vw; margin-top: 26px; }
-    .carousel-hint { font-size: 0.76rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
-    .carousel-dots { display: flex; gap: 8px; }
-    .carousel-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--hair-strong); transition: background 0.3s ease, transform 0.3s ease; }
-    .carousel-dots span.active { background: var(--brass); transform: scale(1.3); }
-
-    /* ---------- Meeting Hall — off-center plaque ---------- */
-    .plaque-section { position: relative; min-height: 92vh; display: flex; align-items: center; overflow: hidden; }
-    .plaque-bg { position: absolute; inset: 0; }
-    .plaque-bg img { width: 100%; height: 100%; object-fit: cover; }
-    .plaque-shade { position: absolute; inset: 0; background: linear-gradient(100deg, rgba(26,21,17,0.88) 0%, rgba(26,21,17,0.5) 42%, rgba(26,21,17,0.75) 100%); }
-    .plaque-card { position: relative; z-index: 2; max-width: 480px; margin-left: 14vw; background: rgba(37,30,23,0.68); backdrop-filter: blur(10px); border: 1px solid var(--hair-strong); border-radius: 2px; padding: 48px 44px; }
-    .plaque-card h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(1.7rem, 2.8vw, 2.3rem); margin: 18px 0 20px; }
-    .plaque-card p { color: var(--ink-dim); line-height: 1.8; font-size: 0.98rem; max-width: 36ch; margin-bottom: 30px; }
-
-    /* ---------- Café — soft overlap, no diagonal ---------- */
-    .cafe-section { position: relative; padding-top: 40px; }
-    .cafe-media { position: relative; aspect-ratio: 21/10; overflow: hidden; margin: 0 5vw; border-radius: 2px; }
-    .cafe-media img { width: 100%; height: 100%; object-fit: cover; }
-    .cafe-media::after { content: ''; position: absolute; inset: 0; background: radial-gradient(120% 100% at 15% 20%, rgba(26,21,17,0.05) 0%, rgba(26,21,17,0.55) 100%); }
-    .cafe-copy-float {
-        position: relative; z-index: 2; max-width: 440px; margin: -90px 0 40px 8vw;
-        background: rgba(37,30,23,0.86); backdrop-filter: blur(12px); border: 1px solid var(--hair-strong);
-        border-radius: 2px; padding: 38px 40px; box-shadow: 0 30px 60px -20px rgba(0,0,0,0.55);
-    }
-    .cafe-copy-float h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.7rem; margin: 16px 0 14px; }
-    .cafe-copy-float p { color: var(--ink-dim); line-height: 1.75; font-size: 0.96rem; }
-    .cafe-strip { display: flex; gap: 18px; padding: 0 5vw; margin-top: 40px; overflow-x: auto; scrollbar-width: none; }
-    .cafe-strip::-webkit-scrollbar { display: none; }
-    .cafe-strip img { flex: 0 0 auto; width: 200px; height: 150px; object-fit: cover; border-radius: 2px; }
-
-    /* ---------- Peshawar marquee (layered) ---------- */
-    .marquee-wrap { position: relative; overflow: hidden; padding: 70px 0; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
-    .marquee-track { position: relative; display: flex; gap: 70px; width: max-content; animation: scroll-left 40s linear infinite; }
-    .marquee-track.back { position: absolute; top: 76px; left: 0; opacity: 0.32; animation-duration: 62s; animation-direction: reverse; }
-    .marquee-wrap:hover .marquee-track { animation-play-state: paused; }
-    @keyframes scroll-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-    .marquee-item { display: flex; align-items: baseline; gap: 22px; white-space: nowrap; }
-    .marquee-item h4 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 500; font-size: 1.9rem; color: var(--ink); }
-    .marquee-item p { font-size: 0.92rem; color: var(--ink-faint); max-width: 34ch; white-space: normal; }
-    .marquee-item .sep { color: var(--brass-soft); font-size: 1.4rem; }
-
-    /* ---------- Closing CTA (hero reprise, mirrored) ---------- */
-    .closing {
-        position: relative; min-height: 100dvh; display: flex; align-items: flex-end; justify-content: flex-end;
-        overflow: hidden; padding: 0 0 100px; text-align: right;
-    }
-    .closing-bg { position: absolute; inset: -5%; background-image: var(--closing-img); background-size: cover; background-position: center 45%; animation: kenburns 30s ease-in-out infinite alternate-reverse; }
-    .closing-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(37,30,23,0.22) 0%, rgba(31,25,19,0.3) 45%, rgba(26,21,17,0.94) 100%), linear-gradient(270deg, rgba(26,21,17,0.5) 0%, rgba(26,21,17,0) 50%); }
-    .closing-content { position: relative; z-index: 2; max-width: 780px; padding-right: 5vw; }
-    .closing-content h2 { font-family: 'Fraunces', serif; font-weight: 700; font-size: clamp(2.6rem, 6.6vw, 5.2rem); line-height: 1.02; }
-    .closing-content h2 em { font-style: italic; font-weight: 500; color: var(--brass); }
-    .closing-content p { margin: 24px 0 36px; color: var(--ink-dim); font-size: 1.02rem; line-height: 1.75; max-width: 42ch; margin-left: auto; }
-    .closing-cta { display: flex; gap: 16px; justify-content: flex-end; flex-wrap: wrap; }
-
-    /* ---------- Footer ---------- */
-    footer { padding: 90px 5vw 36px; }
-    .footer-top { display: grid; grid-template-columns: 1.5fr 0.9fr 0.9fr 0.7fr; gap: 50px; padding-bottom: 54px; border-bottom: 1px solid var(--hair); }
-    .footer-brand { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.5rem; margin-bottom: 16px; }
-    .footer-top > div > p { color: var(--ink-dim); line-height: 1.75; font-size: 0.96rem; max-width: 32ch; }
-    .footer-col h5 { font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 20px; }
-    .footer-col a, .footer-col address { display: block; font-style: normal; color: var(--ink-dim); margin-bottom: 13px; font-size: 0.95rem; transition: color 0.2s ease; }
-    .footer-col a:hover { color: var(--brass); }
-    .footer-bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding-top: 28px; font-size: 0.78rem; color: var(--ink-faint); }
-    .footer-bottom .legal a { color: var(--ink-faint); margin-left: 22px; }
-    .footer-bottom .legal a:hover { color: var(--brass); }
-
-    /* ---------- Responsive ---------- */
-    @media (max-width: 900px) {
-        .nav-links { position: fixed; top: 0; right: 0; bottom: 0; width: 80%; max-width: 340px; background: var(--dusk-2); flex-direction: column; align-items: flex-start; justify-content: center; gap: 28px; padding: 40px; transform: translateX(100%); transition: transform 0.4s ease; border-left: 1px solid var(--hair); }
-        .nav-links.open { transform: translateX(0); }
-        .burger { display: flex; }
-        .hero-tag { display: none; }
-        .slide-counter, .scroll-rail { display: none; }
-        .hero-content { margin-left: 0; }
-        .overlap-strip { justify-content: center; margin-top: -50px; margin-bottom: -50px; padding: 0 6vw; }
-        .overlap-card { max-width: 100%; }
-        .collage { grid-template-columns: 1fr; padding: 20px 6vw 150px; }
-        .collage-copy { padding: 40px 0 0; margin-top: 0; }
-        .collage-chip { width: 58%; }
-        .plaque-section { min-height: auto; padding: 90px 0; }
-        .plaque-card { margin-left: 6vw; margin-right: 6vw; max-width: none; padding: 32px 26px; }
-        .plaque-card h3 { font-size: 1.6rem; }
-        .plaque-card p { font-size: 0.94rem; max-width: none; }
-        .cafe-copy-float { margin: -60px 6vw 30px; max-width: none; padding: 28px 26px; }
-        .room-price { top: 14px; right: 14px; font-size: 0.72rem; padding: 6px 12px; }
-        .carousel { padding: 6px 5vw 16px; }
-        .closing { justify-content: flex-start; text-align: left; padding-bottom: 70px; }
-        .closing-content { padding-right: 0; padding-left: 5vw; text-align: left; }
-        .closing-content p { margin-left: 0; }
-        .closing-cta { justify-content: flex-start; }
-        .footer-top { grid-template-columns: 1fr 1fr; gap: 34px; }
-        .section { padding: 110px 6vw 100px; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-        .hero-bg, .closing-bg { animation: none; }
-        .hero-title .line span { animation: none; transform: none; }
-        .hero-sub, .hero-cta { animation: none; opacity: 1; }
-        .marquee-track { animation: none; }
-        .reveal { opacity: 1; transform: none; transition: none; }
-    }
-</style>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Fraunces:ital,wght@0,600;0,700;1,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="glass-theme.css">
+    <link rel="stylesheet" href="book-theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="theme-toggle.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/anime@3.2.1/lib/anime.min.js"></script>
+    <script src="animation-config.js"></script>
+    <script src="animation-engine.js"></script>
+    <script src="micro-interactions.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 <body>
-
-    <nav class="nav" id="nav">
-        <div class="brand">
-            <img src="images/logo-mark.png" alt="Horizon Inn">
-            <span>Horizon Inn</span>
-        </div>
-        <button class="burger" id="burger" aria-label="Toggle menu" aria-expanded="false">
-            <span></span><span></span><span></span>
-        </button>
-        <div class="nav-links" id="navLinks">
-            <a href="#lawn">The Lawn</a>
-            <a href="#rooms">Rooms</a>
-            <a href="#meetings">Meetings</a>
-            <a href="#cafe">Café</a>
-            <a href="book.html#booking" class="nav-cta">Book Now</a>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <img src="images/logo-mark.png" alt="Horizon Inn" class="nav-logo">
+                <span>Horizon Inn</span>
+            </div>
+            <button type="button" class="theme-toggle" role="switch" aria-checked="false" aria-label="Toggle light/dark theme" style="margin-left: auto; margin-right: 14px;">
+                <i class="fas fa-moon theme-toggle-icon moon"></i>
+                <i class="fas fa-sun theme-toggle-icon sun"></i>
+                <span class="theme-toggle-knob"></span>
+            </button>
+            <button class="nav-toggle" id="navToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <!-- Guest-facing only. Staff/investor entry points live in the footer —
+                 10 items overflowed the 1200px container (the brand and "Invest With
+                 Us" both wrapped onto extra lines), and guests never need them. -->
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="#rooms">Rooms</a></li>
+                <li><a href="#gallery">Gallery</a></li>
+                <li><a href="#invest-with-us">Events</a></li>
+                <li><a href="#reviews">Reviews</a></li>
+                <li><a href="#contact">Contact</a></li>
+                <li><a href="#booking" class="nav-cta">Book Now</a></li>
+            </ul>
         </div>
     </nav>
 
-    <!-- Section wayfinding — dot rail + counter, both desktop-only progressive
-         enhancements referencing the Louvre-style reel: a thin scroll-position
-         rail on the left edge and a small "01 / 06" counter, updated by
-         IntersectionObserver as each full-bleed section comes into view. -->
-    <div class="slide-counter" id="slideCounter"><span class="current">01</span> / 06</div>
-    <div class="scroll-rail">
-        <div class="scroll-rail-dots" id="scrollRailDots"></div>
+    <div class="offers-banner" id="offersBanner" style="display: none;">
+        <i class="fas fa-tag"></i>
+        <span id="offersBannerText"></span>
     </div>
 
-    <!-- Hero — broken grid: headline bleeds off the left edge, rotated eyebrow floats over the frame -->
-    <section class="hero" id="home" style="--hero-img:url('images/hero.jpg')">
-        <div class="hero-bg"></div>
-        <div class="hero-shade"></div>
-        <div class="hero-tag">Peshawar &middot; Est. 2026</div>
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-bg" id="heroBg"></div>
+        <div class="hero-overlay"></div>
         <div class="hero-content">
-            <span class="eyebrow">Boutique &middot; PKR 20,000&ndash;80,000</span>
-            <h1 class="hero-title">
-                <span class="line"><span>Quiet luxury,</span></span>
-                <span class="line"><span>held in <em>firelight.</em></span></span>
-            </h1>
-            <p class="hero-sub">A private lawn, a courtyard fire pit, and rooms built for the kind of stay that doesn't feel like a hotel. Ten minutes from Peshawar's old city.</p>
-            <div class="hero-cta">
-                <a href="book.html#booking" class="btn btn-primary">Book Your Stay</a>
-                <a href="#lawn" class="btn btn-ghost">See the Courtyard</a>
-            </div>
+            <span class="eyebrow hero-in hero-in-1" id="heroEyebrow">Peshawar &middot; Est. 2026</span>
+            <h1 class="hero-in hero-in-2" id="heroHeading">Quiet luxury, held in <em>firelight</em></h1>
+            <p class="hero-in hero-in-3" id="heroSubtext">A boutique guest house ten minutes from the old city — considered rooms, a courtyard fire pit, and evenings that slow down on arrival.</p>
+
+            <!-- Availability search, placed in the hero rather than buried in the
+                 booking section further down the page: checking dates is the single
+                 action most guests arrive wanting to take. It doesn't book anything
+                 itself — it pre-fills and jumps to the full booking form below, so
+                 there's one source of truth for a reservation. -->
+            <form class="hero-search hero-in hero-in-4" id="heroSearchForm">
+                <div class="hero-search-field">
+                    <label for="heroCheckin">Check-in</label>
+                    <input type="date" id="heroCheckin" required>
+                </div>
+                <div class="hero-search-field">
+                    <label for="heroCheckout">Check-out</label>
+                    <input type="date" id="heroCheckout" required>
+                </div>
+                <div class="hero-search-field">
+                    <label for="heroGuests">Guests</label>
+                    <select id="heroGuests">
+                        <option value="1">1 Guest</option>
+                        <option value="2" selected>2 Guests</option>
+                        <option value="3">3 Guests</option>
+                        <option value="4">4 Guests</option>
+                    </select>
+                </div>
+                <button type="submit" class="hero-search-btn">Check Availability</button>
+            </form>
+            <a href="#rooms" class="hero-secondary-link hero-in hero-in-5">or browse our rooms &rarr;</a>
         </div>
-        <div class="scroll-cue"><span class="track"></span><span>Scroll</span></div>
+        <a href="#about" class="scroll-cue" aria-label="Scroll down"><i class="fas fa-chevron-down"></i></a>
     </section>
 
-    <!-- Overlap strip — floats half-on-hero, half-on-next-section -->
-    <div class="overlap-strip">
-        <div class="overlap-card reveal">&ldquo;Boutique rooms. A private lawn. One fire that doesn't go out.&rdquo;</div>
+    <!-- Social Proof Bar -->
+    <div class="social-proof-bar" id="socialProofBar" style="display: none;">
+        <div class="container">
+            <div class="social-proof-grid" id="socialProofGrid"></div>
+        </div>
     </div>
 
-    <!-- The Lawn & Courtyard — asymmetric collage, not a 50/50 split -->
-    <section class="section" id="lawn" style="padding-top:60px;">
-        <div class="section-head reveal">
-            <span class="eyebrow">After Dark</span>
-            <h2 class="section-title">The courtyard fire pit,<br>most evenings.</h2>
-            <p class="section-lede">Where the day's arrivals trade notes on the bazaar, the fort, and where to eat next — the actual heart of a stay here.</p>
-        </div>
-        <div class="collage">
-            <div class="collage-media reveal">
-                <img src="images/gallery/firepit-gathering.jpg" alt="Courtyard fire pit at night">
-                <div class="collage-chip reveal d2">
-                    <img src="images/gallery/tree-lights.jpg" alt="Lawn seating at dusk">
+    <!-- About Section -->
+    <section class="about" id="about">
+        <div class="container">
+            <h2>About Horizon Inn</h2>
+            <div class="about-grid">
+                <div class="about-card reveal">
+                    <i class="fas fa-star"></i>
+                    <h3>Premium Amenities</h3>
+                    <p>Luxurious facilities and world-class service at your fingertips.</p>
+                </div>
+                <div class="about-card reveal">
+                    <i class="fas fa-users"></i>
+                    <h3>Expert Staff</h3>
+                    <p>Our dedicated team ensures an unforgettable experience.</p>
+                </div>
+                <div class="about-card reveal">
+                    <i class="fas fa-wifi"></i>
+                    <h3>Modern Technology</h3>
+                    <p>Stay connected with high-speed Wi-Fi and smart room systems.</p>
+                </div>
+                <div class="about-card reveal">
+                    <i class="fas fa-utensils"></i>
+                    <h3>Fine Dining</h3>
+                    <p>Gourmet meals prepared by our renowned chefs.</p>
                 </div>
             </div>
-            <div class="collage-copy reveal d1">
-                <span class="eyebrow">The Lawn</span>
-                <h3>Space to actually exhale.</h3>
-                <p>A private lawn wraps the fire pit — low seating, string light, room to spread out. It's become the reason guests linger an extra night.</p>
+        </div>
+    </section>
+
+    <!-- Rooms Section -->
+    <section id="rooms" class="rooms">
+        <div class="container">
+            <h2>Our Luxurious <em>Rooms</em></h2>
+            <div class="rooms-grid" id="roomsGrid">
+                <div class="room-card skeleton"></div>
+                <div class="room-card skeleton"></div>
+                <div class="room-card skeleton"></div>
+            </div>
+            <div class="rooms-carousel-dots" id="roomsCarouselDots"></div>
+        </div>
+    </section>
+
+    <!-- Gallery Section.
+         Every card below opens a click-to-enlarge lightbox already. To turn
+         any one of them into a video preview card (hover-to-play muted
+         clip, a play-button badge, full playback with sound in the
+         lightbox), just add data-video="images/gallery/your-clip.mp4" to
+         that .gallery-item div — script.js picks it up automatically, no
+         other change needed. Cards with no data-video stay plain photos. -->
+    <section id="gallery" class="gallery">
+        <div class="container">
+            <h2>Around <em>Horizon Inn</em></h2>
+            <p class="gallery-intro">A few real moments from our courtyard, terrace and meeting room &mdash; no stock photos here.</p>
+            <div class="gallery-grid">
+                <div class="gallery-item gallery-lounge reveal">
+                    <img src="images/gallery/courtyard-lounge.jpg" alt="Courtyard lounge area lit up at dusk" loading="lazy">
+                    <span class="gallery-caption">The Courtyard</span>
+                </div>
+                <div class="gallery-item gallery-tree reveal">
+                    <img src="images/gallery/tree-lights.jpg" alt="String lights in a tree above potted plants" loading="lazy">
+                    <span class="gallery-caption">Evening Light</span>
+                </div>
+                <div class="gallery-item gallery-meet reveal">
+                    <img src="images/gallery/meeting-room.jpg" alt="Glass-walled meeting room with pergola lighting" loading="lazy">
+                    <span class="gallery-caption">The Meeting Room</span>
+                </div>
+                <div class="gallery-item gallery-fire reveal">
+                    <img src="images/gallery/firepit-gathering.jpg" alt="Guest relaxing by the courtyard fire pit" loading="lazy">
+                    <span class="gallery-caption">Fireside</span>
+                </div>
+                <div class="gallery-item gallery-patio reveal">
+                    <img src="images/gallery/courtyard-patio.jpg" alt="Courtyard patio seating under string lights" loading="lazy">
+                    <span class="gallery-caption">The Patio</span>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Rooms — bleeding carousel, varied widths, price tags, woven quote card -->
-    <section class="section carousel-section" id="rooms">
-        <div class="section-head reveal">
-            <span class="eyebrow">Rooms &amp; Suites</span>
-            <h2 class="section-title">Four ways to stay.</h2>
-            <p class="section-lede">Drag through the collection. Full availability and instant booking live on the reservation page.</p>
-        </div>
-        <div class="carousel reveal d1" id="carousel">
-            <div class="room-card">
-                <img src="images/king-room.jpg" alt="Elegant King Room">
-                <div class="room-shade"></div>
-                <div class="room-price">PKR 20,000</div>
-                <div class="room-body"><span class="tag">Signature</span><h3>Elegant King Room</h3><p>Warm oak tones and a reading corner, built for unhurried mornings.</p></div>
+    <!-- Guest Reviews -->
+    <section id="reviews" class="reviews-section">
+        <div class="container">
+            <h2>What Our Guests Say</h2>
+            <p class="gallery-intro">Real feedback from real stays.</p>
+            <div class="review-grid" id="reviewGrid">
+                <p style="text-align: center; grid-column: 1 / -1; color: var(--text-light);">Loading reviews&hellip;</p>
             </div>
-            <div class="room-card wide">
-                <img src="images/garden-suite.jpg" alt="Garden View Suite">
-                <div class="room-shade"></div>
-                <div class="room-price">PKR 48,000</div>
-                <div class="room-body"><span class="tag">Suite</span><h3>Garden View Suite</h3><p>A private sitting area opening onto the courtyard and lawn below.</p></div>
+            <div class="review-cta">
+                <button type="button" class="cta-button" id="openReviewFormBtn">Leave a Review</button>
             </div>
-            <div class="quote-card">
-                <p>&ldquo;Every room looks toward the fire pit.&rdquo;</p>
-            </div>
-            <div class="room-card">
-                <img src="images/deluxe-twin-room-1.jpg" alt="Executive Twin Room">
-                <div class="room-shade"></div>
-                <div class="room-price">PKR 32,000</div>
-                <div class="room-body"><span class="tag">Twin</span><h3>Executive Twin Room</h3><p>Two beds, one calm space, for friends travelling together.</p></div>
-            </div>
-            <div class="room-card wide">
-                <img src="images/horizon-suite.jpg" alt="The Horizon Suite">
-                <div class="room-shade"></div>
-                <div class="room-price">PKR 80,000</div>
-                <div class="room-body"><span class="tag">Top Tier</span><h3>The Horizon Suite</h3><p>The largest room in the house — steps from the fire pit, private terrace.</p></div>
-            </div>
-        </div>
-        <div class="carousel-foot">
-            <p class="carousel-hint">&larr; Drag to explore &rarr;</p>
-            <div class="carousel-dots" id="carouselDots"></div>
+            <form id="reviewForm" class="review-form" style="display: none;">
+                <div class="form-group">
+                    <label>Your Name</label>
+                    <input type="text" id="reviewGuestName" required>
+                </div>
+                <div class="form-group">
+                    <label>Rating</label>
+                    <div class="star-picker" id="starPicker">
+                        <i class="fas fa-star" data-value="1"></i>
+                        <i class="fas fa-star" data-value="2"></i>
+                        <i class="fas fa-star" data-value="3"></i>
+                        <i class="fas fa-star" data-value="4"></i>
+                        <i class="fas fa-star" data-value="5"></i>
+                    </div>
+                    <input type="hidden" id="reviewRating" value="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Your Review</label>
+                    <textarea id="reviewComment" rows="4" placeholder="Tell us about your stay&hellip;"></textarea>
+                </div>
+                <button type="submit" class="submit-btn">Submit Review</button>
+                <p class="form-message" id="reviewFormMessage"></p>
+            </form>
         </div>
     </section>
 
-    <!-- Corporate Meeting Hall — off-center plaque, restrained motion, generous breathing room before it -->
-    <section class="plaque-section" id="meetings" style="margin-top:60px;">
-        <div class="plaque-bg">
-            <img src="images/gallery/meeting-room.jpg" alt="Horizon Inn meeting hall with natural light">
-        </div>
-        <div class="plaque-shade"></div>
-        <div class="plaque-card reveal">
-            <span class="eyebrow">For Business</span>
-            <h3>A meeting hall that doesn't feel corporate.</h3>
-            <p>Natural light, a courtyard-facing layout, and the same quiet service — built for offsites and small conferences that still want the guest-house feel.</p>
-            <a href="#contact" class="btn btn-ghost">Enquire for Events</a>
-        </div>
-    </section>
-
-    <!-- The Café — soft overlap card, not a diagonal cut -->
-    <section class="cafe-section" id="cafe">
-        <div class="section-head reveal" style="padding:0 5vw; margin-bottom:50px;">
-            <span class="eyebrow">Table &amp; Kitchen</span>
-            <h2 class="section-title">The Café.</h2>
-        </div>
-        <div class="cafe-media reveal d1">
-            <img src="images/gallery/cafe-placeholder.jpg" alt="Café placeholder — real Horizon Inn café photos coming soon">
-        </div>
-        <div class="cafe-copy-float reveal d2">
-            <span class="eyebrow">Open to All Guests</span>
-            <h3>Frontier cooking, served slowly.</h3>
-            <p>Breakfast on the terrace, tea on request at any hour — the kind of hospitality Peshawar has practiced for centuries, at guest-house scale.</p>
-        </div>
-        <div class="cafe-strip reveal d3">
-            <img src="images/gallery/cafe-detail-1.jpg" alt="Coffee detail (placeholder)">
-            <img src="images/gallery/cafe-detail-2.jpg" alt="Pastry detail (placeholder)">
-            <img src="images/gallery/cafe-detail-3.jpg" alt="Evening café ambiance (placeholder)">
-        </div>
-    </section>
-
-    <!-- Peshawar — layered, counter-scrolling marquee over the warm textured background
-         (no stock "bazaar" photo here — a generic South Asian market stock image isn't
-         honestly Peshawar, and the brief is about real photography, not more stock). -->
-    <section class="marquee-wrap">
-        <div class="marquee-track back" aria-hidden="true">
-            <div class="marquee-item"><h4>Sethi Mohalla</h4><p>Merchant-era havelis with carved facades.</p></div><span class="sep">&#10022;</span>
-            <div class="marquee-item"><h4>Bala Hisar Fort</h4><p>A Mughal-era fortress over the old city.</p></div><span class="sep">&#10022;</span>
-            <div class="marquee-item"><h4>Peshawar Museum</h4><p>Gandharan art and frontier history.</p></div><span class="sep">&#10022;</span>
-            <div class="marquee-item"><h4>Qissa Khwani Bazaar</h4><p>The legendary "Bazaar of Storytellers."</p></div><span class="sep">&#10022;</span>
-            <div class="marquee-item"><h4>Sethi Mohalla</h4><p>Merchant-era havelis with carved facades.</p></div><span class="sep">&#10022;</span>
-            <div class="marquee-item"><h4>Bala Hisar Fort</h4><p>A Mughal-era fortress over the old city.</p></div><span class="sep">&#10022;</span>
-            <div class="marquee-item"><h4>Peshawar Museum</h4><p>Gandharan art and frontier history.</p></div><span class="sep">&#10022;</span>
-            <div class="marquee-item"><h4>Qissa Khwani Bazaar</h4><p>The legendary "Bazaar of Storytellers."</p></div><span class="sep">&#10022;</span>
-        </div>
-        <div class="marquee-track" id="marquee">
-            <div class="marquee-item"><h4>Qissa Khwani Bazaar</h4><p>The legendary "Bazaar of Storytellers" — centuries of trade in one narrow street.</p></div><span class="sep">&#10022;</span>
-            <div class="marquee-item"><h4>Bala Hisar Fort</h4><p>A commanding Mughal-era fortress overlooking the old city.</p></div><span class="sep">&#10022;</span>
-            <div class="marquee-item"><h4>Peshawar Museum</h4><p>One of Pakistan's finest collections of Gandharan art.</p></div><span class="sep">&#10022;</span>
-            <div class="marquee-item"><h4>Sethi Mohalla</h4><p>Merchant-era havelis with carved wooden facades, ten minutes away.</p></div><span class="sep">&#10022;</span>
-            <div class="marquee-item"><h4>Qissa Khwani Bazaar</h4><p>The legendary "Bazaar of Storytellers" — centuries of trade in one narrow street.</p></div><span class="sep">&#10022;</span>
-            <div class="marquee-item"><h4>Bala Hisar Fort</h4><p>A commanding Mughal-era fortress overlooking the old city.</p></div><span class="sep">&#10022;</span>
-            <div class="marquee-item"><h4>Peshawar Museum</h4><p>One of Pakistan's finest collections of Gandharan art.</p></div><span class="sep">&#10022;</span>
-            <div class="marquee-item"><h4>Sethi Mohalla</h4><p>Merchant-era havelis with carved wooden facades, ten minutes away.</p></div><span class="sep">&#10022;</span>
-        </div>
-    </section>
-
-    <!-- Closing CTA — hero reprise, mirrored right instead of left -->
-    <section class="closing" style="--closing-img:url('images/gallery/courtyard-lounge.jpg')">
-        <div class="closing-bg"></div>
-        <div class="closing-shade"></div>
-        <div class="closing-content">
-            <span class="eyebrow" style="justify-content:flex-end;">Reserve Direct</span>
-            <h2 class="reveal" style="margin-top:22px;">Come sit by <em>the fire.</em></h2>
-            <p class="reveal d1">Best rates are always here, not on a listing site — and the front desk answers in person, day or night.</p>
-            <div class="closing-cta">
-                <a href="book.html#booking" class="btn btn-primary reveal d2">Check Availability</a>
+    <!-- Crescent Grove Event & Hospitality Complex — Facility Showcase.
+         Equity/profit-share investment pitch, the ROI calculator, and the
+         "Upcoming Expansion" investor teaser were removed from this
+         public page for legal reasons (that content must not be presented
+         to unauthenticated site visitors). The bookable-venue showcase
+         below is ordinary event-space rental content, not an investment
+         offer, so it stays. Investor-facing tools remain fully available
+         inside the authenticated investor portal and the admin dashboard. -->
+    <section id="invest-with-us" class="crescent-zone">
+        <div class="container">
+            <h2 style="text-align: center;">Crescent Grove Facilities <span class="coming-soon-pill">Opening Soon</span></h2>
+            <p class="section-intro">Four spaces, each available individually or as a full-complex buyout for exclusive events &mdash; opening soon.</p>
+            <div class="facility-grid" id="facilityGrid">
+                <p style="color: #9ca3af; text-align: center; grid-column: 1 / -1;">Loading facilities&hellip;</p>
             </div>
         </div>
     </section>
 
-    <footer id="contact">
-        <div class="footer-top">
-            <div>
-                <div class="footer-brand">Horizon Inn</div>
-                <p>A boutique guest house in Peshawar — private lawn, courtyard fire pit, a meeting hall, and a café.</p>
-            </div>
-            <div class="footer-col">
-                <h5>Contact</h5>
-                <address>Peshawar, Khyber Pakhtunkhwa, Pakistan</address>
-                <a href="tel:+92910000000">+92 91 000 0000</a>
-                <a href="mailto:info@horizoninnpeshawar.com">info@horizoninnpeshawar.com</a>
-            </div>
-            <div class="footer-col">
-                <h5>Explore</h5>
-                <a href="book.html">Book Your Stay</a>
-                <a href="book.html#rooms">Rooms &amp; Rates</a>
-                <a href="book.html#gallery">Gallery</a>
-                <a href="admin.html">Staff Login</a>
-            </div>
-            <div class="footer-col">
-                <h5>Legal</h5>
-                <a href="privacy.html">Privacy</a>
-                <a href="terms.html">Terms</a>
-                <a href="cancellation-policy.html">Cancellation</a>
+    <!-- Booking Section -->
+    <section id="booking" class="booking">
+        <div class="container">
+            <h2>Book Your Stay</h2>
+            <div class="booking-form-wrapper reveal">
+                <form class="booking-form" id="bookingForm">
+
+                    <fieldset class="form-fieldset">
+                        <legend>Guest Details</legend>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="name">Full Name *</label>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email Address *</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="phone">Phone Number *</label>
+                                <input type="tel" id="phone" name="phone" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="cnic">CNIC / Passport Number *</label>
+                                <input type="text" id="cnic" name="cnic" placeholder="e.g. 12345-1234567-1" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="maritalStatus">Marital Status *</label>
+                                <select id="maritalStatus" name="maritalStatus" required>
+                                    <option value="">Select</option>
+                                    <option value="Single">Single</option>
+                                    <option value="Married">Married</option>
+                                    <option value="Divorced">Divorced</option>
+                                    <option value="Widowed">Widowed</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="guests">Number of Guests *</label>
+                                <input type="number" id="guests" name="guests" min="1" max="4" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label for="address">Permanent / Home Address</label>
+                                <input type="text" id="address" name="address" placeholder="Optional, for your guest record">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="form-fieldset">
+                        <legend>Stay Details</legend>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="roomId">Room Type *</label>
+                                <select id="roomId" name="roomId" required>
+                                    <option value="">Loading rooms...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="purposeOfStay">Purpose of Stay</label>
+                                <select id="purposeOfStay" name="purposeOfStay">
+                                    <option value="">Select</option>
+                                    <option value="Leisure/Tourism">Leisure / Tourism</option>
+                                    <option value="Business">Business</option>
+                                    <option value="Family Visit">Family Visit</option>
+                                    <option value="Medical">Medical</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="checkin">Check-in Date *</label>
+                                <input type="date" id="checkin" name="checkin" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="checkout">Check-out Date *</label>
+                                <input type="date" id="checkout" name="checkout" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="arrivalTime">Expected Arrival Time</label>
+                                <input type="time" id="arrivalTime" name="arrivalTime">
+                            </div>
+                            <div class="form-group">
+                                <label for="vehicleNumber">Vehicle Number (if any)</label>
+                                <input type="text" id="vehicleNumber" name="vehicleNumber" placeholder="e.g. LEA-1234">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="arrivalFrom">Arriving From (City/Address) *</label>
+                                <input type="text" id="arrivalFrom" name="arrivalFrom" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="departureTo">Departing To (City/Address) *</label>
+                                <input type="text" id="departureTo" name="departureTo" required>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="form-fieldset">
+                        <legend>Payment</legend>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="paymentMethod">Payment Method *</label>
+                                <select id="paymentMethod" name="paymentMethod" required>
+                                    <option value="pay_at_property">Pay at Property</option>
+                                    <option value="bank_transfer">Bank Transfer (Advance)</option>
+                                    <option value="easypaisa">EasyPaisa (Advance)</option>
+                                    <option value="jazzcash">JazzCash (Advance)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="transactionIdGroup" style="display: none;">
+                                <label for="transactionId">Transaction ID *</label>
+                                <input type="text" id="transactionId" name="transactionId" placeholder="From your payment receipt">
+                            </div>
+                        </div>
+                        <div class="payment-instructions" id="paymentInstructions" style="display: none;"></div>
+                        <p class="payment-security-note" id="paymentSecurityNote" style="display: none;">
+                            <i class="fas fa-shield-halved"></i> For your security, only send payments to the official Horizon Inn accounts shown above. Horizon Inn is not responsible for payments sent to any other account.
+                        </p>
+                    </fieldset>
+
+                    <fieldset class="form-fieldset">
+                        <legend>Enhance Your Stay (optional)</legend>
+                        <div class="addon-grid">
+                            <label class="addon-option">
+                                <input type="checkbox" name="addon" value="breakfast_upgrade">
+                                <span>Breakfast Upgrade <strong>+Rs. 800</strong></span>
+                            </label>
+                            <label class="addon-option">
+                                <input type="checkbox" name="addon" value="airport_pickup">
+                                <span>Airport Pickup <strong>+Rs. 2,500</strong></span>
+                            </label>
+                            <label class="addon-option">
+                                <input type="checkbox" name="addon" value="late_checkout">
+                                <span>Late Check-out (until 3 PM) <strong>+Rs. 1,000</strong></span>
+                            </label>
+                            <label class="addon-option">
+                                <input type="checkbox" name="addon" value="crescent_dinner">
+                                <span>Crescent Grove Candlelight Dinner for Two <strong>+Rs. 6,500</strong></span>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="form-fieldset">
+                        <legend>Promo / Gift Voucher / Referral Code</legend>
+                        <div class="form-group">
+                            <label for="discountCode">Have a code?</label>
+                            <input type="text" id="discountCode" name="discountCode" placeholder="Optional">
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="form-fieldset">
+                        <legend>Special Requests</legend>
+                        <div class="form-group">
+                            <label for="special">Anything else we should know?</label>
+                            <textarea id="special" name="special" rows="4" placeholder="Any special requests or requirements?"></textarea>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="form-fieldset">
+                        <legend>Terms &amp; Conditions</legend>
+                        <div class="terms-box" id="termsBox">
+                            <p><strong>Check-in / Check-out:</strong> Check-in from 2:00 PM, check-out by 12:00 PM. Early check-in or late check-out is subject to availability.</p>
+                            <p><strong>Identification:</strong> A valid CNIC or passport matching the booking details is required from every guest at check-in.</p>
+                            <p><strong>Cancellation Policy:</strong> Cancellations made 24 hours or more before check-in are fully refundable. Cancellations within 24 hours, or no-shows, are non-refundable.</p>
+                            <p><strong>Damage Policy:</strong> Guests are responsible for any damage to the room or property beyond normal wear and tear, and will be charged for repair or replacement.</p>
+                            <p><strong>House Rules:</strong> No smoking indoors. Quiet hours are from 11:00 PM to 7:00 AM. Only registered guests are permitted in guest rooms. Pets are not allowed unless pre-approved.</p>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="termsAccepted" name="termsAccepted" required>
+                                <span>I have read and agree to the Terms &amp; Conditions above *</span>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <button type="submit" class="submit-btn">Complete Booking</button>
+                    <p class="form-message" id="bookingMessage"></p>
+                </form>
             </div>
         </div>
-        <div class="footer-bottom">
-            <span>&copy; <span id="year"></span> Horizon Inn Peshawar. All rights reserved.</span>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <h2>Get In Touch</h2>
+            <div class="contact-wrapper reveal">
+                <div class="contact-info">
+                    <div class="info-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>
+                            <h4>Address</h4>
+                            <p id="contactAddress">123 Sunset Boulevard<br>Mountain View, CA 94043</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-phone"></i>
+                        <div>
+                            <h4>Phone</h4>
+                            <p id="contactPhone">+1 (555) 123-4567</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-envelope"></i>
+                        <div>
+                            <h4>Email</h4>
+                            <p id="contactEmailDisplay">info@horizoninn.com</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <h4>Hours</h4>
+                            <p id="contactHours">24/7 Service Available</p>
+                        </div>
+                    </div>
+                    <div class="info-item" id="contactFacebookItem" style="display: none;">
+                        <i class="fab fa-facebook"></i>
+                        <div>
+                            <h4>Follow Us</h4>
+                            <p><a id="contactFacebookLink" href="#" target="_blank" rel="noopener">Horizon Inn on Facebook</a></p>
+                        </div>
+                    </div>
+
+                    <form class="contact-form" id="contactForm">
+                        <div class="form-group">
+                            <label for="contactName">Name *</label>
+                            <input type="text" id="contactName" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contactEmail">Email *</label>
+                            <input type="email" id="contactEmail" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contactMessage">Message *</label>
+                            <textarea id="contactMessage" name="message" rows="4" required></textarea>
+                        </div>
+                        <button type="submit" class="submit-btn">Send Message</button>
+                        <p class="form-message" id="contactFormMessage"></p>
+                    </form>
+                </div>
+
+                <div class="map-container">
+                    <iframe id="contactMapEmbed" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3169.0620556597346!2d-122.08393432345069!3d37.42242897127838!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x808fba02425a9ddf%3A0x60a3057bc10d138f!2s123%20Sesame%20St%2C%20Mountain%20View%2C%20CA%2094043!5e0!3m2!1sen!2sus!4v1696892741234" width="100%" height="400" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    <a id="contactMapLink" href="#" target="_blank" rel="noopener" class="map-directions-link" style="display: none;">
+                        <i class="fas fa-location-arrow"></i> Get Directions on Google Maps
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Horizon Inn</h4>
+                    <p>Your gateway to luxury and comfort.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#rooms">Rooms</a></li>
+                        <li><a href="#booking">Booking</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                        <li><a href="manage-booking.html">Manage My Booking</a></li>
+                        <li><a href="gift-voucher.html">Gift Vouchers</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="privacy.html">Privacy Policy</a></li>
+                        <li><a href="terms.html">Terms of Service</a></li>
+                        <li><a href="cancellation-policy.html">Cancellation &amp; Refunds</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Events &amp; Staff</h4>
+                    <ul>
+                        <li><a href="#invest-with-us">Events &amp; Venues</a></li>
+                        <li><a href="admin.html">Staff Login</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Follow Us</h4>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Horizon Inn. All rights reserved.</p>
+            </div>
         </div>
     </footer>
 
+    <!-- Facility detail modal -->
+    <div class="facility-modal-overlay" id="facilityModalOverlay">
+        <div class="facility-modal-box">
+            <button type="button" class="facility-modal-close" id="facilityModalCloseBtn"><i class="fas fa-xmark"></i></button>
+            <div class="facility-modal-gallery" id="facilityModalGallery"></div>
+            <div class="facility-modal-content">
+                <h3 id="facilityModalName"></h3>
+                <div class="facility-modal-meta">
+                    <span><i class="fas fa-ruler-combined"></i> <span id="facilityModalSize"></span></span>
+                    <span><i class="fas fa-users"></i> <span id="facilityModalCapacity"></span></span>
+                    <span><i class="fas fa-tag"></i> <span id="facilityModalRate"></span></span>
+                </div>
+                <p id="facilityModalDescription" style="color: #c7cad1; font-size: 0.9rem; margin-bottom: 18px;"></p>
+                <div class="amenity-tags" id="facilityModalAmenities"></div>
+
+                <h4 style="font-family: 'Playfair Display', serif; margin-bottom: 10px;">Food &amp; Beverage Add-Ons</h4>
+                <div class="catering-tabs" id="cateringTabs"></div>
+                <div id="cateringItemsList"></div>
+
+                <a href="#booking" class="facility-modal-cta" id="facilityModalCta">Register Interest &mdash; Opening Soon</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- WhatsApp click-to-chat -->
+    <a href="#" class="whatsapp-float-btn" id="whatsappFloatBtn" style="display: none;" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+    <!-- Sticky booking CTA bar -->
+    <div class="sticky-cta-bar" id="stickyCtaBar">
+        <div class="sticky-cta-info">
+            <span class="sticky-cta-label">Rooms from</span>
+            <span class="sticky-cta-price" id="stickyCtaPrice">&mdash;</span>
+            <span class="sticky-cta-label">/ night</span>
+        </div>
+        <a href="#booking" class="cta-button sticky-cta-btn">Book Now</a>
+    </div>
+
+    <!-- Exit-intent offer -->
+    <div class="exit-intent-overlay" id="exitIntentOverlay">
+        <div class="exit-intent-box">
+            <button type="button" class="exit-close" id="exitIntentCloseBtn"><i class="fas fa-xmark"></i></button>
+            <h3>Before you go&hellip;</h3>
+            <p style="color: var(--text-light); font-size: 0.92rem;">Here's 5% off your stay if you book today.</p>
+            <div class="exit-intent-code">WELCOME5</div>
+            <p style="font-size: 0.8rem; color: var(--text-light);">Enter this code in the "Promo / Gift Voucher / Referral Code" field at checkout.</p>
+            <a href="#booking" class="cta-button" id="exitIntentBookBtn">Book Now</a>
+        </div>
+    </div>
+
+    <!-- Gallery / video preview lightbox -->
+    <div class="media-lightbox-overlay" id="mediaLightboxOverlay">
+        <button type="button" class="media-lightbox-close" id="mediaLightboxClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
+        <div class="media-lightbox-content" id="mediaLightboxContent"></div>
+    </div>
+
+    <script src="script.js"></script>
     <!-- CHAT WIDGET START -->
     <div id="chat-widget" style="position:fixed; bottom:20px; right:20px; z-index:9999;">
       <button id="chat-toggle" style="width:60px; height:60px; border-radius:50%; background:#1c1c1c; color:white; border:none; font-size:30px; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer;">💬</button>
@@ -542,7 +634,7 @@
     </div>
     <style>
       /* Chat widget is always a white/light surface — scoped override so
-         the page's dark palette doesn't wash it out. */
+         the site-wide dark-theme placeholder color doesn't wash it out. */
       #chat-input::placeholder { color: #888; opacity: 1; }
     </style>
     <script>
@@ -605,101 +697,5 @@
       };
     </script>
     <!-- CHAT WIDGET END -->
-
-    <script>
-        document.getElementById('year').textContent = new Date().getFullYear();
-
-        var nav = document.getElementById('nav');
-        var burger = document.getElementById('burger');
-        var links = document.getElementById('navLinks');
-
-        window.addEventListener('scroll', function () {
-            nav.classList.toggle('scrolled', window.scrollY > 40);
-        });
-
-        burger.addEventListener('click', function () {
-            var open = links.classList.toggle('open');
-            burger.setAttribute('aria-expanded', open);
-        });
-        links.querySelectorAll('a').forEach(function (a) {
-            a.addEventListener('click', function () { links.classList.remove('open'); });
-        });
-
-        // Fade/rise reveal as each element scrolls into view.
-        var revealEls = document.querySelectorAll('.reveal');
-        var io = new IntersectionObserver(function (entries) {
-            entries.forEach(function (entry) {
-                if (entry.isIntersecting) entry.target.classList.add('in');
-            });
-        }, { threshold: 0.18 });
-        revealEls.forEach(function (el) { io.observe(el); });
-
-        // Wayfinding — scroll-position dot rail + "01 / 06" counter, built
-        // from the page's six full-bleed sections.
-        var railSections = [
-            { id: 'home', label: 'Welcome' },
-            { id: 'lawn', label: 'The Lawn' },
-            { id: 'rooms', label: 'Rooms' },
-            { id: 'meetings', label: 'Meetings' },
-            { id: 'cafe', label: 'Café' },
-            { id: 'contact', label: 'Contact' }
-        ];
-        var railDotsWrap = document.getElementById('scrollRailDots');
-        var slideCounter = document.getElementById('slideCounter');
-        var slideCounterCurrent = slideCounter.querySelector('.current');
-        var railButtons = railSections.map(function (s, i) {
-            var btn = document.createElement('button');
-            btn.setAttribute('aria-label', 'Go to ' + s.label);
-            var lbl = document.createElement('span');
-            lbl.className = 'rail-label';
-            lbl.textContent = s.label;
-            btn.appendChild(lbl);
-            btn.addEventListener('click', function () {
-                var el = document.getElementById(s.id);
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-            });
-            railDotsWrap.appendChild(btn);
-            return btn;
-        });
-        if (railButtons.length) railButtons[0].classList.add('active');
-
-        var railObserver = new IntersectionObserver(function (entries) {
-            entries.forEach(function (entry) {
-                var idx = railSections.findIndex(function (s) { return s.id === entry.target.id; });
-                if (idx === -1) return;
-                if (entry.isIntersecting) {
-                    railButtons.forEach(function (b, i) { b.classList.toggle('active', i === idx); });
-                    slideCounterCurrent.textContent = String(idx + 1).padStart(2, '0');
-                    slideCounter.classList.add('visible');
-                }
-            });
-        }, { threshold: 0.5 });
-        railSections.forEach(function (s) {
-            var el = document.getElementById(s.id);
-            if (el) railObserver.observe(el);
-        });
-
-        // Room carousel — dot indicator so the mobile scroll strip reads as
-        // "there are more rooms" rather than an oddly-cut-off row.
-        var carousel = document.getElementById('carousel');
-        var dotsWrap = document.getElementById('carouselDots');
-        if (carousel && dotsWrap) {
-            var items = carousel.children;
-            for (var i = 0; i < items.length; i++) {
-                var d = document.createElement('span');
-                if (i === 0) d.classList.add('active');
-                dotsWrap.appendChild(d);
-            }
-            var dots = dotsWrap.querySelectorAll('span');
-            carousel.addEventListener('scroll', function () {
-                window.requestAnimationFrame(function () {
-                    var itemWidth = items[0].offsetWidth + 24;
-                    var idx = Math.round(carousel.scrollLeft / itemWidth);
-                    dots.forEach(function (dot, i) { dot.classList.toggle('active', i === idx); });
-                });
-            });
-        }
-    </script>
-
 </body>
 </html>
