@@ -106,6 +106,7 @@
                     <button class="admin-tab" data-tab="daily"><i class="fas fa-chart-line"></i> Daily Summary</button>
                     <button class="admin-tab" data-tab="handover"><i class="fas fa-hand-holding-dollar"></i> Cash Handover</button>
                     <button class="admin-tab" data-tab="expenses"><i class="fas fa-receipt"></i> Expenses</button>
+                    <button class="admin-tab" data-tab="dues"><i class="fas fa-hand-holding-dollar"></i> Customer Dues</button>
                     <button class="admin-tab" data-tab="reports"><i class="fas fa-chart-pie"></i> Reports</button>
                     <button class="admin-tab" data-tab="venues"><i class="fas fa-cash-register"></i> Financial Controls</button>
                 </div>
@@ -659,6 +660,38 @@
                             </tr>
                         </thead>
                         <tbody id="expensesBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Customer Dues -->
+            <section class="admin-panel" id="panel-dues" style="display: none;">
+                <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 16px;">
+                    A guest who checked out still owing money shows up here. Front desk collects it the next time that
+                    guest books, at which point it's applied automatically as a charge on their new stay.
+                </p>
+                <div class="panel-toolbar">
+                    <select id="duesStatusFilter">
+                        <option value="outstanding">Outstanding</option>
+                        <option value="settled">Settled</option>
+                        <option value="waived">Waived</option>
+                        <option value="">All</option>
+                    </select>
+                </div>
+                <div class="table-scroll">
+                    <table class="admin-table" id="duesTable">
+                        <thead>
+                            <tr>
+                                <th>Guest</th>
+                                <th>CNIC / Phone</th>
+                                <th>From Booking</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Since</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="duesBody"></tbody>
                     </table>
                 </div>
             </section>
