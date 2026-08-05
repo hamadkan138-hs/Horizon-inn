@@ -285,6 +285,9 @@ router.get('/overview', async (req, res) => {
       outstandingTotal: daily.outstandingTotal,
       outstandingCount: daily.outstandingBookings.length,
       cashReceivedToday: daily.cashReceivedToday,
+      bankReceivedToday: daily.bankReceivedToday,
+      onlineReceivedToday: daily.onlineReceivedToday,
+      totalReceivedToday: daily.totalReceivedToday,
       expensesTotalToday: daily.expensesTotalToday,
       netCashToday: daily.netCashToday,
       occupancy: {
