@@ -1747,15 +1747,7 @@ body.has-offer .navbar {
 }
 
 table.admin-table {
-    /* min-width, not width: fills its .table-scroll wrapper when content is
-       narrow (the common case), but a fixed width:100% would forcibly cap
-       the table at the wrapper's width — with table-layout:auto that left
-       browsers no choice but to squeeze narrow columns (like Actions, once
-       it holds 3-4 pill buttons) and wrap their contents instead of letting
-       the table grow past the wrapper and scroll horizontally, which is the
-       whole reason .table-scroll exists. min-width preserves the "fill the
-       container" look while still allowing that overflow when needed. */
-    min-width: 100%;
+    width: 100%;
     border-collapse: collapse;
     background: var(--white);
     box-shadow: var(--shadow);
@@ -1770,16 +1762,34 @@ table.admin-table td {
 }
 
 /* The Actions column (always last — either literal "Actions" or an unlabeled
-   icon column) holds several inline-block pill buttons. Left to wrap
-   normally, table-layout:auto treats a single button as that column's whole
-   min-content width and happily wraps the rest underneath it one at a time,
-   ballooning the row's height instead of growing the table sideways into
-   the .table-scroll wrapper's horizontal scroll (which exists for exactly
-   this). Forcing nowrap here makes the browser size the column for the
-   full unwrapped button row, so they sit on one line and scroll instead of
-   stacking down the page. */
+   icon column) holds several inline-block pill buttons. Left to its own
+   devices, table-layout:auto treats a single button as satisfying that
+   column's min-content and wraps the rest underneath it one at a time,
+   ballooning the row's height (each extra button = another full line).
+   Forcing everything onto one line (white-space:nowrap) was tried first,
+   but that just traded the vertical problem for a horizontal one — the
+   table grows wider than the screen and needs its own sideways scroll on
+   top of the page's normal vertical scroll, which is worse.
+   flex-wrap instead lets buttons pack two (sometimes three) per line and
+   only drop to a new line when they truly don't fit — no scrollbar in
+   either direction for the common 2-4 button case, and it degrades to a
+   short, compact stack instead of one giant one if the column is ever
+   genuinely too narrow. */
 table.admin-table td:last-child {
-    white-space: nowrap;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 4px;
+    /* The cell's own 18px side padding was eating into the flex content
+       width enough to tip 2-button pairs (e.g. View + WhatsApp) over the
+       edge and onto separate lines even though they'd otherwise fit — the
+       buttons already carry their own padding, so the cell doesn't need
+       as much of its own. */
+    padding-left: 10px;
+    padding-right: 10px;
+}
+table.admin-table td:last-child > * {
+    margin: 0 !important;
 }
 
 table.admin-table th {

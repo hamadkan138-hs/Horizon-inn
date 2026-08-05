@@ -397,7 +397,7 @@ function bookingRowHtml(b) {
                 <div style="font-size: 0.78rem; color: var(--text-light); margin-top: 4px;">Total ${money(b.total_amount)}</div>
             </td>
             <td>
-                <button class="action-btn details-toggle" data-target="details-${b.id}" data-id="${b.id}">View</button><br><br>
+                <button class="action-btn details-toggle" data-target="details-${b.id}" data-id="${b.id}">View</button>
                 <a class="action-btn confirm" href="${whatsappLink(b)}" target="_blank" rel="noopener">WhatsApp</a>
                 <a class="action-btn confirm" href="${emailLink(b)}">Email</a>
                 <a class="action-btn details-toggle" href="invoice.html?id=${b.id}" target="_blank" rel="opener">Invoice</a>
