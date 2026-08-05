@@ -61,6 +61,36 @@ input::placeholder, textarea::placeholder {
     border-color: var(--glass-border) !important;
 }
 
+/* Native <select> dropdown popups: most browsers ignore the select's own
+   background:transparent for the opened option list and fall back to a
+   plain white popup. Combined with the page's near-white text color, every
+   opened dropdown (Room Type, Purpose of Stay, Marital Status, Payment
+   Method, Guests) was rendering white text on a white popup — invisible
+   until you drag-selected it. Styling <option> directly fixes the popup
+   without changing the closed control's seamless transparent look. */
+.form-group select option {
+    background-color: #1a1511;
+    color: #f2ece0;
+}
+
+/* The hero availability search (Check-in/Check-out/Guests) is a
+   deliberately white glass card floating on the hero photo — unlike the
+   rest of the page, it was never meant to flip to light-on-dark. The
+   blanket input/select color rule above (needed everywhere else) was
+   painting its text near-white too, on a white card. Pinned back to dark
+   text here specifically, matching the card's own light background. */
+.hero-search-field label {
+    color: rgba(23, 18, 8, 0.6) !important;
+}
+.hero-search-field input,
+.hero-search-field select {
+    color: #171208 !important;
+}
+.hero-search-field select option {
+    background-color: #fff;
+    color: #171208;
+}
+
 /* Form field labels (FULL NAME, PHONE NUMBER, MARITAL STATUS, etc. on the
    booking/contact/review forms) were --text-light, a muted taupe that
    photographs and low-brightness screens wash out to near-invisible.
