@@ -1,0 +1,119 @@
+/* ===== Book.html cinematic re-skin =====
+   Scoped to this page only — redeclares the shared styles.css/glass-theme.css
+   custom properties on `body` (they cascade to every component that already
+   reads var(--charcoal)/var(--gold)/etc.) instead of editing those shared
+   files, so admin/investor/front-desk/kiosk keep their existing palette.
+   Loaded after styles.css and glass-theme.css so it wins the cascade. */
+
+body {
+    /* styles.css tokens */
+    --charcoal: #1a1511;
+    --charcoal-soft: #251e17;
+    --gold: #c9914f;
+    --gold-soft: #e0b876;
+    --cream: #1a1511;
+    --white: #251e17;
+    --text-dark: #f2ece0;
+    --text-light: #b3a99a;
+    --on-gold: #171208;
+    --glass-bg: rgba(242, 236, 224, 0.04);
+    --glass-border: rgba(242, 236, 224, 0.1);
+    --hair: rgba(242, 236, 224, 0.14);
+    --gold-glow: rgba(201, 145, 79, 0.4);
+    --shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 30px 70px rgba(0, 0, 0, 0.55);
+
+    /* glass-theme.css tokens */
+    --bg-primary: #1a1511;
+    --bg-secondary: #251e17;
+
+    /* Palette shift only — glass-theme.css sets a hardcoded white body
+       color/gradient rather than reading these vars, so both are
+       re-declared directly below too. */
+    background: radial-gradient(90% 60% at 15% -10%, rgba(201, 145, 79, 0.08) 0%, transparent 55%), linear-gradient(135deg, var(--bg-primary) 0%, #201b15 100%) !important;
+    color: rgba(242, 236, 224, 0.92);
+}
+
+/* ---------- Typography: Fraunces for headings, Work Sans for body ---------- */
+body {
+    font-family: 'Work Sans', 'Lora', Georgia, serif;
+}
+h1, h2, h3, h4,
+.hero-content h1 {
+    font-family: 'Fraunces', 'Playfair Display', serif;
+    font-weight: 700;
+}
+.hero-content h1 em,
+h2 em {
+    font-style: italic;
+    font-weight: 500;
+    color: var(--gold);
+}
+
+/* ---------- Text color cleanup for glass-theme's hardcoded whites ---------- */
+input, textarea, select {
+    color: var(--text-dark) !important;
+}
+input::placeholder, textarea::placeholder {
+    color: rgba(242, 236, 224, 0.4) !important;
+}
+.glass-card, .kiosk-card {
+    border-color: var(--glass-border) !important;
+}
+
+/* ---------- Room pricing display — brass accents, matching the homepage
+   carousel's price-tag treatment (the price itself still comes straight
+   from the live API; this only restyles how it's shown). ---------- */
+.room-card .price,
+.room-card .tier-price {
+    color: var(--gold);
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+}
+.room-card .pricing-tier.tier-highlight {
+    background: rgba(201, 145, 79, 0.08);
+    border-color: var(--gold-glow);
+}
+.book-btn.primary {
+    background: linear-gradient(155deg, #d8a865, var(--gold));
+}
+
+/* ---------- Nav ---------- */
+.navbar.scrolled {
+    background: rgba(26, 21, 17, 0.88) !important;
+}
+
+/* ---------- Hardcoded cool-toned overlays that don't read var(--charcoal)
+   at all, so the body-level token override above can't reach them ---------- */
+.hero-overlay {
+    background: linear-gradient(rgba(26, 21, 17, 0.55), rgba(26, 21, 17, 0.4)) !important;
+}
+.gallery-item::after {
+    background: linear-gradient(to top, rgba(26, 21, 17, 0.85) 0%, rgba(26, 21, 17, 0) 45%) !important;
+}
+.sticky-cta-bar {
+    background: rgba(26, 21, 17, 0.92) !important;
+}
+/* Crescent Grove facilities carries its own always-dark sub-theme
+   (independent of the page palette by design) — only its base tone and
+   primary gold accent need to shift so it doesn't read as a cold seam
+   between warm sections either side of it. */
+.crescent-zone {
+    background:
+        radial-gradient(circle at 15% 20%, rgba(201, 145, 79, 0.08), transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(16, 185, 129, 0.06), transparent 45%),
+        #1a1511 !important;
+}
+.facility-view-btn:hover,
+.facility-modal-gallery .fm-dots span.active,
+.catering-tab.active, .catering-tab:hover,
+.facility-modal-cta {
+    background: var(--gold) !important;
+    border-color: var(--gold) !important;
+    color: var(--on-gold) !important;
+}
+
+/* Scroll-reveal animations are handled entirely by the existing
+   .reveal / .reveal-title / .reveal-stagger system in script.js and
+   styles.css — those already read var(--gold) etc., so they pick up
+   the new brass tone automatically. Nothing to duplicate here. */
