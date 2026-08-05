@@ -106,6 +106,38 @@
         padding: 18px 10px; border-left: 1px solid var(--hair-strong);
     }
     .hero-content { position: relative; z-index: 2; max-width: 900px; padding-left: 5vw; margin-left: -1.5vw; }
+
+    /* ---------- Section index counter (top-left, desktop) ---------- */
+    .slide-counter {
+        position: fixed; top: 100px; left: 5vw; z-index: 400;
+        font-size: 0.72rem; letter-spacing: 0.16em; color: var(--ink-faint);
+        font-variant-numeric: tabular-nums; pointer-events: none;
+        opacity: 0; transition: opacity 0.4s ease;
+    }
+    .slide-counter.visible { opacity: 1; }
+    .slide-counter .current { color: var(--brass); font-weight: 600; }
+
+    /* ---------- Scroll-position dot rail (left edge, desktop) ---------- */
+    .scroll-rail {
+        position: fixed; top: 50%; left: 28px; transform: translateY(-50%); z-index: 500;
+        display: flex; flex-direction: column; align-items: center; gap: 14px;
+    }
+    .scroll-rail::before, .scroll-rail::after {
+        content: ''; width: 1px; height: 40px; background: var(--hair-strong);
+    }
+    .scroll-rail-dots { display: flex; flex-direction: column; gap: 16px; }
+    .scroll-rail-dots button {
+        width: 7px; height: 7px; border-radius: 50%; border: none; padding: 0; cursor: pointer;
+        background: var(--hair-strong); transition: background 0.3s ease, transform 0.3s ease;
+        position: relative;
+    }
+    .scroll-rail-dots button.active { background: var(--brass); transform: scale(1.4); }
+    .scroll-rail-dots button .rail-label {
+        position: absolute; left: 18px; top: 50%; transform: translateY(-50%);
+        font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim);
+        white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+    }
+    .scroll-rail-dots button:hover .rail-label { opacity: 1; }
     .hero-title { font-family: 'Fraunces', serif; font-weight: 700; font-size: clamp(3.4rem, 9.6vw, 7.4rem); line-height: 0.96; letter-spacing: -0.01em; margin: 28px 0 32px; }
     .hero-title em { font-style: italic; font-weight: 500; color: var(--brass); }
     .hero-title .line { display: block; overflow: hidden; margin-left: -0.5vw; padding-left: 0.5vw; }
@@ -244,6 +276,7 @@
         .nav-links.open { transform: translateX(0); }
         .burger { display: flex; }
         .hero-tag { display: none; }
+        .slide-counter, .scroll-rail { display: none; }
         .hero-content { margin-left: 0; }
         .overlap-strip { justify-content: center; margin-top: -50px; margin-bottom: -50px; padding: 0 6vw; }
         .overlap-card { max-width: 100%; }
@@ -292,8 +325,17 @@
         </div>
     </nav>
 
+    <!-- Section wayfinding — dot rail + counter, both desktop-only progressive
+         enhancements referencing the Louvre-style reel: a thin scroll-position
+         rail on the left edge and a small "01 / 06" counter, updated by
+         IntersectionObserver as each full-bleed section comes into view. -->
+    <div class="slide-counter" id="slideCounter"><span class="current">01</span> / 06</div>
+    <div class="scroll-rail">
+        <div class="scroll-rail-dots" id="scrollRailDots"></div>
+    </div>
+
     <!-- Hero — broken grid: headline bleeds off the left edge, rotated eyebrow floats over the frame -->
-    <section class="hero" style="--hero-img:url('images/hero.jpg')">
+    <section class="hero" id="home" style="--hero-img:url('images/hero.jpg')">
         <div class="hero-bg"></div>
         <div class="hero-shade"></div>
         <div class="hero-tag">Peshawar &middot; Est. 2026</div>
@@ -591,6 +633,51 @@
             });
         }, { threshold: 0.18 });
         revealEls.forEach(function (el) { io.observe(el); });
+
+        // Wayfinding — scroll-position dot rail + "01 / 06" counter, built
+        // from the page's six full-bleed sections.
+        var railSections = [
+            { id: 'home', label: 'Welcome' },
+            { id: 'lawn', label: 'The Lawn' },
+            { id: 'rooms', label: 'Rooms' },
+            { id: 'meetings', label: 'Meetings' },
+            { id: 'cafe', label: 'Café' },
+            { id: 'contact', label: 'Contact' }
+        ];
+        var railDotsWrap = document.getElementById('scrollRailDots');
+        var slideCounter = document.getElementById('slideCounter');
+        var slideCounterCurrent = slideCounter.querySelector('.current');
+        var railButtons = railSections.map(function (s, i) {
+            var btn = document.createElement('button');
+            btn.setAttribute('aria-label', 'Go to ' + s.label);
+            var lbl = document.createElement('span');
+            lbl.className = 'rail-label';
+            lbl.textContent = s.label;
+            btn.appendChild(lbl);
+            btn.addEventListener('click', function () {
+                var el = document.getElementById(s.id);
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+            });
+            railDotsWrap.appendChild(btn);
+            return btn;
+        });
+        if (railButtons.length) railButtons[0].classList.add('active');
+
+        var railObserver = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                var idx = railSections.findIndex(function (s) { return s.id === entry.target.id; });
+                if (idx === -1) return;
+                if (entry.isIntersecting) {
+                    railButtons.forEach(function (b, i) { b.classList.toggle('active', i === idx); });
+                    slideCounterCurrent.textContent = String(idx + 1).padStart(2, '0');
+                    slideCounter.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.5 });
+        railSections.forEach(function (s) {
+            var el = document.getElementById(s.id);
+            if (el) railObserver.observe(el);
+        });
 
         // Room carousel — dot indicator so the mobile scroll strip reads as
         // "there are more rooms" rather than an oddly-cut-off row.
