@@ -1747,7 +1747,15 @@ body.has-offer .navbar {
 }
 
 table.admin-table {
-    width: 100%;
+    /* min-width, not width: fills its .table-scroll wrapper when content is
+       narrow (the common case), but a fixed width:100% would forcibly cap
+       the table at the wrapper's width — with table-layout:auto that left
+       browsers no choice but to squeeze narrow columns (like Actions, once
+       it holds 3-4 pill buttons) and wrap their contents instead of letting
+       the table grow past the wrapper and scroll horizontally, which is the
+       whole reason .table-scroll exists. min-width preserves the "fill the
+       container" look while still allowing that overflow when needed. */
+    min-width: 100%;
     border-collapse: collapse;
     background: var(--white);
     box-shadow: var(--shadow);
@@ -1759,6 +1767,19 @@ table.admin-table td {
     text-align: left;
     border-bottom: 1px solid var(--hair);
     font-size: 0.88rem;
+}
+
+/* The Actions column (always last — either literal "Actions" or an unlabeled
+   icon column) holds several inline-block pill buttons. Left to wrap
+   normally, table-layout:auto treats a single button as that column's whole
+   min-content width and happily wraps the rest underneath it one at a time,
+   ballooning the row's height instead of growing the table sideways into
+   the .table-scroll wrapper's horizontal scroll (which exists for exactly
+   this). Forcing nowrap here makes the browser size the column for the
+   full unwrapped button row, so they sit on one line and scroll instead of
+   stacking down the page. */
+table.admin-table td:last-child {
+    white-space: nowrap;
 }
 
 table.admin-table th {

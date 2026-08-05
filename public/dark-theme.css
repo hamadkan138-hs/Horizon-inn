@@ -112,6 +112,23 @@ input[type="date"], input[type="datetime-local"] { color-scheme: dark; }
 .action-btn.cancel:hover { background: rgba(224,104,90,0.12) !important; border-color: var(--danger) !important; color: var(--danger) !important; }
 .action-btn.details-toggle { border-color: var(--hair) !important; color: var(--text-2) !important; }
 .action-btn:disabled { opacity: 0.35 !important; cursor: not-allowed; transform: none !important; color: var(--text-2) !important; }
+
+/* A table Actions cell often holds 2-4 of these pill buttons side by side
+   (View/WhatsApp/Email/Invoice on Bookings, Accept/Reject on Front Desk
+   requests, Save/Reset/Delete on Investors, etc.). The 8px/18px padding
+   above reads well for a single standalone button, but multiplied across
+   several buttons in one narrow column it makes each one too wide to share
+   a line — they wrap one-per-line and balloon that row's height, which is
+   what made the Bookings table look broken (huge dead space, only a
+   handful of rows fitting on screen). Compact them back down specifically
+   inside table cells so several still fit on one line; buttons elsewhere
+   (forms, standalone actions) keep the roomier default above. */
+.admin-table td .action-btn {
+    padding: 6px 10px !important;
+    font-size: 0.78rem;
+    margin-right: 4px;
+    margin-bottom: 4px;
+}
 .date-presets button.active { background: var(--gold) !important; color: #14151a !important; border-color: transparent !important; }
 
 /* ---------------- Responsive nav: pill row → sidebar on desktop ---------------- */
