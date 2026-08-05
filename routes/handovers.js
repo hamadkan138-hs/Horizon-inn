@@ -9,9 +9,16 @@ router.use(adminAuth, requireRole('admin', 'staff'));
 
 const RECEIVER_TYPES = ['owner', 'bank', 'staff'];
 
-// A booking's single payment_method field is bucketed into the three cash
-// "buckets" the handover cares about. 'pay_at_property' means the guest paid
-// in person, which in practice at a small guest house is cash in hand.
+// A handover is a physical cash custody transfer — it must reflect what's
+// actually IN THE DRAWER, not what a guest said their intended payment
+// method would be when they booked. bookings.payment_method is that
+// original intent (almost always 'pay_at_property' for a walk-in), which
+// can diverge from how the money was actually settled — e.g. an advance
+// paid via JazzCash with the balance collected in cash at checkout. Real
+// settlement is recorded per-transaction on the payments table's own
+// `method` column ('cash' / 'bank_transfer' / 'easypaisa' / 'jazzcash'),
+// so that's what cash/bank/online totals are built from below — not from
+// the booking-level field.
 function bucketFor(method) {
   if (method === 'bank_transfer') return 'bank';
   if (method === 'easypaisa' || method === 'jazzcash') return 'online';
@@ -25,6 +32,22 @@ async function computeUnswept() {
     WHERE status = 'checked_out' AND handover_id IS NULL
     ORDER BY created_at ASC
   `);
+
+  const bookingIds = bookingsResult.rows.map((b) => b.id);
+  const paymentsByBooking = {};
+  if (bookingIds.length) {
+    const placeholders = bookingIds.map(() => '?').join(',');
+    const paymentsResult = await db.execute({
+      sql: `SELECT booking_id, method, SUM(amount) AS total FROM payments WHERE booking_id IN (${placeholders}) GROUP BY booking_id, method`,
+      args: bookingIds
+    });
+    paymentsResult.rows.forEach((r) => {
+      const bucket = bucketFor(r.method);
+      paymentsByBooking[r.booking_id] = paymentsByBooking[r.booking_id] || { cash: 0, bank: 0, online: 0 };
+      paymentsByBooking[r.booking_id][bucket] += Number(r.total);
+    });
+  }
+
   const expensesResult = await db.execute(`
     SELECT id, category, description, amount, expense_date
     FROM expenses
@@ -33,19 +56,35 @@ async function computeUnswept() {
   `);
 
   const totals = { cash: 0, bank: 0, online: 0 };
-  bookingsResult.rows.forEach((b) => { totals[bucketFor(b.payment_method)] += Number(b.total_amount); });
+  const bookings = bookingsResult.rows.map((b) => {
+    const p = paymentsByBooking[b.id] || { cash: 0, bank: 0, online: 0 };
+    totals.cash += p.cash;
+    totals.bank += p.bank;
+    totals.online += p.online;
+    return { ...b, cashAmount: p.cash, bankAmount: p.bank, onlineAmount: p.online };
+  });
+  // The handover's own bookings list is cash bookings only — a stay paid
+  // entirely by bank/online never touches the till, so it has no business
+  // showing up in a cash handover at all (its revenue is visible in Daily
+  // Summary instead). Every checked-out/unswept booking still gets its
+  // handover_id stamped below regardless of payment mix, so a pure-bank
+  // booking doesn't linger in this query forever — it's just never shown
+  // or counted here as cash.
+  const cashBookings = bookings.filter((b) => b.cashAmount > 0);
+
   const expensesTotal = expensesResult.rows.reduce((sum, e) => sum + Number(e.amount), 0);
   const netCashHanded = totals.cash - expensesTotal;
 
   return {
-    bookings: bookingsResult.rows,
+    bookings: cashBookings,
+    allSweptBookingIds: bookingsResult.rows.map((b) => b.id),
     expenses: expensesResult.rows,
     cashTotal: totals.cash,
     bankTotal: totals.bank,
     onlineTotal: totals.online,
     expensesTotal,
     netCashHanded,
-    bookingCount: bookingsResult.rows.length
+    bookingCount: cashBookings.length
   };
 }
 
@@ -137,7 +176,12 @@ router.post('/', async (req, res) => {
     // leaves handover_id untouched so the pending total is unaffected and
     // the same cash still shows up (correctly) in the next real handover.
     if (receiverType !== 'staff') {
-      if (summary.bookings.length) {
+      // Every checked-out/unswept booking closes out here, cash or not —
+      // a bank/online-only stay never touches the till so it's excluded
+      // from summary.bookings and the cash totals above, but it still
+      // needs handover_id set or it would keep reappearing in every future
+      // preview forever with nothing to actually collect.
+      if (summary.allSweptBookingIds.length) {
         await db.execute({
           sql: `UPDATE bookings SET handover_id = ? WHERE status = 'checked_out' AND handover_id IS NULL`,
           args: [handoverId]

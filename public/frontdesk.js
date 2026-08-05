@@ -404,6 +404,53 @@ document.getElementById('fdExpenseBtn').addEventListener('click', () => {
     document.getElementById('fdExpenseMessage').textContent = '';
     loadFdExpenses();
 });
+
+/* ---------------- Daily Summary ---------------- */
+function fdDailyRowHtml(b) {
+    return `
+        <tr>
+            <td>${escapeHtml(b.name)}<br><small>${escapeHtml(b.phone || '')}</small></td>
+            <td>${escapeHtml(b.room_name)}${b.physical_room_number ? `<br><small>Room ${escapeHtml(b.physical_room_number)}</small>` : ''}</td>
+            <td>${escapeHtml(b.status)}</td>
+            <td>${money(b.balance)}</td>
+        </tr>
+    `;
+}
+
+async function loadFdDailySummary() {
+    try {
+        const data = await apiGet('/api/reports/daily-summary');
+
+        document.getElementById('fdDailyCards').innerHTML = `
+            <div class="summary-card"><span>Check-ins</span><strong>${data.checkins.length}</strong></div>
+            <div class="summary-card"><span>Check-outs</span><strong>${data.checkouts.length}</strong></div>
+            <div class="summary-card"><span>Total Revenue Today</span><strong>${money(data.totalReceivedToday)}</strong></div>
+            <div class="summary-card"><span>Cash Received Today</span><strong>${money(data.cashReceivedToday)}</strong></div>
+            <div class="summary-card"><span>Bank Transfers Today</span><strong>${money(data.bankReceivedToday)}</strong></div>
+            <div class="summary-card"><span>Online Payments Today</span><strong>${money(data.onlineReceivedToday)}</strong></div>
+            <div class="summary-card"><span>Expenses Today</span><strong>${money(data.expensesTotalToday)}</strong></div>
+            <div class="summary-card"><span>Net Cash Today</span><strong>${money(data.netCashToday)}</strong></div>
+            <div class="summary-card"><span>Total Outstanding</span><strong>${money(data.outstandingTotal)}</strong></div>
+        `;
+
+        document.getElementById('fdDailyCheckinsBody').innerHTML = data.checkins.map(fdDailyRowHtml).join('') || '<tr><td colspan="4">No check-ins scheduled.</td></tr>';
+        document.getElementById('fdDailyCheckoutsBody').innerHTML = data.checkouts.map(fdDailyRowHtml).join('') || '<tr><td colspan="4">No check-outs scheduled.</td></tr>';
+        document.getElementById('fdDailySummaryExpensesBody').innerHTML = data.expensesToday.map((ex) => `
+            <tr><td>${escapeHtml(ex.category)}</td><td>${escapeHtml(ex.description || '')}</td><td>${money(ex.amount)}</td></tr>
+        `).join('') || '<tr><td colspan="3">No expenses recorded today.</td></tr>';
+        document.getElementById('fdOutstandingBody').innerHTML = data.outstandingBookings.map((b) => `
+            <tr><td>${escapeHtml(b.name)}<br><small>${escapeHtml(b.phone || '')}</small></td><td>${escapeHtml(b.room_name)}</td><td>${money(b.total_amount)}</td><td>${money(b.balance)}</td></tr>
+        `).join('') || '<tr><td colspan="4">No outstanding balances.</td></tr>';
+    } catch (err) { /* best-effort */ }
+}
+
+document.getElementById('fdDailySummaryBtn').addEventListener('click', () => {
+    document.getElementById('fdDailySummaryModalOverlay').style.display = 'flex';
+    loadFdDailySummary();
+});
+document.getElementById('fdCloseDailySummaryModalBtn').addEventListener('click', () => {
+    document.getElementById('fdDailySummaryModalOverlay').style.display = 'none';
+});
 document.getElementById('fdCloseExpenseModalBtn').addEventListener('click', () => {
     document.getElementById('fdExpenseModalOverlay').style.display = 'none';
 });
@@ -441,23 +488,29 @@ async function loadFdHandoverPanel() {
             apiGet('/api/handovers')
         ]);
 
+        // Cash is the only figure actually part of this handover — bank/online
+        // are shown for reference only (see Daily Summary for those), never
+        // summed together into one "grand total", which would imply money
+        // that never touched the till is part of what's being handed over.
         document.getElementById('fdHandoverSummaryCards').innerHTML = `
-            <div class="summary-card"><span>Cash Collected</span><strong>${money(preview.cashTotal)}</strong></div>
-            <div class="summary-card"><span>Bank Transfers</span><strong>${money(preview.bankTotal)}</strong></div>
-            <div class="summary-card"><span>Online Payments</span><strong>${money(preview.onlineTotal)}</strong></div>
-            <div class="summary-card"><span>Grand Total Pending</span><strong>${money(preview.cashTotal + preview.bankTotal + preview.onlineTotal)}</strong></div>
+            <div class="summary-card"><span>Cash Pending Handover</span><strong>${money(preview.cashTotal)}</strong></div>
+            <div class="summary-card"><span>Bank Transfers (reference only)</span><strong>${money(preview.bankTotal)}</strong></div>
+            <div class="summary-card"><span>Online Payments (reference only)</span><strong>${money(preview.onlineTotal)}</strong></div>
         `;
 
+        // preview.bookings is already cash-only, and cashAmount is that
+        // booking's cash portion specifically (not total_amount, which could
+        // include a bank/online portion too for a mixed-payment stay).
         document.getElementById('fdHandoverSimpleList').innerHTML = preview.bookings.map((b) => `
             <li>
-                <span class="item-label">${escapeHtml(b.name)} <span class="item-meta">${escapeHtml(b.invoice_number)} &middot; ${fdPaymentMethodBucketLabel(b.payment_method)}</span></span>
-                <span class="item-amount">${money(b.total_amount)}</span>
+                <span class="item-label">${escapeHtml(b.name)} <span class="item-meta">${escapeHtml(b.invoice_number)} &middot; Cash</span></span>
+                <span class="item-amount">${money(b.cashAmount)}</span>
             </li>
-        `).join('') || '<li class="empty-row">No completed checkouts awaiting handover.</li>';
+        `).join('') || '<li class="empty-row">No cash checkouts awaiting handover.</li>';
 
         document.getElementById('fdHandoverSimpleTotal').innerHTML = `
-            <span class="label">Total Collection</span>
-            <span class="value">${money(preview.cashTotal + preview.bankTotal + preview.onlineTotal)}</span>
+            <span class="label">Total Cash Pending Handover</span>
+            <span class="value">${money(preview.cashTotal)}</span>
         `;
 
         document.getElementById('fdHandoverHistoryList').innerHTML = history.slice(0, 5).map((h) => `
@@ -465,9 +518,9 @@ async function loadFdHandoverPanel() {
                 <span class="item-label">
                     ${formatPKT(h.created_at)}
                     <span class="status-pill ${h.receiver_type === 'staff' ? 'active-pending' : 'handed-over'}" style="margin-left: 8px;">${h.receiver_type === 'staff' ? 'Custody Transfer' : 'Settled'}</span>
-                    <span class="item-meta">${h.booking_count} booking(s) &middot; By ${escapeHtml(h.staff_name)} &rarr; ${escapeHtml(h.receiver_type)}: ${escapeHtml(h.receiver_name)}</span>
+                    <span class="item-meta">${h.booking_count} booking(s) &middot; Cash ${money(h.cash_total)} &middot; Bank ${money(h.bank_total)} &middot; Online ${money(h.online_total)} &middot; By ${escapeHtml(h.staff_name)} &rarr; ${escapeHtml(h.receiver_type)}: ${escapeHtml(h.receiver_name)}</span>
                 </span>
-                <span class="item-amount">${money(h.net_cash_handed + h.bank_total + h.online_total)}</span>
+                <span class="item-amount">${money(h.net_cash_handed)}</span>
             </li>
         `).join('') || '<li class="empty-row">No handovers recorded yet.</li>';
     } catch (err) { /* best-effort */ }
@@ -596,6 +649,8 @@ document.getElementById('backFromNew').addEventListener('click', goToIdInput);
 document.getElementById('backFromCheckedIn').addEventListener('click', goToIdInput);
 
 /* STATE 2a: Existing guest found, not currently staying */
+let currentGuestDues = [];
+
 function showGuestFoundState(cnic, info) {
     showState('guestFound');
     document.getElementById('foundName').textContent = info.name || '—';
@@ -603,6 +658,16 @@ function showGuestFoundState(cnic, info) {
     document.getElementById('foundVisits').textContent = info.visitCount || 0;
     document.getElementById('foundLastStay').textContent = info.lastStay || '—';
     document.getElementById('foundMessage').textContent = '';
+
+    currentGuestDues = info.dues || [];
+    const duesNotice = document.getElementById('foundDuesNotice');
+    if (currentGuestDues.length) {
+        document.getElementById('foundDuesAmount').textContent = money(info.duesTotal);
+        document.getElementById('foundDuesApplyCheckbox').checked = true;
+        duesNotice.style.display = 'block';
+    } else {
+        duesNotice.style.display = 'none';
+    }
 
     // Animate card expansion and content entrance
     const card = document.getElementById('stateGuestFound');
@@ -658,6 +723,16 @@ document.getElementById('foundCheckinForm').addEventListener('submit', async (e)
             roomId, checkin, checkout,
             checkInNow: true
         });
+
+        let finalTotal = Number(result.booking.total_amount);
+        const shouldApplyDues = currentGuestDues.length && document.getElementById('foundDuesApplyCheckbox').checked;
+        if (shouldApplyDues) {
+            for (const due of currentGuestDues) {
+                const applyResult = await apiSend('POST', `/api/customer-dues/${due.id}/apply/${result.booking.id}`, {});
+                finalTotal = applyResult.totals.total;
+            }
+        }
+
         showCheckedInState({
             id: result.booking.id,
             roomName: '',
@@ -666,7 +741,7 @@ document.getElementById('foundCheckinForm').addEventListener('submit', async (e)
             checkin: result.booking.checkin,
             checkout: result.booking.checkout,
             createdAt: result.booking.created_at,
-            totalAmount: Number(result.booking.total_amount),
+            totalAmount: finalTotal,
             paidTotal: 0
         }, result.booking.name);
     } catch (err) {

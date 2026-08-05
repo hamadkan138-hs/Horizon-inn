@@ -162,6 +162,7 @@ document.querySelectorAll('.admin-tab[data-tab]').forEach((btn) => {
         if (btn.dataset.tab === 'guests') loadGuests();
         if (btn.dataset.tab === 'rooms') loadRoomsPanel();
         if (btn.dataset.tab === 'expenses') loadExpenses();
+        if (btn.dataset.tab === 'dues') loadCustomerDues();
         if (btn.dataset.tab === 'minibar') loadMinibarPanel();
         if (btn.dataset.tab === 'reports') loadReports();
         if (btn.dataset.tab === 'staff') loadStaff();
@@ -250,8 +251,8 @@ async function loadOverview() {
         document.getElementById('kpiOccupancyValue').textContent = `${occupancyPercent}%`;
         document.getElementById('kpiOccupancyMeta').textContent = `${data.occupancy.occupied} of ${data.occupancy.capacity} rooms`;
 
-        document.getElementById('kpiRevenueValue').textContent = `Rs. ${Math.round(data.cashReceivedToday).toLocaleString('en-PK')}`;
-        document.getElementById('kpiRevenueMeta').textContent = data.cashReceivedToday > 0 ? '↑ Growth' : 'No revenue yet';
+        document.getElementById('kpiRevenueValue').textContent = `Rs. ${Math.round(data.totalReceivedToday).toLocaleString('en-PK')}`;
+        document.getElementById('kpiRevenueMeta').textContent = data.totalReceivedToday > 0 ? '↑ Growth' : 'No revenue yet';
 
         document.getElementById('kpiBookingsValue').textContent = data.arrivals.length + data.departures.length;
         document.getElementById('kpiBookingsMeta').textContent = `${data.arrivals.length} check-ins, ${data.departures.length} check-outs`;
@@ -276,7 +277,7 @@ async function loadOverview() {
             // Count-up animations for KPI values (start immediately)
             if (typeof AnimationEngine !== 'undefined') {
                 AnimationEngine.countUp('#kpiOccupancyValue', occupancyPercent, 1200);
-                AnimationEngine.countUp('#kpiRevenueValue', Math.round(data.cashReceivedToday), 1200);
+                AnimationEngine.countUp('#kpiRevenueValue', Math.round(data.totalReceivedToday), 1200);
                 AnimationEngine.countUp('#kpiBookingsValue', data.arrivals.length + data.departures.length, 1200);
                 AnimationEngine.countUp('#kpiExpensesValue', Math.round(data.expensesTotalToday), 1200);
             }
@@ -286,6 +287,7 @@ async function loadOverview() {
             { label: 'Arriving Today', value: data.arrivals.length, tab: 'bookings' },
             { label: 'Departing Today', value: data.departures.length, tab: 'bookings' },
             { label: 'Occupancy Today', value: `${data.occupancy.occupied}/${data.occupancy.capacity} rooms (${Math.round(data.occupancy.rate * 100)}%)`, tab: 'availability' },
+            { label: 'Total Revenue Today', value: money(data.totalReceivedToday), tab: 'daily' },
             { label: 'Cash Received Today', value: money(data.cashReceivedToday), tab: 'daily' },
             { label: 'Expenses Today', value: money(data.expensesTotalToday), tab: 'daily' },
             { label: 'Net Cash Today', value: money(data.netCashToday), tab: 'daily' },
@@ -1035,7 +1037,10 @@ async function loadDailySummary() {
         document.getElementById('dailyCards').innerHTML = `
             <div class="summary-card"><span>Check-ins</span><strong>${data.checkins.length}</strong></div>
             <div class="summary-card"><span>Check-outs</span><strong>${data.checkouts.length}</strong></div>
+            <div class="summary-card"><span>Total Revenue Today</span><strong>${money(data.totalReceivedToday)}</strong></div>
             <div class="summary-card"><span>Cash Received Today</span><strong>${money(data.cashReceivedToday)}</strong></div>
+            <div class="summary-card"><span>Bank Transfers Today</span><strong>${money(data.bankReceivedToday)}</strong></div>
+            <div class="summary-card"><span>Online Payments Today</span><strong>${money(data.onlineReceivedToday)}</strong></div>
             <div class="summary-card"><span>Expenses Today</span><strong>${money(data.expensesTotalToday)}</strong></div>
             <div class="summary-card"><span>Net Cash Today</span><strong>${money(data.netCashToday)}</strong></div>
             <div class="summary-card"><span>Total Outstanding</span><strong>${money(data.outstandingTotal)}</strong></div>
@@ -1094,22 +1099,25 @@ async function loadHandoverPanel() {
             apiGet('/api/handovers')
         ]);
 
+        // Cash is the only figure that's actually part of this handover — a
+        // handover is a physical cash custody transfer, not a revenue report
+        // (that's what Daily Summary is for). Bank/online are shown here only
+        // as reference so staff can see the full picture; they're never
+        // summed into a "grand total" alongside cash, since that would imply
+        // money that never touched the till is somehow part of what's being
+        // handed over.
         document.getElementById('handoverSummaryCards').innerHTML = `
             <div class="cash-summary-card animate-row">
-                <div class="cash-summary-label">Total Cash Collected</div>
+                <div class="cash-summary-label">Cash Pending Handover</div>
                 <div class="cash-summary-value" id="handoverCashValue">${money(preview.cashTotal)}</div>
             </div>
             <div class="cash-summary-card animate-row">
-                <div class="cash-summary-label">Total Bank Transfers</div>
+                <div class="cash-summary-label">Bank Transfers (reference only &mdash; see Daily Summary)</div>
                 <div class="cash-summary-value" id="handoverBankValue">${money(preview.bankTotal)}</div>
             </div>
             <div class="cash-summary-card animate-row">
-                <div class="cash-summary-label">Total Online Payments</div>
+                <div class="cash-summary-label">Online Payments (reference only &mdash; see Daily Summary)</div>
                 <div class="cash-summary-value" id="handoverOnlineValue">${money(preview.onlineTotal)}</div>
-            </div>
-            <div class="cash-summary-card animate-row">
-                <div class="cash-summary-label">Grand Total (Pending Handover)</div>
-                <div class="cash-summary-value" id="handoverGrandValue">${money(preview.cashTotal + preview.bankTotal + preview.onlineTotal)}</div>
             </div>
         `;
 
@@ -1120,19 +1128,22 @@ async function loadHandoverPanel() {
             AnimationEngine.countUp('#handoverCashValue', preview.cashTotal, 1000);
             AnimationEngine.countUp('#handoverBankValue', preview.bankTotal, 1000);
             AnimationEngine.countUp('#handoverOnlineValue', preview.onlineTotal, 1000);
-            AnimationEngine.countUp('#handoverGrandValue', preview.cashTotal + preview.bankTotal + preview.onlineTotal, 1000);
         }
 
+        // preview.bookings is already cash-only (bank/online-only stays are
+        // excluded entirely), and cashAmount is that booking's cash portion
+        // specifically — not its total_amount, which could include a
+        // bank/online portion too for a mixed-payment stay.
         document.getElementById('handoverSimpleList').innerHTML = preview.bookings.map((b) => `
             <li>
-                <span class="item-label">${escapeHtml(b.name)} <span class="item-meta">${escapeHtml(b.invoice_number)} &middot; ${paymentMethodBucketLabel(b.payment_method)}</span></span>
-                <span class="item-amount">${money(b.total_amount)}</span>
+                <span class="item-label">${escapeHtml(b.name)} <span class="item-meta">${escapeHtml(b.invoice_number)} &middot; Cash</span></span>
+                <span class="item-amount">${money(b.cashAmount)}</span>
             </li>
-        `).join('') || '<li class="empty-row">No completed checkouts awaiting handover.</li>';
+        `).join('') || '<li class="empty-row">No cash checkouts awaiting handover.</li>';
 
         document.getElementById('handoverSimpleTotal').innerHTML = `
-            <span class="label">Total Collection</span>
-            <span class="value">${money(preview.cashTotal + preview.bankTotal + preview.onlineTotal)}</span>
+            <span class="label">Total Cash Pending Handover</span>
+            <span class="value">${money(preview.cashTotal)}</span>
         `;
 
         const checkedOutBookings = checkedOutData.bookings
@@ -1163,7 +1174,7 @@ async function loadHandoverPanel() {
                         ${h.receiver_type === 'staff' ? ' &middot; shift handover only — still counted in the pending total until banked/paid out' : ''}
                     </span>
                 </span>
-                <span class="item-amount">${money(h.net_cash_handed + h.bank_total + h.online_total)}</span>
+                <span class="item-amount">${money(h.net_cash_handed)}</span>
             </li>
         `).join('') || '<li class="empty-row">No handovers recorded yet.</li>';
     } catch (err) { /* handled */ }
@@ -1786,6 +1797,41 @@ async function loadExpenses() {
         });
     } catch (err) { /* handled */ }
 }
+
+/* ---------------- Customer Dues ---------------- */
+const DUES_STATUS_LABELS = { outstanding: 'Outstanding', settled: 'Settled', waived: 'Waived' };
+
+async function loadCustomerDues() {
+    try {
+        const status = document.getElementById('duesStatusFilter').value;
+        const dues = await apiGet(`/api/customer-dues${status ? `?status=${status}` : ''}`);
+        const canWaive = currentUser.role === 'admin';
+
+        document.getElementById('duesBody').innerHTML = dues.map((d) => `
+            <tr>
+                <td>${escapeHtml(d.guest_name)}</td>
+                <td>${escapeHtml(d.cnic || d.phone || '—')}</td>
+                <td>#${d.booking_id}${d.settled_booking_id ? ` &rarr; #${d.settled_booking_id}` : ''}</td>
+                <td>${money(d.amount)}</td>
+                <td><span class="status-pill ${d.status === 'outstanding' ? 'pending' : 'confirmed'}">${DUES_STATUS_LABELS[d.status] || d.status}</span></td>
+                <td>${formatPKT(d.created_at)}</td>
+                <td>${canWaive && d.status === 'outstanding' ? `<button class="action-btn cancel dues-waive-btn" data-id="${d.id}">Waive</button>` : ''}</td>
+            </tr>
+        `).join('') || '<tr><td colspan="7">No dues to show.</td></tr>';
+
+        document.querySelectorAll('.dues-waive-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('Waive this due? The guest will no longer be asked to pay it.')) return;
+                try {
+                    await apiSend('PATCH', `/api/customer-dues/${btn.dataset.id}`, { status: 'waived' });
+                    loadCustomerDues();
+                } catch (err) { alert(err.message); }
+            });
+        });
+    } catch (err) { /* handled */ }
+}
+
+document.getElementById('duesStatusFilter').addEventListener('change', loadCustomerDues);
 
 document.getElementById('expenseForm').addEventListener('submit', async (e) => {
     e.preventDefault();
