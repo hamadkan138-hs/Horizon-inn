@@ -1734,22 +1734,54 @@ document.getElementById('rateRuleForm').addEventListener('submit', async (e) => 
 async function loadExpenses() {
     try {
         const expenses = await apiGet('/api/expenses');
-        const canDelete = currentUser.role === 'admin';
-        document.getElementById('expensesBody').innerHTML = expenses.map((ex) => `
+        const canManage = currentUser.role === 'admin';
+        document.getElementById('expensesBody').innerHTML = expenses.map((ex) => canManage ? `
+            <tr data-id="${ex.id}">
+                <td><input type="date" class="exp-date" value="${ex.expense_date}" style="width: 140px;"></td>
+                <td><input type="text" class="exp-category" value="${escapeHtml(ex.category)}" style="width: 130px;"></td>
+                <td><input type="text" class="exp-description" value="${escapeHtml(ex.description)}" style="width: 160px;"></td>
+                <td><input type="number" class="exp-amount" value="${ex.amount}" min="0" step="0.01" style="width: 100px;"></td>
+                <td>
+                    <button class="action-btn confirm exp-save-btn">Save</button>
+                    <button class="action-btn cancel exp-delete-btn">Delete</button>
+                </td>
+            </tr>
+        ` : `
             <tr>
                 <td>${ex.expense_date}</td>
                 <td>${escapeHtml(ex.category)}</td>
                 <td>${escapeHtml(ex.description)}</td>
                 <td>${money(ex.amount)}</td>
-                <td>${canDelete ? `<button class="action-btn cancel" data-id="${ex.id}">Delete</button>` : ''}</td>
+                <td></td>
             </tr>
         `).join('') || '<tr><td colspan="5">No expenses recorded.</td></tr>';
 
-        document.querySelectorAll('#expensesBody .action-btn.cancel').forEach((btn) => {
+        if (!canManage) return;
+
+        document.querySelectorAll('#expensesBody .exp-save-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const row = btn.closest('tr');
+                const id = row.dataset.id;
+                try {
+                    await apiSend('PATCH', `/api/expenses/${id}`, {
+                        category: row.querySelector('.exp-category').value,
+                        description: row.querySelector('.exp-description').value,
+                        amount: Number(row.querySelector('.exp-amount').value),
+                        expenseDate: row.querySelector('.exp-date').value
+                    });
+                    loadExpenses();
+                } catch (err) { alert(err.message); }
+            });
+        });
+
+        document.querySelectorAll('#expensesBody .exp-delete-btn').forEach((btn) => {
             btn.addEventListener('click', async () => {
                 if (!confirm('Delete this expense?')) return;
-                await apiSend('DELETE', `/api/expenses/${btn.dataset.id}`, {});
-                loadExpenses();
+                const id = btn.closest('tr').dataset.id;
+                try {
+                    await apiSend('DELETE', `/api/expenses/${id}`, {});
+                    loadExpenses();
+                } catch (err) { alert(err.message); }
             });
         });
     } catch (err) { /* handled */ }
