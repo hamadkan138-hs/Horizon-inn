@@ -33,6 +33,7 @@ const minibarRouter = require('./routes/minibar');
 const adminDataRouter = require('./routes/adminData');
 const kioskRouter = require('./routes/kiosk');
 const chatRouter = require('./routes/chat');
+const customerDuesRouter = require('./routes/customerDues');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -74,6 +75,7 @@ app.use('/api/minibar', minibarRouter);
 app.use('/api/admin', adminDataRouter);
 app.use('/api/kiosk', kioskRouter);
 app.use('/api/chat', chatRouter);
+app.use('/api/customer-dues', customerDuesRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

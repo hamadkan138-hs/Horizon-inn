@@ -1045,7 +1045,29 @@ router.post('/:id/checkout', adminAuth, requireRole('admin', 'staff'), async (re
     });
 
     const updated = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
-    res.json({ booking: updated.rows[0], payment, totals });
+    const finalBooking = updated.rows[0];
+
+    // A guest who checks out still owing money has that balance tracked as a
+    // due against them rather than left implicit on this now-locked booking
+    // — front desk can then surface and collect it the next time this guest
+    // books (see GET /api/guests/lookup and routes/customerDues.js).
+    const paidResult = await db.execute({ sql: 'SELECT COALESCE(SUM(amount), 0) AS paid FROM payments WHERE booking_id = ?', args: [req.params.id] });
+    const finalBalance = Number(finalBooking.total_amount) - Number(paidResult.rows[0].paid);
+    let due = null;
+    if (finalBalance > 0.01) {
+      const guestKey = finalBooking.cnic && finalBooking.cnic.trim() ? finalBooking.cnic.trim() : finalBooking.email;
+      const dueInsert = await db.execute({
+        sql: `
+          INSERT INTO customer_dues (booking_id, guest_key, guest_name, cnic, phone, amount)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `,
+        args: [req.params.id, guestKey, finalBooking.name, finalBooking.cnic || '', finalBooking.phone || '', finalBalance]
+      });
+      const dueRow = await db.execute({ sql: 'SELECT * FROM customer_dues WHERE id = ?', args: [Number(dueInsert.lastInsertRowid)] });
+      due = dueRow.rows[0];
+    }
+
+    res.json({ booking: finalBooking, payment, totals, due });
   } catch (err) {
     if (err instanceof BookingLockedError) return res.status(err.status).json({ error: err.message });
     console.error(err);

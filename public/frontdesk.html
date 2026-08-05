@@ -31,6 +31,7 @@
                 <li><button type="button" class="kiosk-nav-btn" id="fdMinibarBtn"><i class="fas fa-martini-glass"></i> Mini Bar</button></li>
                 <li><button type="button" class="kiosk-nav-btn" id="fdExpenseBtn"><i class="fas fa-money-bill-wave"></i> Expenses</button></li>
                 <li><button type="button" class="kiosk-nav-btn" id="fdHandoverBtn"><i class="fas fa-hand-holding-dollar"></i> Cash Handover</button></li>
+                <li><button type="button" class="kiosk-nav-btn" id="fdDailySummaryBtn"><i class="fas fa-chart-line"></i> Daily Summary</button></li>
                 <li>
                     <button type="button" class="bell-btn" id="fdRequestsBtn" title="New booking requests">
                         <i class="fas fa-bell"></i>
@@ -83,6 +84,14 @@
                     <div style="background: rgba(59, 130, 246, 0.08); padding: 12px; border-radius: 8px;"><span class="label">Phone</span><strong id="foundPhone" style="display: block; margin-top: 4px; font-size: 1rem;"></strong></div>
                     <div style="background: rgba(59, 130, 246, 0.08); padding: 12px; border-radius: 8px;"><span class="label">Previous Visits</span><strong id="foundVisits" style="display: block; margin-top: 4px;"></strong></div>
                     <div style="background: rgba(59, 130, 246, 0.08); padding: 12px; border-radius: 8px;"><span class="label">Last Stay</span><strong id="foundLastStay" style="display: block; margin-top: 4px;"></strong></div>
+                </div>
+                <div id="foundDuesNotice" style="display: none; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); padding: 14px; border-radius: 8px; margin-bottom: 20px;">
+                    <strong style="color: #fbbf24;">Outstanding balance from a previous stay: <span id="foundDuesAmount"></span></strong>
+                    <p style="font-size: 0.85rem; color: var(--text-light); margin: 6px 0 10px;">Owed from booking(s) that checked out with an unpaid balance.</p>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem;">
+                        <input type="checkbox" id="foundDuesApplyCheckbox" checked>
+                        Add this to the new stay's bill
+                    </label>
                 </div>
                 <form id="foundCheckinForm" class="kiosk-form">
                     <div class="form-group">
@@ -340,6 +349,52 @@
             </div>
 
             <button type="button" class="action-btn cancel" id="fdCloseExpenseModalBtn" style="margin-top: 16px;">Close</button>
+        </div>
+    </div>
+
+    <!-- Daily Summary modal -->
+    <div class="modal-overlay" id="fdDailySummaryModalOverlay" style="display: none;">
+        <div class="modal-box" style="max-width: 820px;">
+            <h3 style="margin-bottom: 4px;">Daily Summary</h3>
+            <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 18px;">Today's check-ins, check-outs, revenue by payment method, expenses and outstanding balances.</p>
+
+            <div class="summary-cards" id="fdDailyCards" style="margin-bottom: 18px;"></div>
+
+            <div style="max-height: 55vh; overflow-y: auto;">
+                <h4 style="margin: 18px 0 8px;">Check-ins</h4>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="fdDailyCheckinsTable">
+                        <thead><tr><th>Guest</th><th>Room</th><th>Status</th><th>Balance Due</th></tr></thead>
+                        <tbody id="fdDailyCheckinsBody"></tbody>
+                    </table>
+                </div>
+
+                <h4 style="margin: 18px 0 8px;">Check-outs</h4>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="fdDailyCheckoutsTable">
+                        <thead><tr><th>Guest</th><th>Room</th><th>Status</th><th>Balance Due</th></tr></thead>
+                        <tbody id="fdDailyCheckoutsBody"></tbody>
+                    </table>
+                </div>
+
+                <h4 style="margin: 18px 0 8px;">Today's Expenses</h4>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="fdDailySummaryExpensesTable">
+                        <thead><tr><th>Category</th><th>Description</th><th>Amount</th></tr></thead>
+                        <tbody id="fdDailySummaryExpensesBody"></tbody>
+                    </table>
+                </div>
+
+                <h4 style="margin: 18px 0 8px;">Outstanding Balances (all active stays)</h4>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table" id="fdOutstandingTable">
+                        <thead><tr><th>Guest</th><th>Room</th><th>Total</th><th>Balance</th></tr></thead>
+                        <tbody id="fdOutstandingBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <button type="button" class="action-btn cancel" id="fdCloseDailySummaryModalBtn" style="margin-top: 16px;">Close</button>
         </div>
     </div>
 

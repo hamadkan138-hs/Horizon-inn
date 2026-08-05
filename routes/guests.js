@@ -73,6 +73,15 @@ router.get('/lookup', async (req, res) => {
       args: [cnic]
     });
 
+    // Any unpaid balance left over from a past, already checked-out stay —
+    // surfaced here so front desk sees it the moment they look this guest
+    // up, before creating their new booking, and can collect it via
+    // POST /api/customer-dues/:id/apply/:bookingId.
+    const duesResult = await db.execute({
+      sql: `SELECT * FROM customer_dues WHERE cnic = ? AND status = 'outstanding' ORDER BY created_at ASC`,
+      args: [cnic]
+    });
+
     const history = historyResult.rows[0] || null;
     const active = activeResult.rows[0] || null;
 
@@ -95,7 +104,9 @@ router.get('/lookup', async (req, res) => {
         createdAt: active.created_at,
         totalAmount: Number(active.total_amount),
         paidTotal: Number(active.paid_total)
-      } : null
+      } : null,
+      dues: duesResult.rows,
+      duesTotal: duesResult.rows.reduce((sum, d) => sum + Number(d.amount), 0)
     });
   } catch (err) {
     console.error(err);

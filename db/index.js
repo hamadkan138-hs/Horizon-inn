@@ -685,6 +685,27 @@ function init() {
         )
       `);
 
+      // A guest who checks out with an unpaid balance owes the property that
+      // amount going forward — recorded here (not left implicit on the now-
+      // locked, checked-out booking) so front desk can surface and collect
+      // it the next time that guest books, instead of it silently
+      // disappearing once the booking is checked out and locked.
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS customer_dues (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          booking_id INTEGER NOT NULL REFERENCES bookings(id),
+          guest_key TEXT NOT NULL,
+          guest_name TEXT NOT NULL DEFAULT '',
+          cnic TEXT NOT NULL DEFAULT '',
+          phone TEXT NOT NULL DEFAULT '',
+          amount REAL NOT NULL,
+          status TEXT NOT NULL DEFAULT 'outstanding',
+          settled_booking_id INTEGER REFERENCES bookings(id),
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          settled_at TEXT
+        )
+      `);
+
       await db.execute(`
         CREATE TABLE IF NOT EXISTS venue_bookings (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
