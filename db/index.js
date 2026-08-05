@@ -340,6 +340,20 @@ function init() {
           'Damage Policy: Guests are responsible for any damage to the room or property beyond normal wear and tear, and will be charged for repair or replacement.',
           'House Rules: No smoking indoors. Quiet hours are from 11:00 PM to 7:00 AM. Only registered guests are permitted in guest rooms. Pets are not allowed unless pre-approved.'
         ].join('\n\n'),
+        amenities_text: [
+          'Courtyard Fire Pit: A private lawn wraps a central fire pit — where most evenings actually happen, weather permitting.',
+          'Private Lawn: Low seating and string lighting, open to all guests for lounging or small gatherings.',
+          'Meeting Hall: A naturally lit, courtyard-facing space for small offsites and conferences — built to feel like the guest house, not a corporate venue.',
+          'Café: On-site, open to all guests, for breakfast and tea/coffee throughout the day.',
+          'Complimentary breakfast, high-speed WiFi, and inverter AC (heat & cool) in every room.'
+        ].join('\n\n'),
+        local_area_text: [
+          "Horizon Inn is about ten minutes from Peshawar's old city.",
+          'Qissa Khwani Bazaar: The historic "Bazaar of Storytellers" — centuries of trade, tea houses, and street food in one narrow street.',
+          'Bala Hisar Fort: A commanding Mughal-era fortress overlooking the old city.',
+          'Peshawar Museum: One of Pakistan\'s finest collections of Gandharan art and frontier history.',
+          'Sethi Mohalla: Merchant-era havelis with carved wooden facades.'
+        ].join('\n\n'),
         contact_address: 'Abdara Road, University Town, Peshawar, Pakistan (Near Doctor Habib Aesthetics Hospital)',
         contact_phone: '0333 3564462',
         contact_email: 'horizoninn55@gmail.com',
