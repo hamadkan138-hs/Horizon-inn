@@ -155,3 +155,54 @@ input::placeholder, textarea::placeholder {
    .reveal / .reveal-title / .reveal-stagger system in script.js and
    styles.css — those already read var(--gold) etc., so they pick up
    the new brass tone automatically. Nothing to duplicate here. */
+
+/* ============================================================
+   LIGHT THEME
+   Toggled by the nav's .theme-toggle switch (see theme-toggle.js),
+   which sets [data-theme="light"] on <html> and persists the choice.
+   glass-theme.css already ships a light theme, but it's a cool
+   gray-blue SaaS palette — wrong brand for this page. book-theme.css
+   loads after it, so this block wins the cascade and gives the toggle
+   a warm ivory/brass light mode instead, mirroring the same tokens
+   the dark block above sets rather than retokenizing every rule that
+   reads them.
+   ============================================================ */
+[data-theme="light"] body {
+    --charcoal: #f8f2e6;
+    --charcoal-soft: #ffffff;
+    --gold: #a8702f;
+    --gold-soft: #8f5b24;
+    --cream: #f8f2e6;
+    --white: #ffffff;
+    --text-dark: #2a2018;
+    --text-light: #7c7060;
+    --on-gold: #fffaf2;
+    --glass-bg: rgba(42, 32, 24, 0.03);
+    --glass-border: rgba(42, 32, 24, 0.1);
+    --hair: rgba(42, 32, 24, 0.12);
+    --gold-glow: rgba(168, 112, 47, 0.25);
+    --shadow: 0 20px 50px rgba(42, 32, 24, 0.1);
+    --shadow-lg: 0 30px 70px rgba(42, 32, 24, 0.14);
+
+    --bg-primary: #f8f2e6;
+    --bg-secondary: #ffffff;
+
+    background: radial-gradient(90% 60% at 15% -10%, rgba(168, 112, 47, 0.06) 0%, transparent 55%), linear-gradient(135deg, var(--bg-primary) 0%, #f1e9d8 100%) !important;
+    color: rgba(42, 32, 24, 0.92);
+}
+
+[data-theme="light"] .form-group select option {
+    background-color: #ffffff;
+    color: #2a2018;
+}
+
+[data-theme="light"] .navbar.scrolled {
+    background: rgba(248, 242, 230, 0.92) !important;
+}
+
+[data-theme="light"] .sticky-cta-bar {
+    background: rgba(248, 242, 230, 0.95) !important;
+}
+
+/* Crescent Grove keeps its own always-dark sub-theme in both site themes —
+   it's a deliberate "evening venue" mood, not meant to flip light. */
