@@ -1130,16 +1130,17 @@ async function loadHandoverPanel() {
             AnimationEngine.countUp('#handoverOnlineValue', preview.onlineTotal, 1000);
         }
 
-        // preview.bookings is already cash-only (bank/online-only stays are
-        // excluded entirely), and cashAmount is that booking's cash portion
-        // specifically — not its total_amount, which could include a
-        // bank/online portion too for a mixed-payment stay.
-        document.getElementById('handoverSimpleList').innerHTML = preview.bookings.map((b) => `
+        // preview.payments is one row per actual cash PAYMENT, not per
+        // booking — a guest who paid a cash advance and then settled the
+        // balance in cash at checkout shows up as two lines here, which is
+        // the accurate picture for a cash reconciliation. Not gated on the
+        // booking's checkout status at all, unlike the old per-booking list.
+        document.getElementById('handoverSimpleList').innerHTML = preview.payments.map((p) => `
             <li>
-                <span class="item-label">${escapeHtml(b.name)} <span class="item-meta">${escapeHtml(b.invoice_number)} &middot; Cash</span></span>
-                <span class="item-amount">${money(b.cashAmount)}</span>
+                <span class="item-label">${escapeHtml(p.name)} <span class="item-meta">${escapeHtml(p.invoice_number)} &middot; Cash</span></span>
+                <span class="item-amount">${money(p.amount)}</span>
             </li>
-        `).join('') || '<li class="empty-row">No cash checkouts awaiting handover.</li>';
+        `).join('') || '<li class="empty-row">No cash payments awaiting handover.</li>';
 
         document.getElementById('handoverSimpleTotal').innerHTML = `
             <span class="label">Total Cash Pending Handover</span>

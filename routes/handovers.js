@@ -26,25 +26,51 @@ function bucketFor(method) {
 }
 
 async function computeUnswept() {
-  const bookingsResult = await db.execute(`
-    SELECT id, invoice_number, name, room_id, checkin, checkout, payment_method, total_amount, created_at
-    FROM bookings
-    WHERE status = 'checked_out' AND handover_id IS NULL
-    ORDER BY created_at ASC
+  // Cash is tracked per PAYMENT, not per booking. A guest can hand over cash
+  // as an advance, or mid-stay, well before they actually check out — that
+  // money is physically in the till the moment it's collected and needs to
+  // be handed over at end of shift regardless of the booking's status.
+  // Gating cash on `status = 'checked_out'` (the original design) meant a
+  // shift's cash silently didn't show up in the handover until every one of
+  // that day's guests had checked out — real cash sitting in the drawer,
+  // invisible here, even though Daily Summary (which counts payments, not
+  // checkouts) already showed it as received. handover_id now lives on the
+  // payments table itself for exactly this reason.
+  const cashPaymentsResult = await db.execute(`
+    SELECT payments.id, payments.booking_id, payments.amount, payments.method, payments.recorded_at,
+           bookings.name, bookings.invoice_number
+    FROM payments
+    JOIN bookings ON bookings.id = payments.booking_id
+    WHERE payments.handover_id IS NULL
+      AND payments.method NOT IN ('bank_transfer', 'easypaisa', 'jazzcash')
+    ORDER BY payments.recorded_at ASC
   `);
+  const cashTotal = cashPaymentsResult.rows.reduce((sum, p) => sum + Number(p.amount), 0);
 
+  // Bank/online are reference-only here (Daily Summary is where they're
+  // actually tracked), so they don't need the same precision — still derived
+  // from checked-out/unswept bookings as before, not from individual
+  // payments, and not swept themselves (nothing to sweep: they never
+  // touched the till).
+  const bookingsResult = await db.execute(`
+    SELECT id FROM bookings WHERE status = 'checked_out' AND handover_id IS NULL
+  `);
   const bookingIds = bookingsResult.rows.map((b) => b.id);
-  const paymentsByBooking = {};
+  let bankTotal = 0;
+  let onlineTotal = 0;
   if (bookingIds.length) {
     const placeholders = bookingIds.map(() => '?').join(',');
-    const paymentsResult = await db.execute({
-      sql: `SELECT booking_id, method, SUM(amount) AS total FROM payments WHERE booking_id IN (${placeholders}) GROUP BY booking_id, method`,
+    const nonCashResult = await db.execute({
+      sql: `
+        SELECT method, SUM(amount) AS total FROM payments
+        WHERE booking_id IN (${placeholders}) AND method IN ('bank_transfer', 'easypaisa', 'jazzcash')
+        GROUP BY method
+      `,
       args: bookingIds
     });
-    paymentsResult.rows.forEach((r) => {
-      const bucket = bucketFor(r.method);
-      paymentsByBooking[r.booking_id] = paymentsByBooking[r.booking_id] || { cash: 0, bank: 0, online: 0 };
-      paymentsByBooking[r.booking_id][bucket] += Number(r.total);
+    nonCashResult.rows.forEach((r) => {
+      if (bucketFor(r.method) === 'bank') bankTotal += Number(r.total);
+      else onlineTotal += Number(r.total);
     });
   }
 
@@ -54,37 +80,19 @@ async function computeUnswept() {
     WHERE handover_id IS NULL
     ORDER BY expense_date ASC
   `);
-
-  const totals = { cash: 0, bank: 0, online: 0 };
-  const bookings = bookingsResult.rows.map((b) => {
-    const p = paymentsByBooking[b.id] || { cash: 0, bank: 0, online: 0 };
-    totals.cash += p.cash;
-    totals.bank += p.bank;
-    totals.online += p.online;
-    return { ...b, cashAmount: p.cash, bankAmount: p.bank, onlineAmount: p.online };
-  });
-  // The handover's own bookings list is cash bookings only — a stay paid
-  // entirely by bank/online never touches the till, so it has no business
-  // showing up in a cash handover at all (its revenue is visible in Daily
-  // Summary instead). Every checked-out/unswept booking still gets its
-  // handover_id stamped below regardless of payment mix, so a pure-bank
-  // booking doesn't linger in this query forever — it's just never shown
-  // or counted here as cash.
-  const cashBookings = bookings.filter((b) => b.cashAmount > 0);
-
   const expensesTotal = expensesResult.rows.reduce((sum, e) => sum + Number(e.amount), 0);
-  const netCashHanded = totals.cash - expensesTotal;
+  const netCashHanded = cashTotal - expensesTotal;
 
   return {
-    bookings: cashBookings,
-    allSweptBookingIds: bookingsResult.rows.map((b) => b.id),
+    payments: cashPaymentsResult.rows,
+    allSweptBookingIds: bookingIds,
     expenses: expensesResult.rows,
-    cashTotal: totals.cash,
-    bankTotal: totals.bank,
-    onlineTotal: totals.online,
+    cashTotal,
+    bankTotal,
+    onlineTotal,
     expensesTotal,
     netCashHanded,
-    bookingCount: cashBookings.length
+    bookingCount: cashPaymentsResult.rows.length
   };
 }
 
@@ -176,9 +184,17 @@ router.post('/', async (req, res) => {
     // leaves handover_id untouched so the pending total is unaffected and
     // the same cash still shows up (correctly) in the next real handover.
     if (receiverType !== 'staff') {
-      // Every checked-out/unswept booking closes out here, cash or not —
+      // Sweep the actual cash payments this handover covers — regardless of
+      // whether their booking has checked out yet (see computeUnswept()).
+      if (summary.payments.length) {
+        await db.execute({
+          sql: `UPDATE payments SET handover_id = ? WHERE handover_id IS NULL AND method NOT IN ('bank_transfer', 'easypaisa', 'jazzcash')`,
+          args: [handoverId]
+        });
+      }
+      // Every checked-out/unswept booking closes out here too, cash or not —
       // a bank/online-only stay never touches the till so it's excluded
-      // from summary.bookings and the cash totals above, but it still
+      // from summary.payments and the cash totals above, but it still
       // needs handover_id set or it would keep reappearing in every future
       // preview forever with nothing to actually collect.
       if (summary.allSweptBookingIds.length) {

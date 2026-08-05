@@ -186,6 +186,11 @@ function init() {
         )
       `);
 
+      // Cash handover sweeps individual cash PAYMENTS (see routes/handovers.js),
+      // not whole bookings — a cash advance sits in the till and needs handing
+      // over at end of shift whether or not that guest has checked out yet.
+      await addColumnsIfMissing('payments', ['handover_id INTEGER REFERENCES handovers(id)']);
+
       await db.execute(`
         CREATE TABLE IF NOT EXISTS rate_rules (
           id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -498,15 +498,15 @@ async function loadFdHandoverPanel() {
             <div class="summary-card"><span>Online Payments (reference only)</span><strong>${money(preview.onlineTotal)}</strong></div>
         `;
 
-        // preview.bookings is already cash-only, and cashAmount is that
-        // booking's cash portion specifically (not total_amount, which could
-        // include a bank/online portion too for a mixed-payment stay).
-        document.getElementById('fdHandoverSimpleList').innerHTML = preview.bookings.map((b) => `
+        // preview.payments is one row per actual cash PAYMENT, not gated on
+        // the booking's checkout status — a cash advance for a guest still
+        // mid-stay shows up here just as much as one collected at checkout.
+        document.getElementById('fdHandoverSimpleList').innerHTML = preview.payments.map((p) => `
             <li>
-                <span class="item-label">${escapeHtml(b.name)} <span class="item-meta">${escapeHtml(b.invoice_number)} &middot; Cash</span></span>
-                <span class="item-amount">${money(b.cashAmount)}</span>
+                <span class="item-label">${escapeHtml(p.name)} <span class="item-meta">${escapeHtml(p.invoice_number)} &middot; Cash</span></span>
+                <span class="item-amount">${money(p.amount)}</span>
             </li>
-        `).join('') || '<li class="empty-row">No cash checkouts awaiting handover.</li>';
+        `).join('') || '<li class="empty-row">No cash payments awaiting handover.</li>';
 
         document.getElementById('fdHandoverSimpleTotal').innerHTML = `
             <span class="label">Total Cash Pending Handover</span>
