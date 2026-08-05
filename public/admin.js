@@ -506,9 +506,9 @@ async function renderBookingDetail(id) {
             <div class="detail-subsection">
                 <h4>Payments &mdash; Total ${money(b.total_amount)}, Paid ${money(paidTotal)}, Balance ${money(balance)}</h4>
                 <table class="admin-table mini-table">
-                    <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Txn ID</th><th>Note</th><th>By</th></tr></thead>
+                    <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Txn ID</th><th>Note</th><th>By</th>${currentUser.role === 'admin' ? '<th></th>' : ''}</tr></thead>
                     <tbody>
-                        ${b.payments.map((p) => `<tr><td>${formatPKT(p.recorded_at)}</td><td>${money(p.amount)}</td><td>${escapeHtml(p.method)}</td><td>${escapeHtml(p.transaction_id)}</td><td>${escapeHtml(p.note)}</td><td>${escapeHtml(p.recorded_by)}</td></tr>`).join('') || '<tr><td colspan="6">No payments recorded yet.</td></tr>'}
+                        ${b.payments.map((p) => `<tr><td>${formatPKT(p.recorded_at)}</td><td>${money(p.amount)}</td><td>${escapeHtml(p.method)}</td><td>${escapeHtml(p.transaction_id)}</td><td>${escapeHtml(p.note)}</td><td>${escapeHtml(p.recorded_by)}</td>${currentUser.role === 'admin' ? `<td><button class="action-btn cancel remove-payment-btn" data-booking="${id}" data-payment="${p.id}">Remove</button></td>` : ''}</tr>`).join('') || `<tr><td colspan="${currentUser.role === 'admin' ? 7 : 6}">No payments recorded yet.</td></tr>`}
                     </tbody>
                 </table>
                 <form class="inline-form payment-form" data-id="${id}">
@@ -556,6 +556,14 @@ async function renderBookingDetail(id) {
                         `).join('')}
                     </tbody>
                 </table>
+            </div>
+            ` : ''}
+
+            ${currentUser.role === 'admin' ? `
+            <div class="detail-subsection danger-zone">
+                <h4>Danger Zone</h4>
+                <p style="font-size: 0.82rem; color: var(--text-light); margin-bottom: 10px;">Permanently deletes this booking and its payment history. Use only to correct a booking created by mistake &mdash; this cannot be undone.</p>
+                <button type="button" class="action-btn cancel delete-booking-btn" data-id="${id}">Delete This Booking</button>
             </div>
             ` : ''}
         `;
@@ -615,6 +623,31 @@ async function renderBookingDetail(id) {
                 }
             });
         });
+
+        cell.querySelectorAll('.remove-payment-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('Remove this payment record? This cannot be undone.')) return;
+                try {
+                    await apiSend('DELETE', `/api/bookings/${btn.dataset.booking}/payments/${btn.dataset.payment}`, {});
+                    loadBookings(true, id);
+                } catch (err) {
+                    alert(err.message);
+                }
+            });
+        });
+
+        const deleteBookingBtn = cell.querySelector('.delete-booking-btn');
+        if (deleteBookingBtn) {
+            deleteBookingBtn.addEventListener('click', async () => {
+                if (!confirm(`Permanently delete booking #${id} and its full payment history? This cannot be undone.`)) return;
+                try {
+                    await apiSend('DELETE', `/api/bookings/${id}`, {});
+                    loadBookings(false);
+                } catch (err) {
+                    alert(err.message);
+                }
+            });
+        }
 
         cell.querySelector('.tax-form').addEventListener('submit', async (e) => {
             e.preventDefault();

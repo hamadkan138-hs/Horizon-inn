@@ -926,6 +926,83 @@ router.post('/:id/payments', adminAuth, requireRole('admin', 'staff'), async (re
   }
 });
 
+// Remove a single payment record (admin only) — for correcting a payment
+// entered by mistake. Bypasses assertBookingUnlocked on purpose: a checked-out
+// or cancelled booking's *status* is locked from routine edits, but fixing a
+// mis-entered payment is a deliberate correction, not a routine edit.
+router.delete('/:id/payments/:paymentId', adminAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const booking = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
+    if (!booking.rows[0]) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+    const existing = await db.execute({
+      sql: 'SELECT * FROM payments WHERE id = ? AND booking_id = ?',
+      args: [req.params.paymentId, req.params.id]
+    });
+    if (!existing.rows[0]) {
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+    await db.execute({ sql: 'DELETE FROM payments WHERE id = ?', args: [req.params.paymentId] });
+    const totals = await recomputeBookingTotal(req.params.id);
+    const paymentsResult = await db.execute({
+      sql: 'SELECT * FROM payments WHERE booking_id = ? ORDER BY recorded_at ASC',
+      args: [req.params.id]
+    });
+    res.json({ payments: paymentsResult.rows, ...totals });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to remove payment' });
+  }
+});
+
+// Delete an entire booking record (admin only) — for a booking entered
+// entirely by mistake. Unlike every other write in this file, this
+// deliberately bypasses assertBookingUnlocked: the lock protects a settled
+// booking's *financial history* from routine edits, but a full delete is an
+// admin correcting an error, not a routine edit, and needs to work no matter
+// what status the mistaken booking is in.
+//
+// minibar_room_log and booking_status_log/booking_extensions are append-only
+// ledgers elsewhere in this app (comments on those tables say so explicitly)
+// — rather than deleting ledger rows, minibar_room_log's booking references
+// are nulled out so the stock-movement history survives. reviews and
+// gift_vouchers keep their own rows too (a guest's review or a voucher's
+// redemption fact isn't erased just because the linked booking record is);
+// only their booking_id back-reference is cleared.
+router.delete('/:id', adminAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const existing = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
+    if (!existing.rows[0]) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    await db.execute({ sql: 'DELETE FROM payments WHERE booking_id = ?', args: [req.params.id] });
+    await db.execute({ sql: 'DELETE FROM booking_charges WHERE booking_id = ?', args: [req.params.id] });
+    await db.execute({ sql: 'DELETE FROM booking_status_log WHERE booking_id = ?', args: [req.params.id] });
+    await db.execute({ sql: 'DELETE FROM booking_extensions WHERE booking_id = ?', args: [req.params.id] });
+    await db.execute({
+      sql: 'UPDATE minibar_room_log SET booking_id = NULL WHERE booking_id = ?',
+      args: [req.params.id]
+    });
+    await db.execute({
+      sql: 'UPDATE minibar_room_log SET charged_booking_id = NULL WHERE charged_booking_id = ?',
+      args: [req.params.id]
+    });
+    await db.execute({ sql: 'UPDATE reviews SET booking_id = NULL WHERE booking_id = ?', args: [req.params.id] });
+    await db.execute({
+      sql: 'UPDATE gift_vouchers SET redeemed_booking_id = NULL WHERE redeemed_booking_id = ?',
+      args: [req.params.id]
+    });
+    await db.execute({ sql: 'DELETE FROM bookings WHERE id = ?', args: [req.params.id] });
+
+    res.json({ deleted: true, id: Number(req.params.id) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete booking' });
+  }
+});
+
 // One-click checkout (admin/staff): optionally records a final payment, then
 // marks the booking checked out with an exact server timestamp. The payment
 // insert happens BEFORE the status update, so if it fails the booking is

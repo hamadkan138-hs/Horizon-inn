@@ -2152,6 +2152,14 @@ table.admin-table th {
     margin-bottom: 12px;
 }
 
+.danger-zone {
+    border-top-color: rgba(239, 68, 68, 0.35);
+}
+
+.danger-zone h4 {
+    color: #f87171;
+}
+
 .mini-table {
     box-shadow: none;
     border: 1px solid var(--hair);
