@@ -335,6 +335,7 @@ function init() {
         policies_text: [
           'Check-in / Check-out: Check-in from 2:00 PM, check-out by 12:00 PM. Early check-in or late check-out is subject to availability.',
           'Identification: A valid CNIC or passport matching the booking details is required from every guest at check-in.',
+          'Couples & Family Bookings: Unmarried couples are not accommodated. Married couples must present matching CNICs or a NADRA-issued Nikkah Nama at check-in to confirm the booking.',
           'Cancellation Policy: Cancellations made 24 hours or more before check-in are fully refundable. Cancellations within 24 hours, or no-shows, are non-refundable.',
           'Damage Policy: Guests are responsible for any damage to the room or property beyond normal wear and tear, and will be charged for repair or replacement.',
           'House Rules: No smoking indoors. Quiet hours are from 11:00 PM to 7:00 AM. Only registered guests are permitted in guest rooms. Pets are not allowed unless pre-approved.'
@@ -374,12 +375,25 @@ function init() {
       // tagline. Guarded on the old value so it fires at most once and never
       // clobbers real admin-edited copy — once it's changed (by this or by
       // an admin), the WHERE no longer matches and this becomes a no-op.
-      const HERO_COPY_REFRESH = [
+      const OLD_POLICIES_TEXT = [
+        'Check-in / Check-out: Check-in from 2:00 PM, check-out by 12:00 PM. Early check-in or late check-out is subject to availability.',
+        'Identification: A valid CNIC or passport matching the booking details is required from every guest at check-in.',
+        'Cancellation Policy: Cancellations made 24 hours or more before check-in are fully refundable. Cancellations within 24 hours, or no-shows, are non-refundable.',
+        'Damage Policy: Guests are responsible for any damage to the room or property beyond normal wear and tear, and will be charged for repair or replacement.',
+        'House Rules: No smoking indoors. Quiet hours are from 11:00 PM to 7:00 AM. Only registered guests are permitted in guest rooms. Pets are not allowed unless pre-approved.'
+      ].join('\n\n');
+
+      const CONTENT_REFRESH = [
         ['hero_eyebrow', 'Est. 2026 · Boutique Hospitality', 'Peshawar · Est. 2026'],
         ['hero_heading', 'Welcome to Horizon Inn', 'Quiet luxury, held in <em>firelight</em>'],
-        ['hero_subtext', 'Experience luxury and tranquility like never before', 'A boutique guest house ten minutes from the old city — considered rooms, a courtyard fire pit, and evenings that slow down on arrival.']
+        ['hero_subtext', 'Experience luxury and tranquility like never before', 'A boutique guest house ten minutes from the old city — considered rooms, a courtyard fire pit, and evenings that slow down on arrival.'],
+        // Adds the couples/family-booking identification rule. Guarded the
+        // same way — only replaces the settings row if it's still exactly
+        // the prior default, so an admin's own edits in the dashboard are
+        // never overwritten.
+        ['policies_text', OLD_POLICIES_TEXT, DEFAULT_SETTINGS.policies_text]
       ];
-      for (const [key, oldValue, newValue] of HERO_COPY_REFRESH) {
+      for (const [key, oldValue, newValue] of CONTENT_REFRESH) {
         await db.execute({
           sql: 'UPDATE settings SET value = ? WHERE key = ? AND value = ?',
           args: [newValue, key, oldValue]
