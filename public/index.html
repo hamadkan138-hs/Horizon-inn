@@ -622,79 +622,209 @@
 
     <script src="script.js"></script>
     <!-- CHAT WIDGET START -->
-    <div id="chat-widget" style="position:fixed; bottom:20px; right:20px; z-index:9999;">
-      <button id="chat-toggle" style="width:60px; height:60px; border-radius:50%; background:#1c1c1c; color:white; border:none; font-size:30px; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer;">💬</button>
-      <div id="chat-window" style="display:none; width:320px; height:450px; background:#fff; color:#1c1c1c; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.15); position:absolute; bottom:80px; right:0; padding:16px; flex-direction:column; border:1px solid #eee;">
-        <div id="chat-messages" style="flex:1; overflow-y:auto; margin-bottom:10px; font-size:14px; line-height:1.5; color:#1c1c1c;"></div>
-        <div style="display:flex; gap:8px;">
-          <input id="chat-input" style="flex:1; padding:10px; border:1px solid #ddd; border-radius:20px; outline:none; background:#fff; color:#1c1c1c;" placeholder="Ask about rooms...">
-          <button id="chat-send" style="padding:10px 16px; background:#1c1c1c; color:white; border:none; border-radius:20px; cursor:pointer;">Send</button>
+    <div id="chat-widget">
+      <button id="chat-toggle" class="chat-fab" aria-label="Open chat" aria-expanded="false">
+        <span aria-hidden="true">💬</span>
+      </button>
+      <div id="chat-window" class="chat-window">
+        <div class="chat-header">
+          <div class="chat-avatar">H</div>
+          <div class="chat-header-text">
+            <h3>Horizon Concierge</h3>
+            <span class="chat-status">Online</span>
+          </div>
+          <button id="chat-close" class="chat-close" aria-label="Close chat">&times;</button>
+        </div>
+        <div id="chat-messages" class="chat-body"></div>
+        <div class="chat-input-bar">
+          <input id="chat-input" type="text" placeholder="Ask about rooms..." autocomplete="off">
+          <button id="chat-send" class="chat-send-btn" disabled aria-label="Send message">
+            <span class="send-label">Send</span>
+            <span class="send-arrow" aria-hidden="true">&rarr;</span>
+          </button>
         </div>
       </div>
     </div>
     <style>
-      /* Chat widget is always a white/light surface — scoped override so
-         the site-wide dark-theme placeholder color doesn't wash it out. */
-      #chat-input::placeholder { color: #888; opacity: 1; }
+      /* Scoped entirely to #chat-widget — reuses the page's own design
+         tokens (redefined by book-theme.css) so the widget always matches
+         the current theme instead of carrying its own hardcoded palette. */
+      #chat-widget { position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-family: 'Work Sans', sans-serif; }
+
+      .chat-fab {
+        width: 58px; height: 58px; border-radius: 50%; border: none; cursor: pointer;
+        background: linear-gradient(155deg, #d8a865, var(--gold, #c9914f));
+        color: #171208; font-size: 26px; line-height: 1;
+        box-shadow: 0 10px 26px -8px rgba(0,0,0,0.5);
+        display: flex; align-items: center; justify-content: center;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+      }
+      .chat-fab:hover { transform: translateY(-2px) scale(1.04); }
+
+      .chat-window {
+        position: absolute; bottom: 74px; right: 0;
+        width: min(360px, calc(100vw - 40px)); height: min(500px, 70vh);
+        background: linear-gradient(160deg, var(--white, #251e17) 0%, var(--charcoal, #1a1511) 100%);
+        border: 1px solid var(--glass-border, rgba(242,236,224,0.1));
+        border-radius: 20px;
+        box-shadow: 0 25px 60px -15px rgba(0,0,0,0.55);
+        display: flex; flex-direction: column; overflow: hidden;
+        transform: translateY(16px) scale(0.98); opacity: 0; pointer-events: none;
+        transition: transform 0.35s cubic-bezier(.16,1,.3,1), opacity 0.3s ease;
+      }
+      .chat-window.open { transform: translateY(0) scale(1); opacity: 1; pointer-events: auto; }
+
+      .chat-header {
+        display: flex; align-items: center; gap: 12px;
+        padding: 16px 18px; border-bottom: 1px solid var(--hair, rgba(242,236,224,0.14));
+        background: rgba(242,236,224,0.03);
+      }
+      .chat-avatar {
+        width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+        background: var(--gold, #c9914f); color: #171208;
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Fraunces', serif; font-weight: 700; font-size: 1.05rem;
+      }
+      .chat-header-text h3 { margin: 0; font-size: 0.95rem; color: var(--text-dark, #f2ece0); font-weight: 600; }
+      .chat-status { font-size: 0.76rem; color: #4ade80; display: inline-flex; align-items: center; gap: 5px; }
+      .chat-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+      .chat-close {
+        margin-left: auto; background: none; border: none; color: var(--text-light, #b3a99a);
+        font-size: 1.3rem; line-height: 1; cursor: pointer; padding: 4px 6px;
+        transition: color 0.2s ease;
+      }
+      .chat-close:hover { color: var(--text-dark, #f2ece0); }
+
+      .chat-body {
+        flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 12px;
+        scroll-behavior: smooth;
+      }
+      .chat-row { display: flex; width: 100%; opacity: 0; transform: translateY(8px); animation: chatMsgIn 0.35s ease forwards; }
+      @keyframes chatMsgIn { to { opacity: 1; transform: translateY(0); } }
+      .chat-row.user { justify-content: flex-end; }
+      .chat-row.bot { justify-content: flex-start; }
+      .chat-bubble {
+        max-width: 82%; padding: 10px 14px; border-radius: 16px; font-size: 0.9rem; line-height: 1.5;
+      }
+      .chat-row.bot .chat-bubble {
+        background: rgba(242,236,224,0.05); color: var(--text-dark, #f2ece0);
+        border: 1px solid var(--hair, rgba(242,236,224,0.1));
+        border-bottom-left-radius: 4px;
+      }
+      .chat-row.user .chat-bubble {
+        background: rgba(201,145,79,0.18); color: var(--text-dark, #f2ece0);
+        border: 1px solid rgba(201,145,79,0.28);
+        border-bottom-right-radius: 4px;
+      }
+      .chat-bubble.thinking { color: var(--text-light, #b3a99a); font-style: italic; }
+
+      .chat-input-bar {
+        display: flex; gap: 8px; padding: 12px 14px;
+        border-top: 1px solid var(--hair, rgba(242,236,224,0.14));
+        background: rgba(0,0,0,0.12);
+      }
+      #chat-input {
+        flex: 1; background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border, rgba(242,236,224,0.1));
+        border-radius: 999px; padding: 10px 16px; color: var(--text-dark, #f2ece0);
+        font-size: 0.9rem; outline: none; transition: border-color 0.25s ease;
+      }
+      #chat-input::placeholder { color: var(--text-light, #b3a99a); opacity: 0.8; }
+      #chat-input:focus { border-color: rgba(201,145,79,0.5); }
+
+      .chat-send-btn {
+        min-width: 64px; padding: 0 16px; border-radius: 999px; border: none; cursor: pointer;
+        font-size: 0.82rem; font-weight: 600; letter-spacing: 0.02em;
+        background: rgba(242,236,224,0.08); color: var(--text-light, #b3a99a);
+        transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+      }
+      .chat-send-btn .send-arrow { display: none; }
+      .chat-send-btn:not(:disabled) {
+        background: linear-gradient(155deg, #d8a865, var(--gold, #c9914f)); color: #171208;
+      }
+      .chat-send-btn:not(:disabled):hover { transform: scale(1.05); }
+      .chat-send-btn:not(:disabled) .send-label { display: none; }
+      .chat-send-btn:not(:disabled) .send-arrow { display: inline; }
+      .chat-send-btn:disabled { cursor: not-allowed; }
+
+      @media (max-width: 480px) {
+        .chat-window { width: calc(100vw - 32px); right: -4px; }
+      }
     </style>
     <script>
+      var chatToggle = document.getElementById('chat-toggle');
+      var chatClose = document.getElementById('chat-close');
+      var chatWindow = document.getElementById('chat-window');
+      var chatMessages = document.getElementById('chat-messages');
+      var chatInput = document.getElementById('chat-input');
+      var chatSend = document.getElementById('chat-send');
+      var greeted = false;
+
       // Bubble text is inserted via textContent, never innerHTML — the
       // chatbot's reply is external, untrusted input, and must not be able
       // to inject markup/scripts into the page.
       function chatAppendBubble(text, side) {
-        const msgs = document.getElementById('chat-messages');
-        const bubble = document.createElement('div');
+        var row = document.createElement('div');
+        row.className = 'chat-row ' + side;
+        var bubble = document.createElement('div');
+        bubble.className = 'chat-bubble';
         bubble.textContent = text;
-        bubble.style.margin = '6px 0';
-        bubble.style.padding = '8px 12px';
-        bubble.style.borderRadius = '12px';
-        bubble.style.display = 'inline-block';
-        bubble.style.clear = 'both';
-        bubble.style.color = '#1c1c1c';
-        if (side === 'user') {
-          bubble.style.textAlign = 'right';
-          bubble.style.background = '#f0f0f0';
-          bubble.style.float = 'right';
-        } else {
-          bubble.style.textAlign = 'left';
-          bubble.style.background = 'white';
-          bubble.style.border = '1px solid #eee';
-        }
-        msgs.appendChild(bubble);
+        row.appendChild(bubble);
+        chatMessages.appendChild(row);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
         return bubble;
       }
-      document.getElementById('chat-toggle').onclick = function() {
-        var w = document.getElementById('chat-window');
-        w.style.display = (w.style.display === 'none') ? 'flex' : 'none';
-      };
-      document.getElementById('chat-send').onclick = function() {
-        var input = document.getElementById('chat-input');
-        var text = input.value.trim();
+
+      function openChat() {
+        chatWindow.classList.add('open');
+        chatToggle.setAttribute('aria-expanded', 'true');
+        if (!greeted) {
+          greeted = true;
+          chatAppendBubble("Hello! Ask me about our rooms, rates, or policies — happy to help.", 'bot');
+        }
+        chatInput.focus();
+      }
+      function closeChat() {
+        chatWindow.classList.remove('open');
+        chatToggle.setAttribute('aria-expanded', 'false');
+      }
+      chatToggle.addEventListener('click', function () {
+        chatWindow.classList.contains('open') ? closeChat() : openChat();
+      });
+      chatClose.addEventListener('click', closeChat);
+
+      function updateSendState() {
+        chatSend.disabled = chatInput.value.trim().length === 0;
+      }
+      chatInput.addEventListener('input', updateSendState);
+      updateSendState();
+
+      function sendMessage() {
+        var text = chatInput.value.trim();
         if (!text) return;
         chatAppendBubble(text, 'user');
-        input.value = '';
-        const thinking = chatAppendBubble('Thinking...', 'bot');
-        thinking.style.color = '#888';
-        thinking.style.border = 'none';
-        thinking.style.background = 'transparent';
+        chatInput.value = '';
+        updateSendState();
+        var thinking = chatAppendBubble('Thinking...', 'bot');
+        thinking.classList.add('thinking');
         fetch('/api/chat', {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
           body: JSON.stringify({text: text})
         })
-        .then(res => res.json().then(data => ({ ok: res.ok, data })))
-        .then(({ ok, data }) => {
-          thinking.remove();
-          chatAppendBubble(ok ? data.reply : (data.error || "Sorry, something went wrong."), 'bot');
+        .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+        .then(function (result) {
+          thinking.parentElement.remove();
+          chatAppendBubble(result.ok ? result.data.reply : (result.data.error || "Sorry, something went wrong."), 'bot');
         })
-        .catch(() => {
-          thinking.remove();
+        .catch(function () {
+          thinking.parentElement.remove();
           chatAppendBubble("Sorry, I couldn't reach support right now.", 'bot');
         });
-      };
-      document.getElementById('chat-input').onkeydown = function(e) {
-        if(e.key === 'Enter') document.getElementById('chat-send').click();
-      };
+      }
+      chatSend.addEventListener('click', sendMessage);
+      chatInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') sendMessage();
+      });
     </script>
     <!-- CHAT WIDGET END -->
 </body>
