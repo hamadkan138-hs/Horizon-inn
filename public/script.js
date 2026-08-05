@@ -460,13 +460,22 @@ function renderRooms(rooms) {
     updateStickyCtaPrice(rooms);
 }
 
-function renderRoomOptions(rooms) {
+function renderRoomOptions(rooms, previousValue) {
     roomSelect.innerHTML = '<option value="">Select a room</option>' +
         rooms.map((room) => `<option value="${room.id}">${room.name} - ${money(room.price)}/night</option>`).join('');
+    // Rebuilding the <select> resets it to the placeholder option, which would
+    // silently clear a guest's room choice every time they pick a date. Restore
+    // it as long as that room is still in the list (i.e. still available for
+    // whatever dates are now selected) — if it's no longer available, falling
+    // back to the placeholder is correct, not a bug.
+    if (previousValue && rooms.some((room) => String(room.id) === String(previousValue))) {
+        roomSelect.value = previousValue;
+    }
 }
 
 async function loadRooms() {
     try {
+        const previousValue = roomSelect.value;
         const params = new URLSearchParams();
         if (checkinInput.value) params.set('checkin', checkinInput.value);
         if (checkoutInput.value) params.set('checkout', checkoutInput.value);
@@ -475,7 +484,7 @@ async function loadRooms() {
         if (!res.ok) throw new Error('Failed to load rooms');
         currentRooms = await res.json();
         renderRooms(currentRooms);
-        renderRoomOptions(currentRooms);
+        renderRoomOptions(currentRooms, previousValue);
     } catch (err) {
         roomsGrid.innerHTML = '<p class="error-text">Could not load rooms right now. Please refresh the page.</p>';
     }
