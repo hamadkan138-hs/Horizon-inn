@@ -61,6 +61,14 @@ input::placeholder, textarea::placeholder {
     border-color: var(--glass-border) !important;
 }
 
+/* Form field labels (FULL NAME, PHONE NUMBER, MARITAL STATUS, etc. on the
+   booking/contact/review forms) were --text-light, a muted taupe that
+   photographs and low-brightness screens wash out to near-invisible.
+   Brightened to the same near-white used for body text. */
+.form-group label {
+    color: var(--text-dark);
+}
+
 /* ---------- Room pricing display — brass accents, matching the homepage
    carousel's price-tag treatment (the price itself still comes straight
    from the live API; this only restyles how it's shown). ---------- */
