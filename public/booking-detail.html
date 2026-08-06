@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horizon Inn - Booking Details</title>
+    <link rel="icon" type="image/png" href="images/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="dark-theme.css">
+    <link rel="stylesheet" href="glass-theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* This page is a single focused document, not a multi-column
+           dashboard — capping width keeps the grouped detail fields and
+           forms readable instead of stretching them across a wide desktop
+           viewport the way the old in-table row was forced to. */
+        .booking-detail-wrap { max-width: 880px; }
+        .bd-back-link {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: var(--text-light); font-size: 0.85rem; text-decoration: none;
+            margin-bottom: 18px;
+        }
+        .bd-back-link:hover { color: var(--gold); }
+        .bd-header {
+            display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between;
+            gap: 16px; margin-bottom: 24px;
+        }
+        .bd-header h1 { margin: 0 0 6px; font-size: 1.6rem; }
+        .bd-meta { color: var(--text-light); font-size: 0.9rem; line-height: 1.7; }
+        .bd-panel {
+            background: var(--white);
+            border: 1px solid var(--hair);
+            border-radius: var(--radius-lg);
+            padding: 24px 28px;
+            box-shadow: var(--shadow);
+        }
+        #bdLoading, #bdError { padding: 60px 0; text-align: center; color: var(--text-light); }
+        #bdError { display: none; color: #e0685a; }
+    </style>
+</head>
+<body>
+    <div class="mesh-blob gold"></div>
+    <div class="mesh-blob emerald"></div>
+
+    <div class="admin-page" id="dashboard">
+        <div class="booking-detail-wrap">
+            <a class="bd-back-link" href="admin.html"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+            <div id="bdLoading">Loading booking&hellip;</div>
+            <p id="bdError"></p>
+            <div id="bdRoot" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script src="booking-detail.js"></script>
+</body>
+</html>

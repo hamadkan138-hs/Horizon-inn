@@ -399,360 +399,22 @@ function bookingRowHtml(b) {
                 <div style="font-size: 0.78rem; color: var(--text-light); margin-top: 4px;">Total ${money(b.total_amount)}</div>
             </td>
             <td>
-                <button class="action-btn details-toggle" data-target="details-${b.id}" data-id="${b.id}">View</button>
+                <a class="action-btn details-toggle" href="booking-detail.html?id=${b.id}" target="_blank" rel="opener">View</a>
                 <a class="action-btn confirm" href="${whatsappLink(b)}" target="_blank" rel="noopener">WhatsApp</a>
                 <a class="action-btn confirm" href="${emailLink(b)}">Email</a>
                 <a class="action-btn details-toggle" href="invoice.html?id=${b.id}" target="_blank" rel="opener">Invoice</a>
             </td>
         </tr>
-        <tr class="detail-row" id="details-${b.id}" style="display: none;">
-            <td colspan="9"><div class="detail-loading" data-id="${b.id}">Loading details&hellip;</div></td>
-        </tr>
     `;
 }
 
-async function renderBookingDetail(id) {
-    const cell = document.querySelector(`#details-${id} td`);
-    try {
-        const [b, minibarItems] = await Promise.all([
-            apiGet(`/api/bookings/${id}`),
-            apiGet('/api/minibar')
-        ]);
-        const paidTotal = b.payments.reduce((sum, p) => sum + Number(p.amount), 0);
-        const balance = Math.max(0, Number(b.total_amount) - paidTotal);
-        const chargesTotal = b.charges.reduce((sum, c) => sum + Number(c.amount), 0);
 
-        const needsVerification = b.payment_method !== 'pay_at_property' && b.transaction_id && b.payment_status === 'unpaid';
-        const verifyBanner = needsVerification ? `
-            <div class="verify-banner">
-                <i class="fas fa-circle-exclamation"></i>
-                Guest submitted a <strong>${PAYMENT_METHOD_LABELS[b.payment_method]}</strong> transaction ID
-                (<strong>${escapeHtml(b.transaction_id)}</strong>) for ${money(b.total_amount)} but no payment has been verified yet.
-                <button type="button" class="action-btn confirm verify-btn" data-id="${id}"
-                    data-amount="${b.total_amount}" data-method="${b.payment_method}" data-txn="${escapeHtml(b.transaction_id)}">
-                    Verify &amp; Record Payment
-                </button>
-            </div>
-        ` : '';
-
-        cell.innerHTML = `
-            ${verifyBanner}
-            <div class="detail-group">
-                <div class="detail-group-label">Guest Identity</div>
-                <div class="detail-grid">
-                    ${detailField('Room Number', assignedRoomNumber(b))}
-                    ${detailField('CNIC / Passport', b.cnic)}
-                    ${detailField('Marital Status', b.marital_status)}
-                    ${detailField('Address', b.address)}
-                </div>
-            </div>
-            <div class="detail-group">
-                <div class="detail-group-label">Travel Details</div>
-                <div class="detail-grid">
-                    ${detailField('Arriving From', b.arrival_from)}
-                    ${detailField('Departing To', b.departure_to)}
-                    ${detailField('Arrival Time', b.arrival_time)}
-                    ${detailField('Purpose of Stay', b.purpose_of_stay)}
-                    ${detailField('Vehicle Number', b.vehicle_number)}
-                </div>
-            </div>
-            <div class="detail-group">
-                <div class="detail-group-label">Payment &amp; Booking</div>
-                <div class="detail-grid">
-                    ${detailField('Payment Method', PAYMENT_METHOD_LABELS[b.payment_method] || b.payment_method)}
-                    ${detailField('Transaction ID', b.transaction_id)}
-                    ${detailField('Special Requests', b.special_requests)}
-                    ${detailField('Terms Accepted', b.terms_accepted ? 'Yes' : 'No')}
-                    ${detailField('Booked At', b.created_at)}
-                </div>
-            </div>
-
-            <div class="detail-subsection">
-                <h4>Invoice &mdash; ${escapeHtml(b.invoice_number)}</h4>
-                <form class="inline-form invoice-fields-form" data-id="${id}">
-                    <input type="text" name="roomNumber" value="${escapeHtml(assignedRoomNumber(b))}" placeholder="Room number (e.g. 12)">
-                    <input type="text" name="invoiceNotes" value="${escapeHtml(b.invoice_notes)}" placeholder="Notes to print on invoice">
-                    <button type="submit" class="action-btn confirm">Save</button>
-                    <a class="action-btn details-toggle" href="invoice.html?id=${id}" target="_blank" rel="opener">Open Invoice</a>
-                    <button type="button" class="action-btn details-toggle copy-link-btn" data-id="${id}" data-token="${b.invoice_token}">Copy Guest Link</button>
-                </form>
-                <p class="form-message" id="invoiceFieldsMessage-${id}"></p>
-            </div>
-
-            <div class="detail-subsection">
-                <h4>Charges &mdash; Room ${money(b.room_amount)}, Extras ${money(chargesTotal)}, Tax ${b.tax_percent}%</h4>
-                <table class="admin-table mini-table">
-                    <thead><tr><th>Description</th><th>Category</th><th>Amount</th><th></th></tr></thead>
-                    <tbody>
-                        <tr><td>${escapeHtml(b.room_name)} (room charge)</td><td>Room Booking</td><td>${money(b.room_amount)}</td><td></td></tr>
-                        ${b.charges.map((c) => `<tr ${c.amount < 0 ? 'class="discount-row"' : ''}><td>${escapeHtml(c.description)}</td><td>${CHARGE_CATEGORY_LABELS[c.category] || 'Other'}</td><td>${money(c.amount)}</td><td><button class="action-btn cancel remove-charge-btn" data-booking="${id}" data-charge="${c.id}">Remove</button></td></tr>`).join('')}
-                    </tbody>
-                </table>
-                <form class="inline-form charge-form" data-id="${id}">
-                    <input type="text" name="description" placeholder="Extra service or discount (e.g. Barbecue, Bonfire)" required>
-                    <select name="category">
-                        <option value="amenity">Amenity</option>
-                        <option value="event_rental">Event Rental</option>
-                        <option value="other" selected>Other</option>
-                    </select>
-                    <input type="number" name="amount" placeholder="Amount (negative = discount)" step="0.01" required>
-                    <button type="submit" class="action-btn confirm">Add Charge</button>
-                </form>
-                <form class="inline-form tax-form" data-id="${id}">
-                    <label style="font-size: 0.85rem; color: var(--text-light);">Tax rate:</label>
-                    <input type="number" name="taxPercent" value="${b.tax_percent}" min="0" max="100" step="0.1" style="max-width: 100px;">
-                    <button type="submit" class="action-btn confirm">Update Tax %</button>
-                </form>
-            </div>
-
-            <div class="detail-subsection">
-                <h4>Mini Bar</h4>
-                <form class="inline-form minibar-charge-form" data-id="${id}">
-                    <select name="itemId" required>
-                        <option value="">Select an item&hellip;</option>
-                        ${minibarItems.filter((i) => i.active).map((i) => `<option value="${i.id}" ${i.stockQuantity <= 0 ? 'disabled' : ''}>${escapeHtml(i.name)} &mdash; ${money(i.price)} (${i.stockQuantity} left)</option>`).join('')}
-                    </select>
-                    <input type="number" name="quantity" value="1" min="1" step="1" style="max-width: 90px;">
-                    <button type="submit" class="action-btn confirm">Charge Guest</button>
-                </form>
-                <p class="form-message" id="minibarChargeMessage-${id}"></p>
-            </div>
-
-            <div class="detail-subsection">
-                <h4>Payments &mdash; Total ${money(b.total_amount)}, Paid ${money(paidTotal)}, Balance ${money(balance)}</h4>
-                <table class="admin-table mini-table">
-                    <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Txn ID</th><th>Note</th><th>By</th>${currentUser.role === 'admin' ? '<th></th>' : ''}</tr></thead>
-                    <tbody>
-                        ${b.payments.map((p) => `<tr><td>${formatPKT(p.recorded_at)}</td><td>${money(p.amount)}</td><td>${escapeHtml(p.method)}</td><td>${escapeHtml(p.transaction_id)}</td><td>${escapeHtml(p.note)}</td><td>${escapeHtml(p.recorded_by)}</td>${currentUser.role === 'admin' ? `<td><button class="action-btn cancel remove-payment-btn" data-booking="${id}" data-payment="${p.id}">Remove</button></td>` : ''}</tr>`).join('') || `<tr><td colspan="${currentUser.role === 'admin' ? 7 : 6}">No payments recorded yet.</td></tr>`}
-                    </tbody>
-                </table>
-                <form class="inline-form payment-form" data-id="${id}">
-                    <input type="number" name="amount" placeholder="Amount (Rs.)" min="0.01" step="0.01" required>
-                    <select name="method">
-                        <option value="cash">Cash</option>
-                        <option value="bank_transfer">Bank Transfer</option>
-                        <option value="easypaisa">EasyPaisa</option>
-                        <option value="jazzcash">JazzCash</option>
-                    </select>
-                    <input type="text" name="transactionId" placeholder="Transaction ID (optional)">
-                    <input type="text" name="note" placeholder="Note (optional)">
-                    <button type="submit" class="action-btn confirm">Record Payment</button>
-                </form>
-            </div>
-
-            <div class="detail-subsection">
-                <h4>Edit Booking</h4>
-                <form class="inline-form edit-booking-form" data-id="${id}">
-                    <input type="text" name="name" value="${escapeHtml(b.name)}" placeholder="Name">
-                    <input type="email" name="email" value="${escapeHtml(b.email)}" placeholder="Email">
-                    <input type="tel" name="phone" value="${escapeHtml(b.phone)}" placeholder="Phone">
-                    <input type="number" name="guests" value="${b.guests}" min="1" max="10" placeholder="Guests">
-                    <input type="date" name="checkin" value="${b.checkin}">
-                    <input type="date" name="checkout" value="${b.checkout}">
-                    <input type="text" name="specialRequests" value="${escapeHtml(b.special_requests)}" placeholder="Special requests">
-                    <button type="submit" class="action-btn confirm">Save Changes</button>
-                </form>
-                <p class="form-message" id="editMessage-${id}"></p>
-            </div>
-
-            ${b.statusHistory.length ? `
-            <div class="detail-subsection">
-                <h4>Status History</h4>
-                <table class="admin-table mini-table">
-                    <thead><tr><th>When</th><th>Change</th><th>By</th><th>Reason</th></tr></thead>
-                    <tbody>
-                        ${b.statusHistory.map((h) => `
-                            <tr>
-                                <td>${formatPKT(h.changed_at)}</td>
-                                <td>${STATUS_LABELS[h.from_status] || h.from_status} &rarr; ${STATUS_LABELS[h.to_status] || h.to_status}</td>
-                                <td>${escapeHtml(h.changed_by)}</td>
-                                <td>${escapeHtml(h.reason)}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-            ` : ''}
-
-            ${currentUser.role === 'admin' ? `
-            <div class="detail-subsection danger-zone">
-                <h4>Danger Zone</h4>
-                <p style="font-size: 0.82rem; color: var(--text-light); margin-bottom: 10px;">Permanently deletes this booking and its payment history. Use only to correct a booking created by mistake &mdash; this cannot be undone.</p>
-                <button type="button" class="action-btn cancel delete-booking-btn" data-id="${id}">Delete This Booking</button>
-            </div>
-            ` : ''}
-        `;
-
-        const paymentForm = cell.querySelector('.payment-form');
-        paymentForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const form = e.target;
-            try {
-                await apiSend('POST', `/api/bookings/${id}/payments`, {
-                    amount: Number(form.amount.value),
-                    method: form.method.value,
-                    transactionId: form.transactionId.value,
-                    note: form.note.value
-                });
-                loadBookings(true, id);
-            } catch (err) {
-                alert(err.message);
-            }
-        });
-
-        const verifyBtn = cell.querySelector('.verify-btn');
-        if (verifyBtn) {
-            verifyBtn.addEventListener('click', () => {
-                paymentForm.amount.value = verifyBtn.dataset.amount;
-                paymentForm.method.value = verifyBtn.dataset.method;
-                paymentForm.transactionId.value = verifyBtn.dataset.txn;
-                paymentForm.note.value = 'Verified guest-submitted transaction ID';
-                paymentForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                paymentForm.amount.focus();
-            });
-        }
-
-        cell.querySelector('.charge-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const form = e.target;
-            try {
-                await apiSend('POST', `/api/bookings/${id}/charges`, {
-                    description: form.description.value,
-                    amount: Number(form.amount.value),
-                    category: form.category.value
-                });
-                loadBookings(true, id);
-            } catch (err) {
-                alert(err.message);
-            }
-        });
-
-        cell.querySelectorAll('.remove-charge-btn').forEach((btn) => {
-            btn.addEventListener('click', async () => {
-                if (!confirm('Remove this charge?')) return;
-                try {
-                    await apiSend('DELETE', `/api/bookings/${btn.dataset.booking}/charges/${btn.dataset.charge}`, {});
-                    loadBookings(true, id);
-                } catch (err) {
-                    alert(err.message);
-                }
-            });
-        });
-
-        cell.querySelectorAll('.remove-payment-btn').forEach((btn) => {
-            btn.addEventListener('click', async () => {
-                if (!confirm('Remove this payment record? This cannot be undone.')) return;
-                try {
-                    await apiSend('DELETE', `/api/bookings/${btn.dataset.booking}/payments/${btn.dataset.payment}`, {});
-                    loadBookings(true, id);
-                } catch (err) {
-                    alert(err.message);
-                }
-            });
-        });
-
-        const deleteBookingBtn = cell.querySelector('.delete-booking-btn');
-        if (deleteBookingBtn) {
-            deleteBookingBtn.addEventListener('click', async () => {
-                if (!confirm(`Permanently delete booking #${id} and its full payment history? This cannot be undone.`)) return;
-                try {
-                    await apiSend('DELETE', `/api/bookings/${id}`, {});
-                    loadBookings(false);
-                } catch (err) {
-                    alert(err.message);
-                }
-            });
-        }
-
-        cell.querySelector('.tax-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const form = e.target;
-            try {
-                await apiSend('PATCH', `/api/bookings/${id}/tax`, { taxPercent: Number(form.taxPercent.value) });
-                loadBookings(true, id);
-            } catch (err) {
-                alert(err.message);
-            }
-        });
-
-        cell.querySelector('.minibar-charge-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const form = e.target;
-            const msg = document.getElementById(`minibarChargeMessage-${id}`);
-            if (!form.itemId.value) return;
-            try {
-                await apiSend('POST', `/api/minibar/${form.itemId.value}/consume`, {
-                    bookingId: id, quantity: Number(form.quantity.value)
-                });
-                msg.textContent = 'Charged to the guest\'s bill.'; msg.className = 'form-message success';
-                loadBookings(true, id);
-            } catch (err) {
-                msg.textContent = err.message; msg.className = 'form-message error';
-            }
-        });
-
-        cell.querySelector('.invoice-fields-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const form = e.target;
-            const msg = document.getElementById(`invoiceFieldsMessage-${id}`);
-            try {
-                await apiSend('PATCH', `/api/bookings/${id}/invoice-fields`, {
-                    roomNumber: form.roomNumber.value,
-                    invoiceNotes: form.invoiceNotes.value
-                });
-                msg.textContent = 'Saved.';
-                msg.className = 'form-message success';
-            } catch (err) {
-                msg.textContent = err.message;
-                msg.className = 'form-message error';
-            }
-        });
-
-        cell.querySelector('.copy-link-btn').addEventListener('click', async () => {
-            const btn = cell.querySelector('.copy-link-btn');
-            const link = `${window.location.origin}/invoice.html?id=${btn.dataset.id}&token=${btn.dataset.token}`;
-            try {
-                await navigator.clipboard.writeText(link);
-                btn.textContent = 'Link Copied!';
-            } catch (err) {
-                prompt('Copy this link to send to the guest:', link);
-            }
-            setTimeout(() => { btn.textContent = 'Copy Guest Link'; }, 2000);
-        });
-
-        cell.querySelector('.edit-booking-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const form = e.target;
-            const msg = document.getElementById(`editMessage-${id}`);
-            try {
-                await apiSend('PATCH', `/api/bookings/${id}/details`, {
-                    name: form.name.value, email: form.email.value, phone: form.phone.value,
-                    guests: Number(form.guests.value), checkin: form.checkin.value, checkout: form.checkout.value,
-                    specialRequests: form.specialRequests.value
-                });
-                msg.textContent = 'Saved.';
-                msg.className = 'form-message success';
-                loadBookings(true, id);
-            } catch (err) {
-                msg.textContent = err.message;
-                msg.className = 'form-message error';
-            }
-        });
-    } catch (err) {
-        cell.innerHTML = `<p class="error-text">Failed to load details.</p>`;
-    }
-}
-
-async function loadBookings(keepOpen, reopenId) {
+async function loadBookings() {
     try {
         const data = await apiGet('/api/bookings');
         allBookings = data.bookings;
         applyBookingFilters();
         updateNotifyBell();
-        if (keepOpen && reopenId) {
-            const row = document.getElementById(`details-${reopenId}`);
-            if (row) { row.style.display = 'table-row'; renderBookingDetail(reopenId); }
-        }
     } catch (err) { /* handled by apiGet */ }
 }
 
@@ -826,15 +488,6 @@ function applyBookingFilters() {
         });
     });
 
-    body.querySelectorAll('.details-toggle[data-target]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-            const row = document.getElementById(btn.dataset.target);
-            const isOpen = row.style.display !== 'none';
-            row.style.display = isOpen ? 'none' : 'table-row';
-            btn.textContent = isOpen ? 'View' : 'Hide';
-            if (!isOpen) renderBookingDetail(btn.dataset.id);
-        });
-    });
 }
 
 let bookingSearchDebounceTimer = null;
@@ -911,13 +564,7 @@ async function loadOverdueCheckouts() {
         });
         banner.querySelectorAll('.overdue-view-btn').forEach((btn) => {
             btn.addEventListener('click', () => {
-                document.querySelector('.admin-tab[data-tab="bookings"]')?.click();
-                document.getElementById('bookingSearch').value = '';
-                setTimeout(() => {
-                    const toggleBtn = document.querySelector(`.details-toggle[data-target="details-${btn.dataset.id}"]`);
-                    if (toggleBtn) toggleBtn.click();
-                    toggleBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 300);
+                window.open(`booking-detail.html?id=${btn.dataset.id}`, '_blank', 'noopener');
             });
         });
     } catch (err) { /* silent — this is a background poll, not a user action */ }
@@ -1364,24 +1011,7 @@ function applyTransactionFilters() {
 });
 
 function jumpToBooking(id) {
-    // Clear any active filters and jump to whichever page the target
-    // booking actually falls on, since the table only renders one page
-    // at a time now.
-    document.getElementById('bookingSearch').value = '';
-    document.getElementById('bookingStatusFilter').value = '';
-    document.getElementById('bookingPaymentFilter').value = '';
-    const indexInList = allBookings.findIndex((b) => String(b.id) === String(id));
-    bookingsPage = indexInList >= 0 ? Math.floor(indexInList / BOOKINGS_PAGE_SIZE) + 1 : 1;
-
-    document.querySelector('.admin-tab[data-tab="bookings"]').click();
-    applyBookingFilters();
-    setTimeout(() => {
-        const toggleBtn = document.querySelector(`.details-toggle[data-target="details-${id}"]`);
-        if (toggleBtn) {
-            toggleBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            if (document.getElementById(`details-${id}`).style.display === 'none') toggleBtn.click();
-        }
-    }, 100);
+    window.open(`booking-detail.html?id=${id}`, '_blank', 'noopener');
 }
 
 document.getElementById('txnExportBtn').addEventListener('click', () => {
