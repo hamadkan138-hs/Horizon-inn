@@ -89,6 +89,7 @@
                 <!-- Core Operations -->
                 <button class="admin-tab active" data-tab="overview"><i class="fas fa-house"></i> Overview</button>
                 <button class="admin-tab" data-tab="bookings"><i class="fas fa-calendar-check"></i> Bookings</button>
+                <button class="admin-tab" data-tab="checkedout"><i class="fas fa-door-open"></i> Checked Out</button>
                 <button class="admin-tab" data-tab="guests"><i class="fas fa-users"></i> Guests</button>
 
                 <!-- Operations: section toggle + subrow of real tabs -->
@@ -239,7 +240,6 @@
                         <option value="pending">Pending</option>
                         <option value="confirmed">Confirmed</option>
                         <option value="checked_in">Checked In</option>
-                        <option value="checked_out">Checked Out</option>
                         <option value="cancelled">Cancelled</option>
                     </select>
                     <select id="bookingPaymentFilter">
@@ -271,6 +271,43 @@
                     <button type="button" id="bookingsPrevPage" class="submit-btn" style="width: auto; padding: 8px 16px;">Prev</button>
                     <span id="bookingsPageLabel" style="font-size: 0.85rem; color: var(--text-light, #6f7180);"></span>
                     <button type="button" id="bookingsNextPage" class="submit-btn" style="width: auto; padding: 8px 16px;">Next</button>
+                </div>
+            </section>
+
+            <!-- Checked Out — stays that have left, split out of Bookings so
+                 that tab stays focused on guests still on the property. -->
+            <section class="admin-panel" id="panel-checkedout" style="display: none;">
+                <div class="panel-toolbar">
+                    <input type="text" id="checkedOutSearch" placeholder="Search by name, email, phone, CNIC...">
+                    <select id="checkedOutPaymentFilter">
+                        <option value="">All payment statuses</option>
+                        <option value="unpaid">Unpaid</option>
+                        <option value="partial">Partial</option>
+                        <option value="paid">Paid</option>
+                    </select>
+                </div>
+                <div class="table-scroll">
+                    <table class="admin-table" id="checkedOutTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Guest</th>
+                                <th>Room</th>
+                                <th>Check-in</th>
+                                <th>Check-out</th>
+                                <th>Guests</th>
+                                <th>Status</th>
+                                <th>Payment</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="checkedOutBody"></tbody>
+                    </table>
+                </div>
+                <div class="panel-pagination" id="checkedOutPagination" style="display: flex; align-items: center; gap: 12px; margin-top: 14px;">
+                    <button type="button" id="checkedOutPrevPage" class="submit-btn" style="width: auto; padding: 8px 16px;">Prev</button>
+                    <span id="checkedOutPageLabel" style="font-size: 0.85rem; color: var(--text-light, #6f7180);"></span>
+                    <button type="button" id="checkedOutNextPage" class="submit-btn" style="width: auto; padding: 8px 16px;">Next</button>
                 </div>
             </section>
 

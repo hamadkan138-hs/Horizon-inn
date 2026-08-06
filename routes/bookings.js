@@ -176,6 +176,7 @@ router.post('/', async (req, res) => {
           args: [bookingId, `Promo code ${discountResolution.code} (${discountResolution.discountPercent}% off)`, discountAmount]
         });
         await db.execute({ sql: 'UPDATE promo_codes SET used_count = used_count + 1 WHERE id = ?', args: [discountResolution.id] });
+        await db.execute({ sql: 'UPDATE bookings SET discount_percent = ? WHERE id = ?', args: [discountResolution.discountPercent, bookingId] });
       } else if (discountResolution.type === 'voucher') {
         const addonsTotal = selectedAddons.reduce((sum, key) => sum + HOTEL_ADDONS[key].amount, 0);
         const cappedAmount = Math.min(discountResolution.amount, roomAmount + addonsTotal);
@@ -193,7 +194,10 @@ router.post('/', async (req, res) => {
           sql: "INSERT INTO booking_charges (booking_id, description, amount, category) VALUES (?, ?, ?, 'other')",
           args: [bookingId, `Referral discount (${discountResolution.discountPercent}% off)`, discountAmount]
         });
-        await db.execute({ sql: 'UPDATE bookings SET referred_by_code = ? WHERE id = ?', args: [discountResolution.code, bookingId] });
+        await db.execute({
+          sql: 'UPDATE bookings SET referred_by_code = ?, discount_percent = ? WHERE id = ?',
+          args: [discountResolution.code, discountResolution.discountPercent, bookingId]
+        });
 
         // Reward the referrer with a Rs. 1,000 gift voucher, redeemable on their next stay.
         const referrer = await db.execute({ sql: 'SELECT name, email, phone FROM bookings WHERE id = ?', args: [discountResolution.referrerBookingId] });
@@ -564,6 +568,19 @@ router.post('/:id/extend', adminAuth, requireRole('admin', 'staff'), async (req,
       sql: 'UPDATE bookings SET checkout = ?, room_amount = room_amount + ? WHERE id = ?',
       args: [newCheckoutStr, additionalAmount, req.params.id]
     });
+
+    // A promo/referral discount was a percent-off applied at booking time —
+    // extending the stay adds nights that were never covered by it, so the
+    // discount would silently stop applying to anything past the original
+    // checkout date unless the same rate is extended to the added nights too.
+    if (booking.discount_percent) {
+      const additionalDiscount = -Math.round(additionalAmount * (booking.discount_percent / 100));
+      await db.execute({
+        sql: "INSERT INTO booking_charges (booking_id, description, amount, category) VALUES (?, ?, ?, 'other')",
+        args: [req.params.id, `Discount extended (${booking.discount_percent}% off ${nights} added night${nights > 1 ? 's' : ''})`, additionalDiscount]
+      });
+    }
+
     await db.execute({
       sql: `
         INSERT INTO booking_extensions (booking_id, previous_checkout, new_checkout, nights_added, amount_added, reason, extended_by)

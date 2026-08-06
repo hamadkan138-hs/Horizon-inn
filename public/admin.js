@@ -34,6 +34,7 @@ const CHARGE_CATEGORY_LABELS = { amenity: 'Amenity', event_rental: 'Event Rental
 let currentUser = null;
 let allBookings = [];
 let bookingsPage = 1;
+let checkedOutPage = 1;
 const BOOKINGS_PAGE_SIZE = 50;
 let allRooms = [];
 let allRoomsForPanel = [];
@@ -177,6 +178,7 @@ document.querySelectorAll('.admin-tab[data-tab]').forEach((btn) => {
         if (btn.dataset.tab === 'recovery') loadRecoveryPanel();
         if (btn.dataset.tab === 'overview') loadOverview();
         if (btn.dataset.tab === 'bookings') { localStorage.setItem('horizonLastSeen', new Date().toISOString()); updateNotifyBell(); }
+        if (btn.dataset.tab === 'checkedout') applyCheckedOutFilters();
     });
 });
 
@@ -414,20 +416,31 @@ async function loadBookings() {
         const data = await apiGet('/api/bookings');
         allBookings = data.bookings;
         applyBookingFilters();
+        if (document.getElementById('panel-checkedout').style.display !== 'none') applyCheckedOutFilters();
         updateNotifyBell();
     } catch (err) { /* handled by apiGet */ }
 }
+
+// Checked-in guests are who front desk needs eyes on right now, so they
+// always sort to the top of the Bookings tab regardless of the current
+// sort/filter — everything else keeps its normal (most-recent-first, as
+// returned by the API) order beneath them. Checked-out stays live in their
+// own tab entirely (see applyCheckedOutFilters) since once a guest has left,
+// they're a record to look up, not something staff need surfaced here.
+const BOOKING_TAB_STATUS_PRIORITY = { checked_in: 0, confirmed: 1, pending: 2, cancelled: 3 };
 
 function applyBookingFilters() {
     const search = document.getElementById('bookingSearch').value.toLowerCase();
     const statusFilter = document.getElementById('bookingStatusFilter').value;
     const paymentFilter = document.getElementById('bookingPaymentFilter').value;
     const filtered = allBookings.filter((b) => {
+        if (b.status === 'checked_out') return false;
         const matchesSearch = !search || [b.name, b.email, b.phone, b.cnic].some((f) => (f || '').toLowerCase().includes(search));
         const matchesStatus = !statusFilter || b.status === statusFilter;
         const matchesPayment = !paymentFilter || b.payment_status === paymentFilter;
         return matchesSearch && matchesStatus && matchesPayment;
     });
+    filtered.sort((a, b) => (BOOKING_TAB_STATUS_PRIORITY[a.status] ?? 9) - (BOOKING_TAB_STATUS_PRIORITY[b.status] ?? 9));
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / BOOKINGS_PAGE_SIZE));
     bookingsPage = Math.min(bookingsPage, totalPages);
@@ -490,6 +503,34 @@ function applyBookingFilters() {
 
 }
 
+// Checked-out stays' own tab — same row layout as Bookings (View/WhatsApp/
+// Email/Invoice), but no status-select/checkout/extend controls to wire up
+// since bookingStatusCellHtml already renders checked-out bookings as a
+// locked, read-only pill.
+function applyCheckedOutFilters() {
+    const search = document.getElementById('checkedOutSearch').value.toLowerCase();
+    const paymentFilter = document.getElementById('checkedOutPaymentFilter').value;
+    const filtered = allBookings.filter((b) => {
+        if (b.status !== 'checked_out') return false;
+        const matchesSearch = !search || [b.name, b.email, b.phone, b.cnic].some((f) => (f || '').toLowerCase().includes(search));
+        const matchesPayment = !paymentFilter || b.payment_status === paymentFilter;
+        return matchesSearch && matchesPayment;
+    });
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / BOOKINGS_PAGE_SIZE));
+    checkedOutPage = Math.min(checkedOutPage, totalPages);
+    const pageStart = (checkedOutPage - 1) * BOOKINGS_PAGE_SIZE;
+    const pageRows = filtered.slice(pageStart, pageStart + BOOKINGS_PAGE_SIZE);
+
+    document.getElementById('checkedOutPageLabel').textContent =
+        filtered.length ? `Page ${checkedOutPage} of ${totalPages} (${filtered.length} checked out)` : '';
+    document.getElementById('checkedOutPrevPage').disabled = checkedOutPage <= 1;
+    document.getElementById('checkedOutNextPage').disabled = checkedOutPage >= totalPages;
+
+    const body = document.getElementById('checkedOutBody');
+    body.innerHTML = pageRows.map(bookingRowHtml).join('') || '<tr><td colspan="9">No checked-out bookings match.</td></tr>';
+}
+
 let bookingSearchDebounceTimer = null;
 document.getElementById('bookingSearch').addEventListener('input', () => {
     clearTimeout(bookingSearchDebounceTimer);
@@ -497,6 +538,15 @@ document.getElementById('bookingSearch').addEventListener('input', () => {
 });
 document.getElementById('bookingStatusFilter').addEventListener('change', () => { bookingsPage = 1; applyBookingFilters(); });
 document.getElementById('bookingPaymentFilter').addEventListener('change', () => { bookingsPage = 1; applyBookingFilters(); });
+
+let checkedOutSearchDebounceTimer = null;
+document.getElementById('checkedOutSearch').addEventListener('input', () => {
+    clearTimeout(checkedOutSearchDebounceTimer);
+    checkedOutSearchDebounceTimer = setTimeout(() => { checkedOutPage = 1; applyCheckedOutFilters(); }, 300);
+});
+document.getElementById('checkedOutPaymentFilter').addEventListener('change', () => { checkedOutPage = 1; applyCheckedOutFilters(); });
+document.getElementById('checkedOutPrevPage').addEventListener('click', () => { checkedOutPage -= 1; applyCheckedOutFilters(); });
+document.getElementById('checkedOutNextPage').addEventListener('click', () => { checkedOutPage += 1; applyCheckedOutFilters(); });
 document.getElementById('bookingsPrevPage').addEventListener('click', () => { bookingsPage -= 1; applyBookingFilters(); });
 document.getElementById('bookingsNextPage').addEventListener('click', () => { bookingsPage += 1; applyBookingFilters(); });
 

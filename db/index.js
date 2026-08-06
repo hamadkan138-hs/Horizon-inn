@@ -622,6 +622,14 @@ function init() {
 
       await addColumnsIfMissing('bookings', ['referral_code TEXT', 'referred_by_code TEXT']);
 
+      // The percent-off from a promo code or referral discount, kept on the
+      // booking itself so a later stay extension can extend the same
+      // discount rate to the added nights instead of leaving it covering
+      // only the nights booked at the time the code was applied. Flat-amount
+      // gift vouchers aren't tracked here — they cap at a fixed Rs. amount
+      // rather than scaling with nights, so there's nothing to extend.
+      await addColumnsIfMissing('bookings', ['discount_percent REAL']);
+
       // Corporate/B2B accounts for repeat Crescent Grove clients (companies
       // booking the Meeting Hall regularly) — saved terms so each booking
       // doesn't need re-negotiating, distinct from a one-off event guest.
