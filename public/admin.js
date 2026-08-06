@@ -437,21 +437,34 @@ async function renderBookingDetail(id) {
 
         cell.innerHTML = `
             ${verifyBanner}
-            <div class="detail-grid">
-                ${detailField('Room Number', assignedRoomNumber(b))}
-                ${detailField('CNIC / Passport', b.cnic)}
-                ${detailField('Marital Status', b.marital_status)}
-                ${detailField('Address', b.address)}
-                ${detailField('Arriving From', b.arrival_from)}
-                ${detailField('Departing To', b.departure_to)}
-                ${detailField('Arrival Time', b.arrival_time)}
-                ${detailField('Purpose of Stay', b.purpose_of_stay)}
-                ${detailField('Vehicle Number', b.vehicle_number)}
-                ${detailField('Payment Method', PAYMENT_METHOD_LABELS[b.payment_method] || b.payment_method)}
-                ${detailField('Transaction ID', b.transaction_id)}
-                ${detailField('Special Requests', b.special_requests)}
-                ${detailField('Terms Accepted', b.terms_accepted ? 'Yes' : 'No')}
-                ${detailField('Booked At', b.created_at)}
+            <div class="detail-group">
+                <div class="detail-group-label">Guest Identity</div>
+                <div class="detail-grid">
+                    ${detailField('Room Number', assignedRoomNumber(b))}
+                    ${detailField('CNIC / Passport', b.cnic)}
+                    ${detailField('Marital Status', b.marital_status)}
+                    ${detailField('Address', b.address)}
+                </div>
+            </div>
+            <div class="detail-group">
+                <div class="detail-group-label">Travel Details</div>
+                <div class="detail-grid">
+                    ${detailField('Arriving From', b.arrival_from)}
+                    ${detailField('Departing To', b.departure_to)}
+                    ${detailField('Arrival Time', b.arrival_time)}
+                    ${detailField('Purpose of Stay', b.purpose_of_stay)}
+                    ${detailField('Vehicle Number', b.vehicle_number)}
+                </div>
+            </div>
+            <div class="detail-group">
+                <div class="detail-group-label">Payment &amp; Booking</div>
+                <div class="detail-grid">
+                    ${detailField('Payment Method', PAYMENT_METHOD_LABELS[b.payment_method] || b.payment_method)}
+                    ${detailField('Transaction ID', b.transaction_id)}
+                    ${detailField('Special Requests', b.special_requests)}
+                    ${detailField('Terms Accepted', b.terms_accepted ? 'Yes' : 'No')}
+                    ${detailField('Booked At', b.created_at)}
+                </div>
             </div>
 
             <div class="detail-subsection">

@@ -1927,6 +1927,23 @@ table.admin-table th {
     margin-bottom: 3px;
 }
 
+.detail-group {
+    margin-bottom: 18px;
+}
+
+.detail-group:last-of-type {
+    margin-bottom: 0;
+}
+
+.detail-group-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gold);
+    margin-bottom: 10px;
+}
+
 .status-pill.partial {
     background: rgba(251, 191, 36, 0.12);
     color: #fbbf24;
