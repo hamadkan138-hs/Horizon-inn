@@ -623,12 +623,65 @@ function init() {
       await addColumnsIfMissing('bookings', ['referral_code TEXT', 'referred_by_code TEXT']);
 
       // The percent-off from a promo code or referral discount, kept on the
-      // booking itself so a later stay extension can extend the same
-      // discount rate to the added nights instead of leaving it covering
-      // only the nights booked at the time the code was applied. Flat-amount
-      // gift vouchers aren't tracked here — they cap at a fixed Rs. amount
-      // rather than scaling with nights, so there's nothing to extend.
-      await addColumnsIfMissing('bookings', ['discount_percent REAL']);
+      // booking itself so ANY later change to room_amount — a stay
+      // extension, or staff editing the check-in/check-out dates — can
+      // re-sync the discount charge (see syncStayDiscount in lib/billing.js)
+      // instead of leaving it frozen at whatever the room total was the
+      // moment the code was first applied. discount_label preserves the
+      // original "Promo code X" / "Referral discount" wording so re-synced
+      // charges still read the same way. Flat-amount gift vouchers aren't
+      // tracked here — they cap at a fixed Rs. amount rather than scaling
+      // with nights, so there's nothing to keep in sync.
+      await addColumnsIfMissing('bookings', ['discount_percent REAL', 'discount_label TEXT']);
+
+      // Backfill + one-time repair for bookings discounted before the two
+      // columns above existed. Without discount_percent set, syncStayDiscount
+      // has nothing to go on for these — and more urgently, any of them
+      // already extended or date-edited since their discount was applied are
+      // sitting right now with that discount still frozen at the OLD, smaller
+      // room_amount (e.g. a promo computed against 1 night on what's since
+      // become a 2-night stay). Parse the rate back out of the original
+      // charge description, backfill the two columns, and correct the charge
+      // amount immediately so today's total is right, not just future edits.
+      const legacyDiscounted = await db.execute(`
+        SELECT bc.id AS charge_id, bc.booking_id, bc.description, b.room_amount, b.tax_percent
+        FROM booking_charges bc
+        JOIN bookings b ON b.id = bc.booking_id
+        WHERE b.discount_percent IS NULL
+          AND bc.category = 'other'
+          AND (bc.description LIKE 'Promo code %' OR bc.description LIKE 'Referral discount%')
+      `);
+      for (const row of legacyDiscounted.rows) {
+        const match = row.description.match(/\((\d+(?:\.\d+)?)% off\)/);
+        if (!match) continue;
+        const percent = Number(match[1]);
+        const label = row.description.replace(/\s*\(\d+(?:\.\d+)?% off\)\s*$/, '');
+        const correctedAmount = -Math.round(Number(row.room_amount) * (percent / 100));
+
+        await db.execute({
+          sql: 'UPDATE bookings SET discount_percent = ?, discount_label = ? WHERE id = ?',
+          args: [percent, label, row.booking_id]
+        });
+        await db.execute({ sql: 'UPDATE booking_charges SET amount = ? WHERE id = ?', args: [correctedAmount, row.charge_id] });
+
+        const chargesResult = await db.execute({
+          sql: 'SELECT COALESCE(SUM(amount),0) AS sum FROM booking_charges WHERE booking_id = ?',
+          args: [row.booking_id]
+        });
+        const subtotal = Number(row.room_amount) + Number(chargesResult.rows[0].sum);
+        const taxAmount = subtotal * (Number(row.tax_percent) / 100);
+        const total = Math.round((subtotal + taxAmount) * 100) / 100;
+        const paidResult = await db.execute({
+          sql: 'SELECT COALESCE(SUM(amount),0) AS paid FROM payments WHERE booking_id = ?',
+          args: [row.booking_id]
+        });
+        const paidTotal = Number(paidResult.rows[0].paid);
+        const paymentStatus = paidTotal <= 0 ? 'unpaid' : (paidTotal >= total ? 'paid' : 'partial');
+        await db.execute({
+          sql: 'UPDATE bookings SET total_amount = ?, payment_status = ? WHERE id = ?',
+          args: [total, paymentStatus, row.booking_id]
+        });
+      }
 
       // Corporate/B2B accounts for repeat Crescent Grove clients (companies
       // booking the Meeting Hall regularly) — saved terms so each booking

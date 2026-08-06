@@ -5,7 +5,7 @@ const adminAuth = require('../middleware/adminAuth');
 const { requireRole } = adminAuth;
 const { isRoomAvailable } = require('../lib/availability');
 const { computeTotalAmount } = require('../lib/pricing');
-const { recomputeBookingTotal } = require('../lib/billing');
+const { recomputeBookingTotal, syncStayDiscount } = require('../lib/billing');
 const { assertBookingUnlocked, BookingLockedError } = require('../lib/lock');
 const { sendBookingConfirmationEmail, sendInvoiceEmail, invoiceLink } = require('../lib/mailer');
 const { initRoomIfNeeded } = require('../lib/minibarEngine');
@@ -176,7 +176,10 @@ router.post('/', async (req, res) => {
           args: [bookingId, `Promo code ${discountResolution.code} (${discountResolution.discountPercent}% off)`, discountAmount]
         });
         await db.execute({ sql: 'UPDATE promo_codes SET used_count = used_count + 1 WHERE id = ?', args: [discountResolution.id] });
-        await db.execute({ sql: 'UPDATE bookings SET discount_percent = ? WHERE id = ?', args: [discountResolution.discountPercent, bookingId] });
+        await db.execute({
+          sql: 'UPDATE bookings SET discount_percent = ?, discount_label = ? WHERE id = ?',
+          args: [discountResolution.discountPercent, `Promo code ${discountResolution.code}`, bookingId]
+        });
       } else if (discountResolution.type === 'voucher') {
         const addonsTotal = selectedAddons.reduce((sum, key) => sum + HOTEL_ADDONS[key].amount, 0);
         const cappedAmount = Math.min(discountResolution.amount, roomAmount + addonsTotal);
@@ -195,8 +198,8 @@ router.post('/', async (req, res) => {
           args: [bookingId, `Referral discount (${discountResolution.discountPercent}% off)`, discountAmount]
         });
         await db.execute({
-          sql: 'UPDATE bookings SET referred_by_code = ?, discount_percent = ? WHERE id = ?',
-          args: [discountResolution.code, discountResolution.discountPercent, bookingId]
+          sql: 'UPDATE bookings SET referred_by_code = ?, discount_percent = ?, discount_label = ? WHERE id = ?',
+          args: [discountResolution.code, discountResolution.discountPercent, 'Referral discount', bookingId]
         });
 
         // Reward the referrer with a Rs. 1,000 gift voucher, redeemable on their next stay.
@@ -570,16 +573,10 @@ router.post('/:id/extend', adminAuth, requireRole('admin', 'staff'), async (req,
     });
 
     // A promo/referral discount was a percent-off applied at booking time —
-    // extending the stay adds nights that were never covered by it, so the
-    // discount would silently stop applying to anything past the original
-    // checkout date unless the same rate is extended to the added nights too.
-    if (booking.discount_percent) {
-      const additionalDiscount = -Math.round(additionalAmount * (booking.discount_percent / 100));
-      await db.execute({
-        sql: "INSERT INTO booking_charges (booking_id, description, amount, category) VALUES (?, ?, ?, 'other')",
-        args: [req.params.id, `Discount extended (${booking.discount_percent}% off ${nights} added night${nights > 1 ? 's' : ''})`, additionalDiscount]
-      });
-    }
+    // extending the stay adds nights that were never covered by it, so
+    // re-sync the discount against the new room_amount or it'd silently
+    // stop applying to anything past the original checkout date.
+    await syncStayDiscount(req.params.id);
 
     await db.execute({
       sql: `
@@ -741,7 +738,15 @@ router.patch('/:id/details', adminAuth, requireRole('admin', 'staff'), async (re
     args.push(req.params.id);
     await db.execute({ sql: `UPDATE bookings SET ${updates.join(', ')} WHERE id = ?`, args });
 
-    if (roomAmountChanged) await recomputeBookingTotal(req.params.id);
+    // Editing the stay dates here changes room_amount exactly like an
+    // extension does, and a promo/referral discount needs the same re-sync
+    // or it's left covering only whatever the room total was before the
+    // edit — this was the actual cause of a discount reading correct on the
+    // charges line but short on the grand total after a date edit.
+    if (roomAmountChanged) {
+      await syncStayDiscount(req.params.id);
+      await recomputeBookingTotal(req.params.id);
+    }
 
     const updated = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [req.params.id] });
     res.json(updated.rows[0]);
