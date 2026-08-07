@@ -911,8 +911,15 @@ router.delete('/:id/charges/:chargeId', adminAuth, requireRole('admin', 'staff')
   }
 });
 
-// Record a payment against a booking (admin) — builds transaction history and
-// auto-derives payment_status from total paid vs total_amount.
+// Record a payment against a booking (admin/staff) — builds transaction
+// history and auto-derives payment_status from total paid vs total_amount.
+// Staff are still held to the lock (routine cash handling shouldn't touch a
+// settled booking), but an admin can record a payment on a checked-out or
+// cancelled booking too — mirroring the DELETE /:id/payments/:paymentId
+// carve-out below: cash genuinely collected at checkout but never entered
+// (or entered wrong) needs a corrective path, the same way a mis-entered
+// payment needs one to be removed. This is a deliberate, narrow exception to
+// the lock, not a loophole — only this endpoint, and only for admins.
 router.post('/:id/payments', adminAuth, requireRole('admin', 'staff'), async (req, res) => {
   try {
     const { amount, method, transactionId, note } = req.body;
@@ -924,7 +931,7 @@ router.post('/:id/payments', adminAuth, requireRole('admin', 'staff'), async (re
     if (!bookingResult.rows[0]) {
       return res.status(404).json({ error: 'Booking not found' });
     }
-    assertBookingUnlocked(bookingResult.rows[0]);
+    if (req.user.role !== 'admin') assertBookingUnlocked(bookingResult.rows[0]);
 
     await db.execute({
       sql: `
